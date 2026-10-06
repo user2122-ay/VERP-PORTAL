@@ -3,7 +3,7 @@ import { Plus, Trash2, Coins, Check } from "lucide-react";
 async function call(a, data) { const r = await fetch("/api/admin", { method: "POST", body: JSON.stringify({ a, ...data }) }); const j = await r.json(); alert(r.ok ? "Listo" : j.error); if (r.ok) location.reload(); }
 const f = (e) => { e.preventDefault(); return Object.fromEntries(new FormData(e.target)); };
 export default function Admin({ rank, items, reps }) {
-  const full = rank === "FUNDACION";
+  const full = true; // Fundación y Asuntos Internos pueden todo; Moderación no entra aquí
   return (<><h2>Panel de administración</h2><span className="tag">{rank.replace("_", " ")}</span>
     {full && <form className="card" onSubmit={(e) => call("addItem", f(e))}><b>Nuevo artículo (concesionario, casas, licencias)</b>
       <input name="name" placeholder="Nombre" required /><input name="brand" placeholder="Marca o ubicación" /><input name="year" placeholder="Año" />
