@@ -16,12 +16,10 @@ export async function POST(req) {
   if (!ESTADOS_CIVILES.includes(b.edoCivil)) return bad("Estado civil inválido");
   const nac = new Date(b.nac + "T00:00:00Z");
   if (isNaN(nac) || nac.getUTCFullYear() < 1930 || nac > new Date()) return bad("Fecha de nacimiento inválida");
-  const d = await db(), [lo, hi] = LUGARES[b.lugar]; let num;
-  for (let i = 0; i < 20; i++) {
-    const n = String(lo + Math.floor(Math.random() * (hi - lo + 1)));
-    if (!(await d.collection("users").findOne({ "cedula.num": n }))) { num = n; break; }
-  }
-  if (!num) return bad("No se pudo generar el número, intenta de nuevo", 500);
+  const d = await db();
+  // Número correlativo: V-00.000.001, V-00.000.002, ... (contador atómico en la colección "counters")
+  const cnt = await d.collection("counters").findOneAndUpdate({ _id: "cedula" }, { $inc: { seq: 1 } }, { upsert: true, returnDocument: "after" });
+  const num = String(cnt.seq);
   const emision = new Date(), vence = new Date(emision); vence.setUTCFullYear(vence.getUTCFullYear() + 10);
   const r = await d.collection("users").updateOne({ id: u.id, cedula: { $exists: false } }, { $set: { cedula: {
     nombres: nombres.toUpperCase(), apellidos: apellidos.toUpperCase(), nac: b.nac, edoCivil: b.edoCivil.toUpperCase(), lugar: b.lugar,
