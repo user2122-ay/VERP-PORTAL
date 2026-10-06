@@ -20,7 +20,7 @@ jobs:
       - name: Descomprimir ZIP
         run: |
           unzip -o verp-portal.zip -d temp_verp
-          cp -a temp_verp/VERP/. .
+          cp -a temp_verp/*/. .
           rm -rf temp_verp verp-portal.zip
 
       - name: Guardar cambios
