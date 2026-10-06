@@ -7,8 +7,8 @@ const fmt = (d) => { const x = new Date(d); return `${String(x.getUTCDate()).pad
 const T = ({ x, y, c, children, size = 3, center, w, ls }) => (<div style={{ position: "absolute", left: `${(x / W) * 100}%`, top: `${(y / H) * 100}%`, transform: center ? "translate(-50%,-50%)" : "translateY(-50%)", fontSize: `${size}cqw`, fontWeight: 700, color: c || "#111", whiteSpace: "nowrap", fontFamily: "Arial, sans-serif", letterSpacing: ls, width: w ? `${(w / W) * 100}%` : undefined }}>{children}</div>);
 export default async function P() {
   const u = await needUser(), c = u.cedula;
-  return (<Shell user={u}><h2>Mi cédula</h2>
-    <div style={{ containerType: "inline-size", maxWidth: 560, position: "relative", borderRadius: 14, overflow: "hidden", boxShadow: "0 0 30px var(--glow)" }}>
+  return (<Shell user={u}><div style={{ maxWidth: 560, margin: "0 auto" }}><h2 style={{ textAlign: "center", marginBottom: 12 }}>Mi cédula</h2>
+    <div style={{ containerType: "inline-size", width: "100%", position: "relative", borderRadius: 14, overflow: "hidden", boxShadow: "0 0 30px var(--glow)" }}>
       <img src="/cedula-plantilla.jpg" alt="Cédula de identidad" style={{ width: "100%", display: "block" }} />
       <img src="/cedula-logo.png" alt="" style={{ position: "absolute", left: `${(102.5 / W) * 100}%`, top: `${(95 / H) * 100}%`, width: `${(215 / W) * 100}%`, opacity: 0.28, pointerEvents: "none" }} />
       <T x={269} y={26.5} center size={3.1} c="#fff" ls="0.16em">VENEZUELA COMMUNITY ROLEPLAY</T>
@@ -24,5 +24,5 @@ export default async function P() {
       <div style={{ position: "absolute", left: `${(366 / W) * 100}%`, top: `${(166 / H) * 100}%`, width: `${(152 / W) * 100}%`, aspectRatio: "1", background: "#fff", overflow: "hidden" }}>
         {c.avatar && <img src={c.avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />}</div>
       <T x={442} y={340} center size={2.4} c="#444">{c.lugar} · {c.roblox}</T>
-    </div><Aviso /></Shell>);
+    </div><Aviso /></div></Shell>);
 }
