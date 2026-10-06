@@ -1,0 +1,27 @@
+import { CardSecret } from "./Transfer";
+const P_ = ({ l, t, w, h, bg }) => <i style={{ left: l, top: t, width: w, height: h, background: bg }} />;
+const X = ({ l, t, s, c = "#fff", fw = 700, ls, st, children }) => <div className="t" style={{ left: l, top: t, fontSize: `${s}cqw`, color: c, fontWeight: fw, letterSpacing: ls, fontStyle: st }}>{children}</div>;
+const grp = (n) => n.replace(/(\d{4})(?=\d)/g, "$1 ");
+const nombre = (c) => `${c.nombres.split(" ")[0]} ${c.apellidos.split(" ")[0]}`;
+export function BvcCard({ c, cuenta }) {
+  return (<div className="bk"><div className="bkt" />
+    <P_ l="62%" t="-6%" w="16%" h="44%" bg="#f5c518" /><P_ l="76%" t="14%" w="14%" h="32%" bg="#1e4fd8" /><P_ l="70%" t="42%" w="12%" h="24%" bg="#14a38b" /><P_ l="82%" t="44%" w="8%" h="14%" bg="#d7263d" />
+    <img src="/ve-logo.png" alt="" className="t" style={{ left: "5%", top: "8%", height: "14%" }} />
+    <X l="19%" t="9%" s={8.5}>BVC</X><X l="19%" t="22%" s={3} fw={400}>Banco de Venezuela Community</X><X l="5%" t="34%" s={5}>USD</X>
+    <X l="5%" t="52%" s={5.8} c="#0a1f3a" ls=".04em">{grp(cuenta.num)}</X>
+    <CardSecret b="bvc" />
+    <X l="5%" t="80%" s={2.6} c="#4b5b70" fw={600}>TITULAR</X><X l="5%" t="86%" s={3.6} c="#0a1f3a">{nombre(c)}</X>
+    <img src="/ve-logo.png" alt="" className="t" style={{ right: "6%", bottom: "7%", width: "22%" }} /></div>);
+}
+// Tarjeta "Mercantil VERP": diseño propio (azul, franja gris curva y trazo naranja), con el logo VE y el logo VERP.
+export function MerCard({ c, cuenta }) {
+  return (<div className="bk mc">
+    <svg viewBox="0 0 100 63" preserveAspectRatio="none"><path d="M0 0H86C70 22 34 34 0 24Z" fill="#d9dce1" /><path d="M0 24C34 34 70 22 86 0L90 0C75 28 36 42 0 31Z" fill="#f5a31a" /></svg>
+    <X l="8%" t="9%" s={7.5} c="#0a4a9f"><span style={{ fontStyle: "italic" }}>Mercantil VERP</span></X>
+    <img src="/ve-logo.png" alt="" className="t" style={{ left: "71%", top: "6%", height: "15%" }} />
+    <div className="t" style={{ left: "8%", top: "40%", width: "13%", height: "16%", borderRadius: "12%", background: "linear-gradient(135deg,#f1d27a,#b8860b)" }} />
+    <X l="8%" t="60%" s={5.2} ls=".06em">{grp(cuenta.num)}</X>
+    <CardSecret b="mer" mer />
+    <X l="8%" t="88%" s={3.4} c="#fff" fw={600}>{nombre(c).toUpperCase()}</X>
+    <div className="t" style={{ left: "73%", top: "74%", width: "21%", height: "18%", background: "#fff", borderRadius: "8%", display: "flex", alignItems: "center", justifyContent: "center" }}><img src="/verp-logo.png" alt="VERP" style={{ width: "88%", height: "88%", objectFit: "contain" }} /></div></div>);
+}
