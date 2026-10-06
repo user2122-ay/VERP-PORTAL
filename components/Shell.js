@@ -2,8 +2,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { canAdmin } from "@/lib/roles";
-import { LayoutDashboard, Contact, Store, Siren, ShieldCheck, Sun, Moon, LogOut } from "lucide-react";
-const L = [["/", "Panel", LayoutDashboard], ["/cedula", "Cédula", Contact], ["/mercado", "Mercado", Store], ["/emergencias", "911", Siren]];
+import { LayoutDashboard, Contact, Store, Siren, Landmark, Bell, ShieldCheck, Sun, Moon, LogOut } from "lucide-react";
+const L = [["/", "Panel", LayoutDashboard], ["/cedula", "Cédula", Contact], ["/banco", "Banco", Landmark], ["/mercado", "Mercado", Store], ["/notificaciones", "Avisos", Bell], ["/emergencias", "911", Siren]];
 export default function Shell({ user, children }) {
   const p = usePathname();
   function toggle(e) {

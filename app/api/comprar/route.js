@@ -10,5 +10,6 @@ export async function POST(req) {
   if (!r.modifiedCount) return NextResponse.json({ error: "Saldo insuficiente" }, { status: 400 });
   if (it.stock > 0) await d.collection("items").updateOne({ _id: it._id }, { $inc: { stock: -1 } });
   await d.collection("tx").insertOne({ user: u.id, type: "compra", item: it.name, amount: -it.price, at: new Date() });
+  await d.collection("notifs").insertOne({ uid: u.id, title: "Compra realizada", body: `Compraste ${it.name} por $${it.price.toLocaleString("es")}.`, at: new Date(), read: false });
   return NextResponse.json({ ok: true });
 }
