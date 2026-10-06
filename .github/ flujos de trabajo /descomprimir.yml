@@ -1,4 +1,4 @@
-name: Descomprimir
+name: Descomprimir VERP
 
 on:
   workflow_dispatch:
@@ -17,16 +17,16 @@ jobs:
       - name: Descargar repositorio
         uses: actions/checkout@v4
 
-      - name: Descomprimir proyecto
+      - name: Descomprimir ZIP
         run: |
-          unzip -o verp-portal.zip
-          cp -a verp-portal/. .
-          rm -rf verp-portal verp-portal.zip
+          unzip -o verp-portal.zip -d temp_verp
+          cp -a temp_verp/VERP/. .
+          rm -rf temp_verp verp-portal.zip
 
       - name: Guardar cambios
         run: |
           git config user.name "bot"
           git config user.email "bot@users.noreply.github.com"
           git add -A
-          git commit -m "Agregar proyecto verp-portal" || true
+          git commit -m "Actualizar portal VERP" || true
           git push
