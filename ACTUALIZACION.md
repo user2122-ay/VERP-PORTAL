@@ -31,3 +31,10 @@ lib/rol.js, lib/placa.js, components/CedulaCard.js, app/darkweb/*, app/delictivo
 - **Tarjeta VE:RP Provincial** ($35, membresía $2/semana, se cobra de la propia tarjeta o de otro banco). Logo de VE:RP en lugar del de la red de pagos.
 - **911**: el mapa del ciudadano ahora tiene zoom (botones +/−, pellizco y rueda). En la MDT (pestaña Reportes) hay un mapa con un punto por llamado, el botón **Atender llamado** (el ciudadano recibe un aviso), y suena una alerta cuando entra uno nuevo.
 - **Impuesto de ventas de negocios**: listo pero APAGADO. Para activarlo cambia `IMPUESTO_NEGOCIO = 0` por `0.05` (5%) en lib/negocios.js.
+
+## Actualización 4: licencias y Mercado por categorías
+- **3 licencias** en el Mercado (categoría Licencias): Conducir $600, Armas $2.500, Embarcaciones $10.000 (por ahora solo se vende, no bloquea nada).
+- **Bloqueos**: sin Licencia de Conducir no se pueden comprar vehículos; sin Licencia de Armas no se pueden comprar armas. Se valida también en el servidor. Las licencias ya compradas salen bloqueadas ("Ya la tienes").
+- **Licencias personalizadas**: cada una es una tarjeta con foto, nombre y cédula del ciudadano y un número inventado (ej. LC-K7QD-3MX9, formato que no se parece a los reales). Se ven en Inventario y en la ficha de la MDT, que además dice si tiene o no licencia de conducir y de armas.
+- **Mercado**: botones arriba (Todo, Tarjetas, Licencias, Concesionario, Propiedades, Armas, Herramientas, Telefonía, Tecnología, Negocios).
+- Las licencias que ya existan en el servidor como artículos creados por staff se reconocen por el nombre.

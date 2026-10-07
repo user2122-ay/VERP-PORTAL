@@ -9,6 +9,7 @@ import { OPS, numeroDe } from "@/lib/redes";
 import { nuevaPlaca, registrarPlaca } from "@/lib/placa";
 import { nombreDe } from "@/lib/rol";
 import { NEGOCIO_DE } from "@/lib/negocios";
+import { licTipo, numeroLicencia } from "@/lib/licencia";
 const err = (m, s = 400) => NextResponse.json({ error: m }, { status: s });
 const CATS = ["Concesionario", "Propiedades", "Licencias", "Objetos", "Armas", "Herramientas", "Telefonía", "Tecnología"], INICIAL = 5000;
 const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), str = (s, n = 80) => String(s || "").trim().slice(0, n), up = (s, n = 40) => str(s, n).replace(/\s+/g, " ").toUpperCase();
@@ -56,7 +57,7 @@ export async function POST(req) {
     case "invAgregar": {
       const id = oid(b.itemId), it = id && (await d.collection("items").findOne({ _id: id })); if (!it) return err("Artículo no existe", 404);
       const pl = it.category === "Concesionario" ? await nuevaPlaca(d, { modelo: it.name, dueno: t.id, duenoN: nombreDe(t) }) : null;
-      await users.updateOne({ id: t.id }, { $push: { inventory: { name: it.name, category: it.category, price: it.price, at, admin: true, sku: it.sku || null, tipo: it.tipo || null, ubicacion: it.ubicacion || null, img: it.img || null, placa: pl, vence: it.dias ? new Date(Date.now() + it.dias * 864e5) : null } } });
+      await users.updateOne({ id: t.id }, { $push: { inventory: { name: it.name, category: it.category, price: it.price, at, admin: true, sku: it.sku || null, tipo: it.tipo || null, ubicacion: it.ubicacion || null, img: it.img || null, placa: pl, vence: it.dias ? new Date(Date.now() + it.dias * 864e5) : null, licNum: licTipo(it) ? numeroLicencia(licTipo(it)) : null } } });
       await d.collection("notifs").insertOne({ uid: t.id, title: "Artículo recibido", body: `Un administrador agregó ${it.name} a tu inventario.`, at, read: false });
       await log("invAgregar", quien, { item: it.name }); break;
     }

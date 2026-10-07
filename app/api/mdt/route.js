@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { apiUser } from "@/lib/auth";
 import { esRol, nombreDe } from "@/lib/rol";
 import { normPlaca } from "@/lib/placa";
+import { licTipo } from "@/lib/licencia";
 const bad = (m, s = 400) => NextResponse.json({ error: m }, { status: s });
 const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), money = (n) => "$" + Number(n).toLocaleString("es"), txt = (s, n = 400) => String(s || "").trim().slice(0, n);
 const oid = (s) => { try { return new ObjectId(String(s)); } catch { return null; } };
@@ -22,7 +23,7 @@ export async function GET(req) {
   if (m === "ficha") {
     const x = await us.findOne({ id: txt(p.get("id"), 30), cedula: { $exists: true } }); if (!x) return bad("No existe", 404);
     const ar = await d.collection("arrestos").find({ sujeto: x.id }).sort({ at: -1 }).limit(30).toArray(), ex = await d.collection("expedientes").find({ sujetos: x.id }).sort({ at: -1 }).limit(20).toArray();
-    return NextResponse.json({ cedula: x.cedula, linea: x.chip?.num || null, autos: (x.inventory || []).filter((i) => i.category === "Concesionario").map((i) => ({ name: i.name, placa: i.placa || "", robado: !!i.robado })),
+    return NextResponse.json({ licencias: (x.inventory || []).filter((i) => licTipo(i)).map((i) => ({ tipo: licTipo(i), num: i.licNum || "—", at: i.at })), cedula: x.cedula, linea: x.chip?.num || null, autos: (x.inventory || []).filter((i) => i.category === "Concesionario").map((i) => ({ name: i.name, placa: i.placa || "", robado: !!i.robado })),
       arrestos: ar.map((a) => ({ id: String(a._id), cargos: a.cargos, multa: a.multa, cobrado: a.cobrado, minutos: a.minutos, por: a.porName, at: a.at })), expedientes: ex.map((e) => ({ id: String(e._id), titulo: e.titulo, estado: e.estado })) });
   }
   if (m === "placa") { // buscar un auto por matrícula: muestra el dueño oficial (si el auto se vendió en la Dark Web, ya no figura)

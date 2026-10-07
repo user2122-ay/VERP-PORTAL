@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { Search, Shield, FileText, Gavel, Siren, Plus } from "lucide-react";
 import CedulaCard from "@/components/CedulaCard";
 import ZoomMap from "@/components/ZoomMap";
+import LicenciaCard from "@/components/LicenciaCard";
 const $ = (n) => `$${Number(n || 0).toLocaleString("es")}`, fec = (d) => new Date(d).toLocaleString("es", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
 const get = async (q) => { const r = await fetch("/api/mdt?" + q, { cache: "no-store" }); return r.ok ? r.json() : null; };
 const post = async (b) => { const r = await fetch("/api/mdt", { method: "POST", body: JSON.stringify(b) }), j = await r.json().catch(() => ({})); if (!r.ok) { alert(j.error || "Error"); return null; } return j; };
@@ -24,6 +25,8 @@ function Ciudadanos() {
   return (<><div className="card"><b>Buscar ciudadano</b><Buscador onPick={(x) => abrir(x.id)} /><b style={{ display: "block", marginTop: 14 }}>Buscar auto por matrícula</b><Matricula abrir={abrir} /></div>
     {f && <div style={{ display: "grid", gap: 12 }}><div style={{ maxWidth: 520 }}><CedulaCard c={f.cedula} /></div>
       <div className="card"><b>Datos</b><div className="mut">Línea: {f.linea || "sin chip"}</div><b style={{ display: "block", marginTop: 8 }}>Vehículos</b>{f.autos.map((a, k) => <div key={k}>{a.name} {a.placa && <span className="mut">· {a.placa}</span>} {a.robado && <span className="rob-t" style={{ fontSize: 11 }}>ROBADO</span>}</div>)}{!f.autos.length && <div className="mut">Sin vehículos.</div>}</div>
+      <div className="card"><b>Licencias</b>{[["conducir", "Conducir"], ["armas", "Armas"], ["embarcaciones", "Embarcaciones"]].map(([t, n]) => { const l = f.licencias.find((x) => x.tipo === t); return <div key={t} style={{ display: "flex", justifyContent: "space-between", gap: 8, padding: "4px 0" }}><span>{n}</span>{l ? <b style={{ color: "var(--ok)" }}>Tiene · {l.num}</b> : <b style={{ color: "var(--bad)" }}>No tiene</b>}</div>; })}
+        {f.licencias.length > 0 && <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))", gap: 12, marginTop: 10 }}>{f.licencias.map((l, k) => <LicenciaCard key={k} tipo={l.tipo} c={f.cedula} num={l.num} emision={l.at} />)}</div>}</div>
       <div className="card"><b>Historial de arrestos ({f.arrestos.length})</b>{f.arrestos.map((a) => <div key={a.id} style={{ padding: "6px 0", borderTop: "1px solid var(--bd)" }}>{a.cargos}<div className="mut">{fec(a.at)} · multa {$(a.multa)} (cobrado {$(a.cobrado)}) · {a.minutos} min · {a.por}</div></div>)}{!f.arrestos.length && <div className="mut">Sin antecedentes.</div>}</div>
       <div className="card"><b>Expedientes ({f.expedientes.length})</b>{f.expedientes.map((e) => <div key={e.id}>{e.titulo} <span className="tag">{e.estado}</span></div>)}{!f.expedientes.length && <div className="mut">Ninguno.</div>}</div></div>}</>);
 }
