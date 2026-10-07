@@ -31,6 +31,7 @@ export default function Estados() {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><b>{v.g.nombre} · {hora(it.at)} ({v.i + 1}/{v.g.items.length})</b><button className="btn g" onClick={cerrar}><X size={18} /></button></div>
       <img src={it.url || `/api/wa/estados?img=${it.id}`} alt="" referrerPolicy="no-referrer" onClick={sig} style={{ width: "100%", maxHeight: "62vh", objectFit: "contain", borderRadius: 12, cursor: "pointer" }} />
       {it.desc && <div style={{ textAlign: "center" }}>{it.desc}</div>}
-      {v.g.mio && <div className="card" style={{ color: "var(--tx)" }}><b>Visto por {it.vistas.length}</b>{it.vistas.map((x) => <div key={x.num} className="mut" style={{ display: "flex", justifyContent: "space-between" }}><span>{x.nombre}</span><span>{hora(x.at)}</span></div>)}
-        <button className="btn r" style={{ marginTop: 8 }} onClick={async () => { await post({ accion: "borrar", id: it.id }); setV(null); }}><Trash2 size={16} />Borrar estado</button></div>}</div></div>}</>);
+      {v.g.mio && <div style={{ background: "#0d1526", color: "#fff", border: "1px solid #2a3b63", borderRadius: 14, padding: 14 }}><div style={{ fontWeight: 700, fontSize: 16 }}>Visto por {it.vistas.length}</div>
+        <div style={{ maxHeight: "26vh", overflow: "auto", marginTop: 6 }}>{it.vistas.length ? it.vistas.map((x) => <div key={x.num} style={{ display: "flex", justifyContent: "space-between", padding: "5px 0", color: "#e8eefc" }}><span>{x.nombre}</span><span style={{ color: "#9fb0d0" }}>{hora(x.at)}</span></div>) : <div style={{ color: "#9fb0d0" }}>Nadie lo ha visto todavía.</div>}</div>
+        <button className="btn" style={{ width: "100%", marginTop: 12, background: "#e5334a", color: "#fff", fontWeight: 700, fontSize: 15 }} onClick={async () => { await post({ accion: "borrar", id: it.id }); setV(null); }}><Trash2 size={18} />Borrar este estado</button></div>}</div></div>}</>);
 }
