@@ -1,7 +1,7 @@
 # Actualización: Dark Web, Panel Delictivo y MDT
 
 No hay variables nuevas. Se usan las que ya tienes: `POLICIA_ROLE_IDS`, `DELICTIVO_ROLE_IDS` (ya trae 1373359377217487060) y el bot de Discord.
-Los enlaces "Delictivo" y "MDT" del menú aparecen tras volver a iniciar sesión; las páginas comprueban el rol EN VIVO con el bot cada vez que se abren.
+Los enlaces "Delictivo" y "MDT" aparecen solos (se revisan los roles en Discord cada 5 minutos). Fundación siempre los ve. Las páginas comprueban el rol EN VIVO con el bot.
 
 ## Qué hay de nuevo
 - **Mercado → pestaña Negocios** (ya no hay "Negocios" en el menú). Precios: Móvil $120.000, Tool Store $125.000. El Taller clandestino ($95.000) solo se compra dentro de la Dark Web.
