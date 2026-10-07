@@ -35,3 +35,17 @@ export function ComCard({ c, cuenta, promo }) {
     <CardSecret b="com" mer promo={promo} />
     <X l="8%" t="88%" s={3.4} c="#f1d27a" fw={600}>{promo ? "TU NOMBRE" : nombre(c).toUpperCase()}</X></div>);
 }
+
+// VE:RP Provincial: tarjeta internacional prepagada (azul, brillo diagonal, logo VE y logo VERP en lugar del de la red de pagos).
+export function ProCard({ c, cuenta, promo }) {
+  return (<div className="bk" style={{ background: "linear-gradient(135deg,#0d5aa7,#0a3d78 60%,#083060)" }}>
+    <div className="t" style={{ left: 0, top: 0, width: "100%", height: "100%", background: "linear-gradient(115deg,transparent 38%,#ffffff26 48%,transparent 62%)" }} />
+    <img src="/ve-logo.png" alt="" className="t" style={{ left: "6%", top: "8%", height: "15%" }} /><X l="25%" t="8%" s={7.5} fw={400}>Provincial</X>
+    <div className="t" style={{ left: "8%", top: "34%", width: "13%", height: "16%", borderRadius: "12%", background: "linear-gradient(135deg,#eef0f3,#9aa3af)" }} />
+    <X l="26%" t="33%" s={4.4} fw={400}>Internacional</X><X l="26%" t="43%" s={3} c="#cfe0f7" fw={400}>Prepagada</X>
+    <X l="8%" t="58%" s={5.2} ls=".06em">{promo ? "7600 •••• •••• ••••" : grp(cuenta.num)}</X>
+    <CardSecret b="pro" mer promo={promo} />
+    <X l="8%" t="88%" s={3.4} c="#fff" fw={600}>{promo ? "TU NOMBRE" : nombre(c).toUpperCase()}</X>
+    <div className="t" style={{ left: "73%", top: "74%", width: "21%", height: "18%", background: "#fff", borderRadius: "8%", display: "flex", alignItems: "center", justifyContent: "center" }}><img src="/verp-logo.png" alt="VERP" style={{ width: "88%", height: "88%", objectFit: "contain" }} /></div></div>);
+}
+export const CARD = { bvc: BvcCard, mer: MerCard, pro: ProCard, com: ComCard };

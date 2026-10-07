@@ -1,7 +1,8 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Search, Shield, FileText, Gavel, Siren, Plus } from "lucide-react";
 import CedulaCard from "@/components/CedulaCard";
+import ZoomMap from "@/components/ZoomMap";
 const $ = (n) => `$${Number(n || 0).toLocaleString("es")}`, fec = (d) => new Date(d).toLocaleString("es", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
 const get = async (q) => { const r = await fetch("/api/mdt?" + q, { cache: "no-store" }); return r.ok ? r.json() : null; };
 const post = async (b) => { const r = await fetch("/api/mdt", { method: "POST", body: JSON.stringify(b) }), j = await r.json().catch(() => ({})); if (!r.ok) { alert(j.error || "Error"); return null; } return j; };
@@ -45,15 +46,24 @@ function Arrestos() {
     <textarea name="cargos" rows={2} placeholder="Cargos" required style={{ marginTop: 8 }} /><div className="row2"><input name="multa" type="number" min="0" placeholder="Multa ($)" /><input name="minutos" type="number" min="0" placeholder="Condena (minutos)" /></div>
     <input name="oficiales" placeholder="Otros oficiales presentes (usuarios de Roblox separados por coma)" /><p className="mut">Tú y cada oficial presente reciben el 5% de la multa cobrada, en efectivo.</p><button className="btn"><Gavel size={16} />Arrestar</button></form>);
 }
+const beep = () => { try { const a = new (window.AudioContext || window.webkitAudioContext)(), o = a.createOscillator(), g = a.createGain(); o.connect(g); g.connect(a.destination); o.frequency.value = 880; g.gain.value = 0.15; o.start(); setTimeout(() => { o.stop(); a.close(); }, 350); } catch {} };
 function Reportes() {
-  const [l, setL] = useState([]), [ab, setAb] = useState(null), cargar = async () => setL((await get("m=rep"))?.reps || []);
-  useEffect(() => { cargar(); const x = setInterval(cargar, 8000); return () => clearInterval(x); }, []);
-  return (<>{l.map((r) => { const k = r.src + r.id; return (<div key={k} className={"card" + (r.resuelto ? "" : " rob")}><div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center" }}><b>{r.titulo}</b>
+  const [l, setL] = useState([]), [ab, setAb] = useState(null), [sel, setSel] = useState(null), prev = useRef(null);
+  const cargar = async () => { const reps = (await get("m=rep"))?.reps || [], n = reps.filter((r) => r.src === "e" && !r.resuelto && !r.atiende).length; if (prev.current !== null && n > prev.current) beep(); prev.current = n; setL(reps); };
+  useEffect(() => { cargar(); const x = setInterval(cargar, 6000); return () => clearInterval(x); }, []);
+  const pins = l.filter((r) => r.src === "e" && r.x != null && !r.resuelto).map((r) => ({ id: r.src + r.id, x: r.x, y: r.y, color: r.atiende ? "#fbbf24" : "#ff4d5e" }));
+  const atender = async (r) => { if (await post({ accion: "repAtender", src: r.src, id: r.id })) cargar(); };
+  const card = (r) => { const k = r.src + r.id; return (<div key={k} className={"card" + (r.resuelto ? "" : " rob")}><div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center" }}><b>{r.titulo}</b>
     <label style={{ display: "flex", gap: 8, alignItems: "center" }}><span className="mut">{r.resuelto ? "Resuelto" : "Pendiente"}</span><button className={"sw" + (r.resuelto ? " on" : "")} aria-label="Resolver problema" onClick={async () => { if (await post({ accion: "repEstado", src: r.src, id: r.id, resuelto: !r.resuelto })) cargar(); }} /></label></div>
     <div className="mut">{fec(r.at)}{r.por ? ` · ${r.por}` : ""}</div><div>{r.det}</div>
+    {r.atiende ? <div style={{ color: "var(--ok)", marginTop: 4 }}>Atiende: <b>{r.atiende}</b></div> : !r.resuelto && <button className="btn" style={{ marginTop: 8 }} onClick={() => atender(r)}>Atender llamado</button>}
     {ab === k && <><div className="chatb">{r.seg.map((n, i) => <div key={i}><b>{n.by}</b> <span className="mut">{fec(n.at)}</span><div>{n.txt}</div></div>)}{!r.seg.length && <span className="mut">Sin seguimiento.</span>}</div>
       <form className="row2" onSubmit={async (x) => { const b = fd(x); if (await post({ accion: "repNota", src: r.src, id: r.id, txt: b.txt })) { x.target.reset(); cargar(); } }}><input name="txt" placeholder="Añadir seguimiento" /><button className="btn g">Añadir</button></form></>}
-    <button className="btn g" style={{ marginTop: 8 }} onClick={() => setAb(ab === k ? null : k)}>{ab === k ? "Ocultar seguimiento" : `Seguimiento (${r.seg.length})`}</button></div>); })}{!l.length && <div className="card mut">No hay reportes.</div>}</>);
+    <button className="btn g" style={{ marginTop: 8 }} onClick={() => setAb(ab === k ? null : k)}>{ab === k ? "Ocultar seguimiento" : `Seguimiento (${r.seg.length})`}</button></div>); };
+  const s = sel && l.find((r) => r.src + r.id === sel);
+  return (<><div className="card"><b>Mapa de llamados 911</b><p className="mut" style={{ margin: "4px 0 8px" }}><span style={{ color: "#ff4d5e" }}>●</span> pendiente · <span style={{ color: "#fbbf24" }}>●</span> atendiendo. Toca un punto para ver el llamado. Se actualiza solo y suena cuando entra uno nuevo.</p><ZoomMap pins={pins} onPin={(p) => setSel(p.id)} /></div>
+    {s && <><div className="mut" style={{ margin: "4px 0" }}>Llamado seleccionado · {s.zona || ""}</div>{card(s)}</>}
+    {l.filter((r) => r.src + r.id !== sel).map(card)}{!l.length && <div className="card mut">No hay reportes.</div>}</>);
 }
 const TABS = [["Ciudadanos", Shield, Ciudadanos], ["Expedientes", FileText, Expedientes], ["Arrestos", Gavel, Arrestos], ["Reportes", Siren, Reportes]];
 export default function Mdt() {

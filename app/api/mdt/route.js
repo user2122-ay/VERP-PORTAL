@@ -38,8 +38,8 @@ export async function GET(req) {
   }
   if (m === "rep") {
     const a = await d.collection("reports").find().sort({ at: -1 }).limit(40).toArray(), b = await d.collection("reportes").find().sort({ at: -1 }).limit(40).toArray();
-    const r = [...a.map((x) => ({ src: "e", id: String(x._id), titulo: `911 · ${x.tipo}`, det: `${x.zona}${x.calle ? " · " + x.calle : ""} — ${x.desc}`, por: x.nombre, resuelto: x.estado === "resuelto", seg: x.seg || [], at: x.at })),
-      ...b.map((x) => ({ src: "v", id: String(x._id), titulo: `${x.tipo}: ${x.modelo}`, det: `Color ${x.color || "—"} · Placa ${x.placa || "—"}${x.specs ? " · " + x.specs : ""}`, por: x.denuncia || "", resuelto: x.estado === "resuelto", seg: x.seg || [], at: x.at }))].sort((x, y) => +new Date(y.at) - +new Date(x.at));
+    const r = [...a.map((x) => ({ src: "e", id: String(x._id), titulo: `911 · ${x.tipo}`, det: `${x.zona}${x.calle ? " · " + x.calle : ""} — ${x.desc}`, por: x.nombre, zona: x.zona, x: x.x, y: x.y, atiende: x.atiende || null, resuelto: x.estado === "resuelto", seg: x.seg || [], at: x.at })),
+      ...b.map((x) => ({ src: "v", id: String(x._id), titulo: `${x.tipo}: ${x.modelo}`, det: `Color ${x.color || "—"} · Placa ${x.placa || "—"}${x.specs ? " · " + x.specs : ""}`, por: x.denuncia || "", atiende: x.atiende || null, resuelto: x.estado === "resuelto", seg: x.seg || [], at: x.at }))].sort((x, y) => +new Date(y.at) - +new Date(x.at));
     return NextResponse.json({ reps: r });
   }
   return bad("Consulta inválida");
@@ -77,10 +77,17 @@ export async function POST(req) {
       await d.collection("notifs").insertOne({ uid: s.id, title: "Has sido arrestado", body: `Cargos: ${cargos}.${cobrado ? ` Se cobró una multa de ${money(cobrado)}.` : ""}${rest ? ` Quedó sin pagar ${money(rest)}.` : ""}`, at, read: false });
       return NextResponse.json({ ok: true, cobrado, comision: com, oficiales: ids.length });
     }
+    case "repAtender": { // un policía toma el llamado; el ciudadano recibe un aviso
+      const id = oid(b.id); if (!id) return bad("Reporte inválido"); const c = d.collection(b.src === "v" ? "reportes" : "reports");
+      const r = await c.findOneAndUpdate({ _id: id, estado: { $ne: "resuelto" }, atiende: { $in: [null, undefined] } }, { $set: { estado: "atendiendo", atiende: yo }, $push: { seg: { by: yo, txt: "Va a atender el llamado", at } } });
+      if (!r) return bad("Ese llamado ya lo atiende otra unidad o ya está resuelto", 409);
+      if (b.src !== "v" && r.user) await d.collection("notifs").insertOne({ uid: r.user, title: "Una unidad va en camino", body: `${yo} atenderá tu reporte de ${r.tipo}.`, at, read: false });
+      return NextResponse.json({ ok: true });
+    }
     case "repNota": case "repEstado": {
       const id = oid(b.id); if (!id) return bad("Reporte inválido"); const c = d.collection(b.src === "v" ? "reportes" : "reports");
       if (b.accion === "repNota") { const t = txt(b.txt); if (!t) return bad("Nota vacía"); await c.updateOne({ _id: id }, { $push: { seg: { by: yo, txt: t, at } } }); }
-      else await c.updateOne({ _id: id }, { $set: { estado: b.resuelto ? "resuelto" : "pendiente" }, $push: { seg: { by: yo, txt: b.resuelto ? "Marcó el problema como RESUELTO" : "Reabrió el reporte", at } } });
+      else await c.updateOne({ _id: id }, { $set: { estado: b.resuelto ? "resuelto" : "pendiente" }, ...(b.resuelto ? {} : { $unset: { atiende: "" } }), $push: { seg: { by: yo, txt: b.resuelto ? "Marcó el problema como RESUELTO" : "Reabrió el reporte", at } } });
       return NextResponse.json({ ok: true });
     }
   }

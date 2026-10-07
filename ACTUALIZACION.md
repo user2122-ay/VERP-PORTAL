@@ -25,3 +25,9 @@ lib/rol.js, lib/placa.js, components/CedulaCard.js, app/darkweb/*, app/delictivo
 - **Placas VEN-000** automáticas al comprar un auto (registradas a nombre del comprador). **Casas**: preguntan el color al comprar.
 - **MDT**: buscar auto por matrícula (muestra el dueño oficial; si el auto se vendió en la Dark Web ya no figura el dueño anterior) y reportes de robo sin foto.
 - Colección nueva en Mongo: `placas`.
+
+## Actualización 3: Armería, tarjeta Provincial y 911
+- **Armería Liberty Guns & Ammo** ($95.000, foto en public/negocios/armeria.jpg): el dueño edita los precios de las armas y lo que se vende le llega a su Tarjeta de Comerciante. Los artículos que Administración crea en la categoría "Armas" quedan ligados a este negocio automáticamente (igual que Herramientas, Telefonía/Tecnología y Concesionario).
+- **Tarjeta VE:RP Provincial** ($35, membresía $2/semana, se cobra de la propia tarjeta o de otro banco). Logo de VE:RP en lugar del de la red de pagos.
+- **911**: el mapa del ciudadano ahora tiene zoom (botones +/−, pellizco y rueda). En la MDT (pestaña Reportes) hay un mapa con un punto por llamado, el botón **Atender llamado** (el ciudadano recibe un aviso), y suena una alerta cuando entra uno nuevo.
+- **Impuesto de ventas de negocios**: listo pero APAGADO. Para activarlo cambia `IMPUESTO_NEGOCIO = 0` por `0.05` (5%) en lib/negocios.js.

@@ -8,6 +8,7 @@ import { nuevaCuenta } from "@/lib/tarjeta";
 import { OPS, numeroDe } from "@/lib/redes";
 import { nuevaPlaca, registrarPlaca } from "@/lib/placa";
 import { nombreDe } from "@/lib/rol";
+import { NEGOCIO_DE } from "@/lib/negocios";
 const err = (m, s = 400) => NextResponse.json({ error: m }, { status: s });
 const CATS = ["Concesionario", "Propiedades", "Licencias", "Objetos", "Armas", "Herramientas", "Telefonía", "Tecnología"], INICIAL = 5000;
 const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), str = (s, n = 80) => String(s || "").trim().slice(0, n), up = (s, n = 40) => str(s, n).replace(/\s+/g, " ").toUpperCase();
@@ -76,7 +77,7 @@ export async function POST(req) {
       const price = Number(b.price), cat = str(b.category, 30), imp = Number(b.impuesto || 0);
       if (!str(b.name) || !Number.isFinite(price) || price < 0) return err("Nombre o precio inválido"); if (!CATS.includes(cat)) return err("Categoría inválida");
       if (cat === "Propiedades" && !str(b.ubicacion)) return err("Las propiedades necesitan ubicación (ej: Caracas 405)");
-      const doc = { name: str(b.name), category: cat, price, desc: str(b.desc, 400), brand: str(b.brand), year: str(b.year, 10), clase: str(b.clase, 30), ubicacion: str(b.ubicacion, 80), impuesto: Number.isFinite(imp) && imp > 0 ? imp : 0, img: str(b.img, 500), stock: b.stock ? Math.floor(Number(b.stock)) || -1 : -1 };
+      const doc = { name: str(b.name), category: cat, negocio: NEGOCIO_DE[cat] || null, price, desc: str(b.desc, 400), brand: str(b.brand), year: str(b.year, 10), clase: str(b.clase, 30), ubicacion: str(b.ubicacion, 80), impuesto: Number.isFinite(imp) && imp > 0 ? imp : 0, img: str(b.img, 500), stock: b.stock ? Math.floor(Number(b.stock)) || -1 : -1 };
       await d.collection("items").insertOne(doc); await log("addItem", doc.name, { price, category: cat }); break;
     }
     case "cuentaQuitar": {
@@ -85,7 +86,7 @@ export async function POST(req) {
     }
     case "cuentaDar": {
       const k = b.banco; if (!BANCOS[k]) return err("Banco inválido"); if (t.cuentas?.[k]) return err("Ya tiene esa tarjeta");
-      const cu = await nuevaCuenta(k); if (BANCOS[k].comercial) cu.proximo = new Date(Date.now() + 7 * 864e5);
+      const cu = await nuevaCuenta(k); if (BANCOS[k].semanal) cu.proximo = new Date(Date.now() + 7 * 864e5);
       await users.updateOne({ id: t.id, [`cuentas.${k}`]: { $exists: false } }, { $set: { [`cuentas.${k}`]: cu } });
       await d.collection("notifs").insertOne({ uid: t.id, title: "Tarjeta entregada", body: `Un administrador te entregó la tarjeta ${BANCOS[k].nombre}.`, at, read: false }); await log("cuentaDar", quien, { banco: k }); break;
     }

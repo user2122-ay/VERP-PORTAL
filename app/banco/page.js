@@ -1,6 +1,6 @@
 import Shell from "@/components/Shell";
 import Transfer, { Deposito } from "./Transfer";
-import { BvcCard, MerCard, ComCard } from "./Cards";
+import { CARD } from "./Cards";
 import { needUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { impuesto } from "@/lib/economia";
@@ -13,9 +13,9 @@ export default async function P() {
   return (<Shell user={u}><div style={{ maxWidth: 1100, margin: "0 auto" }}>
     <p className="mut" style={{ margin: "0 0 10px" }}>Banca en línea · Hola, {c.nombres.split(" ")[0]}</p>
     <div className="card"><span className="mut">Efectivo</span><div className="big">${u.balance.toLocaleString("es")}</div></div>
-    {(u.plan || cu.com) && <div className="card mut" style={{ marginTop: 14 }}>{u.plan && <div>Plan de telefonía: ${u.plan.monto}/semana · próximo cobro {new Date(u.plan.proximo).toLocaleDateString("es")}</div>}{cu.com && <div>Membresía de comerciante: ${BANCOS.com.semanal}/semana · próximo cobro {new Date(cu.com.proximo).toLocaleDateString("es")}</div>}</div>}
+    {(u.plan || cu.com || cu.pro) && <div className="card mut" style={{ marginTop: 14 }}>{u.plan && <div>Plan de telefonía: ${u.plan.monto}/semana · próximo cobro {new Date(u.plan.proximo).toLocaleDateString("es")}</div>}{cu.pro && <div>Membresía Provincial: ${BANCOS.pro.semanal}/semana · próximo cobro {new Date(cu.pro.proximo).toLocaleDateString("es")}</div>}{cu.com && <div>Membresía de comerciante: ${BANCOS.com.semanal}/semana · próximo cobro {new Date(cu.com.proximo).toLocaleDateString("es")}</div>}</div>}
     {!owned.length ? <div className="card" style={{ marginTop: 14 }}><b>Aún no tienes tarjeta bancaria</b><p className="mut">Cómprala en el Mercado: BVC ${BANCOS.bvc.precio} · Mercantil VERP ${BANCOS.mer.precio}. Cuando te la entreguen aparecerá aquí.</p><a className="btn" href="/mercado">Ir al Mercado</a></div>
-      : <><div style={G}>{owned.map((k) => (<div key={k}>{k === "bvc" ? <BvcCard c={c} cuenta={cu[k]} /> : k === "mer" ? <MerCard c={c} cuenta={cu[k]} /> : <ComCard c={c} cuenta={cu[k]} />}
+      : <><div style={G}>{owned.map((k) => (<div key={k}>{(() => { const C = CARD[k]; return <C c={c} cuenta={cu[k]} />; })()}
         <div className="card"><span className="mut">Saldo en {BANCOS[k].corto}</span><div className="big">${cu[k].saldo.toLocaleString("es")}</div></div></div>))}</div>
       {bk.length > 0 && <div style={G}><Deposito owned={bk} /><Transfer owned={bk} fee={fee} inflacion={inflacion} /></div>}</>}
     <div className="card" style={{ marginTop: 14 }}><b>Movimientos</b>{mov.length ? mov.map((m) => (<div key={String(m._id)} style={{ display: "flex", justifyContent: "space-between", gap: 8, padding: "8px 0", borderTop: "1px solid var(--bd)" }}>

@@ -60,3 +60,6 @@ h1,h2{margin:.2em 0}.mut{color:var(--mut);font-size:14px}.big{font-size:34px;fon
 .dk{--ac:#ff3b5c;--glow:#ff3b5caa}
 .chatb{max-height:280px;overflow:auto;display:flex;flex-direction:column;gap:6px;padding:8px;background:var(--bg);border-radius:10px;margin:8px 0}
 .row2{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.row2>input,.row2>select{flex:1;min-width:120px;margin:4px 0}
+.zm{position:relative;overflow:hidden;border-radius:14px;touch-action:none;user-select:none;cursor:crosshair;aspect-ratio:1049/1024;background:#000}
+.zm>div:first-child{position:absolute;inset:0;transform-origin:0 0}.zm img{width:100%;height:100%;display:block;pointer-events:none}.zm .pin{pointer-events:none}
+.zc{position:absolute;top:8px;right:8px;display:flex;flex-direction:column;gap:6px;z-index:3}.zl2{position:absolute;left:8px;bottom:8px;background:#000a;color:#fff;border-radius:8px;padding:2px 8px;font-size:12px;z-index:3}
