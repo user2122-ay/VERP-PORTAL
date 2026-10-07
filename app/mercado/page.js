@@ -9,12 +9,16 @@ import { sembrar } from "@/lib/catalogo";
 import { BANCOS } from "@/lib/bancos";
 import { CHIP_PRECIO } from "@/lib/redes";
 import { MessageCircle } from "lucide-react";
+import Link from "next/link";
+import Negocios from "./Negocios";
 export const dynamic = "force-dynamic";
-export default async function P() {
-  const u = await needUser(), metodos = metodosDe(u);
+export default async function P({ searchParams }) {
+  const u = await needUser(), metodos = metodosDe(u), neg = searchParams?.s === "negocios";
+  const tabs = <div style={{ display: "flex", gap: 8, margin: "10px 0" }}><Link className={"btn " + (neg ? "g" : "")} href="/mercado">Tienda</Link><Link className={"btn " + (neg ? "" : "g")} href="/mercado?s=negocios">Negocios</Link></div>;
+  if (neg) return <Shell user={u}><h2>Mercado</h2>{tabs}<Negocios u={u} /></Shell>;
   await sembrar(await db());
   const items = await (await db()).collection("items").find({ stock: { $ne: 0 } }).sort({ _id: -1 }).toArray();
-  return (<Shell user={u}><h2>Mercado</h2><p className="mut">{items.length} artículos disponibles</p>
+  return (<Shell user={u}><h2>Mercado</h2><p className="mut">{items.length} artículos disponibles</p>{tabs}
     <h3 style={{ marginTop: 16 }}>Tarjetas bancarias</h3><div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))", gap: 14 }}>{Object.entries(BANCOS).map(([k, b]) => <div className="card" key={k}>
       {k === "bvc" ? <BvcCard promo /> : k === "mer" ? <MerCard promo /> : <ComCard promo />}
       <span className="tag" style={{ marginTop: 10, display: "inline-block" }}>Banco</span><div><b>Tarjeta {b.nombre}</b></div><div className="mut">{k === "bvc" ? "Tu banca en línea de Venezuela Community." : k === "mer" ? "Transfiere a cualquier banco del servidor." : "Necesaria para comprar negocios. Membresía de $5 semanales."}</div><div className="big" style={{ fontSize: 22 }}>${b.precio}</div><BuyCard metodos={metodos} k={k} owned={!!u.cuentas?.[k]} /></div>)}

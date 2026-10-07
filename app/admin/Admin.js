@@ -52,11 +52,17 @@ function Mercado({ items }) {
       <button className="btn g" onClick={async () => { const p = prompt("Nuevo precio (vacío = no cambia):", i.price); if (p === null) return; const m = prompt("Nuevo impuesto mensual (vacío = no cambia):", i.impuesto || ""); if (m === null) return; const r = ask("Razón del cambio:"); if (r && (await post("setPrice", { id: i.id, price: p, impuesto: m, razon: r }))) location.reload(); }}>Editar</button>
       <button className="btn g" onClick={async () => { const r = ask(`Razón para eliminar "${i.name}":`); if (r && (await post("delItem", { id: i.id, razon: r }))) location.reload(); }}><Trash2 size={16} /></button></span></div>)}</div></>);
 }
-export default function Admin({ rank, items, reps, audit }) {
+function Solicitudes({ robos }) {
+  return (<div className="card"><b>Solicitudes de robo de autos ({robos.length})</b>{robos.map((r) => <div key={r.id} style={{ padding: "10px 0", borderTop: "1px solid var(--bd)" }}>
+    <img src={r.img} alt="" style={{ width: "100%", maxWidth: 360, borderRadius: 10 }} /><div><b>{r.modelo}</b> · {r.color} · Placa {r.placa}</div><div className="mut">Solicita: {r.user}</div><div>{r.specs}</div>
+    <div style={{ display: "flex", gap: 8, marginTop: 8 }}><button className="btn" onClick={async () => { if (await post("roboOk", { id: r.id })) location.reload(); }}><Check size={16} />Aprobar</button>
+      <button className="btn r" onClick={async () => { const m = ask("Razón para rechazar:"); if (m && (await post("roboNo", { id: r.id, razon: m }))) location.reload(); }}><Trash2 size={16} />Rechazar</button></div></div>)}{!robos.length && <p className="mut">No hay solicitudes pendientes.</p>}</div>);
+}
+export default function Admin({ rank, items, reps, audit, robos = [] }) {
   const [tab, setTab] = useState("Usuarios");
   return (<div style={{ maxWidth: 900, margin: "0 auto" }}><h2>Administración</h2><span className="tag">{rank.replace("_", " ")}</span>
-    <div style={{ display: "flex", gap: 8, margin: "12px 0", flexWrap: "wrap" }}>{["Usuarios", "Mercado", "Auditoría", "Reportes 911"].map((t) => <button key={t} className={"btn " + (tab === t ? "" : "g")} onClick={() => setTab(t)}>{t}</button>)}</div>
-    {tab === "Usuarios" && <Usuarios items={items} />}{tab === "Mercado" && <Mercado items={items} />}
+    <div style={{ display: "flex", gap: 8, margin: "12px 0", flexWrap: "wrap" }}>{["Usuarios", "Mercado", "Solicitudes", "Auditoría", "Reportes 911"].map((t) => <button key={t} className={"btn " + (tab === t ? "" : "g")} onClick={() => setTab(t)}>{t}</button>)}</div>
+    {tab === "Solicitudes" && <Solicitudes robos={robos} />}{tab === "Usuarios" && <Usuarios items={items} />}{tab === "Mercado" && <Mercado items={items} />}
     {tab === "Auditoría" && <div className="card"><b>Registro de auditoría (últimas 100 acciones)</b>{audit.map((x) => <div key={x.id} style={{ padding: "8px 0", borderTop: "1px solid var(--bd)" }}><b>{x.act}</b> · {x.obj}<div className="mut">{x.by} ({String(x.rank).replace("_", " ")}) · {new Date(x.at).toLocaleString("es")}</div><div>Razón: {x.razon}</div></div>)}{!audit.length && <p className="mut">Sin registros.</p>}</div>}
     {tab === "Reportes 911" && <div className="card"><b>Reportes 911</b>{reps.map((r) => <div key={r.id} style={{ margin: "8px 0" }}>{r.t}<div className="mut">{r.d} · {r.e}</div><button className="btn g" onClick={async () => { if (await post("done", { id: r.id })) location.reload(); }}><Check size={16} className="neon" />Resuelto</button></div>)}{!reps.length && <p className="mut">Sin reportes pendientes.</p>}</div>}</div>);
 }

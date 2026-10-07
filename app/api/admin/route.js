@@ -6,6 +6,7 @@ import { LUGARES } from "@/lib/zonas";
 import { BANCOS } from "@/lib/bancos";
 import { nuevaCuenta } from "@/lib/tarjeta";
 import { OPS, numeroDe } from "@/lib/redes";
+import { placa } from "@/lib/placa";
 const err = (m, s = 400) => NextResponse.json({ error: m }, { status: s });
 const CATS = ["Concesionario", "Propiedades", "Licencias", "Objetos", "Armas"], INICIAL = 5000;
 const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), str = (s, n = 80) => String(s || "").trim().slice(0, n), up = (s, n = 40) => str(s, n).replace(/\s+/g, " ").toUpperCase();
@@ -27,7 +28,7 @@ export async function POST(req) {
   const b = await req.json(), d = await db(), users = d.collection("users"), at = new Date();
   const razon = str(b.razon, 300);
   // Toda acción administrativa (salvo marcar un reporte como resuelto) exige razón y queda en la colección "audit".
-  if (b.a !== "done" && razon.length < 3) return err("La razón es obligatoria");
+  if (!["done", "roboOk"].includes(b.a) && razon.length < 3) return err("La razón es obligatoria");
   const log = (act, objetivo, detalle) => d.collection("audit").insertOne({ by: a.id, byName: a.name, rank: a.rank, act, objetivo, razon, detalle, at });
   const t = b.uid ? await users.findOne({ id: str(b.uid, 30) }) : null, quien = t ? `${t.name} (${t.id})` : null;
   if (b.uid && !t) return err("Usuario no existe", 404);
@@ -52,7 +53,7 @@ export async function POST(req) {
     }
     case "invAgregar": {
       const id = oid(b.itemId), it = id && (await d.collection("items").findOne({ _id: id })); if (!it) return err("Artículo no existe", 404);
-      await users.updateOne({ id: t.id }, { $push: { inventory: { name: it.name, category: it.category, price: it.price, at, admin: true } } });
+      await users.updateOne({ id: t.id }, { $push: { inventory: { name: it.name, category: it.category, price: it.price, at, admin: true, sku: it.sku || null, tipo: it.tipo || null, ubicacion: it.ubicacion || null, img: it.img || null, placa: it.category === "Concesionario" ? placa() : null } } });
       await d.collection("notifs").insertOne({ uid: t.id, title: "Artículo recibido", body: `Un administrador agregó ${it.name} a tu inventario.`, at, read: false });
       await log("invAgregar", quien, { item: it.name }); break;
     }
@@ -123,6 +124,17 @@ export async function POST(req) {
       const id = oid(b.id); if (!id) return err("ID inválido");
       await d.collection("reports").updateOne({ _id: id }, { $set: { estado: "resuelto" } });
       await d.collection("audit").insertOne({ by: a.id, byName: a.name, rank: a.rank, act: "reporte911", objetivo: String(id), razon: "Reporte resuelto", at }); break;
+    }
+    case "roboOk": case "roboNo": {
+      const id = oid(b.id), r = id && (await d.collection("robos").findOne({ _id: id, estado: "pendiente" })); if (!r) return err("Solicitud no encontrada", 404);
+      if (b.a === "roboNo") {
+        await d.collection("robos").updateOne({ _id: id }, { $set: { estado: "rechazado", por: a.name, motivo: razon, resuelto: at } });
+        await d.collection("notifs").insertOne({ uid: r.user, title: "Robo rechazado", body: `Tu solicitud de robo (${r.modelo}) fue rechazada: ${razon}`, at, read: false }); await log("roboNo", r.modelo, { user: r.userName }); break;
+      }
+      await users.updateOne({ id: r.user }, { $push: { inventory: { name: r.modelo, category: "Concesionario", price: 0, at, sku: null, tipo: "vehiculo", img: r.img, placa: r.placa, color: r.color, specs: r.specs, robado: true } } });
+      await d.collection("reportes").insertOne({ tipo: "Vehículo robado", modelo: r.modelo, color: r.color, placa: r.placa, specs: r.specs, img: r.img, estado: "pendiente", seg: [], at });
+      await d.collection("robos").updateOne({ _id: id }, { $set: { estado: "aprobado", por: a.name, resuelto: at } });
+      await d.collection("notifs").insertOne({ uid: r.user, title: "Robo aprobado", body: `${r.modelo} (${r.placa}) ya está en tu inventario como ROBADO. La policía recibió el reporte.`, at, read: false }); await log("roboOk", r.modelo, { user: r.userName, placa: r.placa }); break;
     }
     default: return err("Acción desconocida");
   }
