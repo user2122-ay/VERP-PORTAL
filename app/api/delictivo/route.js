@@ -3,7 +3,7 @@ import { ObjectId } from "mongodb";
 import { db } from "@/lib/db";
 import { apiUser } from "@/lib/auth";
 import { esRol, nombreDe } from "@/lib/rol";
-import { placa } from "@/lib/placa";
+import { nuevaPlaca, registrarPlaca } from "@/lib/placa";
 import { enviarPush } from "@/lib/push";
 const bad = (m, s = 400) => NextResponse.json({ error: m }, { status: s });
 const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), money = (n) => "$" + Number(n).toLocaleString("es");
@@ -44,9 +44,9 @@ export async function POST(req) {
       const it = (u.inventory || [])[+s.i], veh = it?.category === "Concesionario";
       if (!it || it.name !== s.name || (veh ? !a.vehiculos : !a.objetos) || it.sku === "vpn") continue;
       if (!(await us.updateOne({ id: u.id }, { $pull: { inventory: { name: it.name, at: it.at } } })).modifiedCount) continue;
-      const pl = it.placa || (veh ? placa() : null);
+      let pl = it.placa || null; if (veh) { if (!pl) pl = await nuevaPlaca(d, { modelo: it.name, dueno: u.id, duenoN: nombreDe(u) }); await registrarPlaca(d, pl, { modelo: it.name, color: it.color || "", dueno: u.id, duenoN: nombreDe(u), robado: true, estado: "Robado a su propietario" }); }
       await us.updateOne({ id: a.from }, { $push: { inventory: { ...it, at: new Date(), placa: pl, robado: true, robadoDe: nombreDe(u) } } });
-      if (veh) await d.collection("reportes").insertOne({ tipo: "Vehículo robado (asalto)", modelo: it.name, color: it.color || "", placa: pl, specs: "", img: it.img || a.evidencia || "", denuncia: nombreDe(u), estado: "pendiente", seg: [], at });
+      if (veh) await d.collection("reportes").insertOne({ tipo: "Vehículo robado (asalto)", modelo: it.name, color: it.color || "", placa: pl, specs: "", denuncia: nombreDe(u), estado: "pendiente", seg: [], at });
       res.push(it.name);
     }
     await c.updateOne({ _id: id }, { $set: { estado: "aceptado", resuelto: at, entregado: res } });

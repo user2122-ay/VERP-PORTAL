@@ -5,19 +5,21 @@ import { apiUser } from "@/lib/auth";
 import { pagoKey } from "@/lib/pago";
 import { creditarCom } from "@/lib/negocios";
 import { esRol, nombreDe } from "@/lib/rol";
-import { placa } from "@/lib/placa";
+import { nuevaPlaca, traspasarPlaca } from "@/lib/placa";
+import { tieneVpn } from "@/lib/vpn";
 import { enviarPush } from "@/lib/push";
 const bad = (m, s = 400) => NextResponse.json({ error: m }, { status: s });
-const vpn = (u) => (u.inventory || []).some((i) => i.sku === "vpn");
+const vpn = tieneVpn;
 const oid = (s) => { try { return new ObjectId(String(s)); } catch { return null; } };
 const money = (n) => "$" + Number(n).toLocaleString("es");
 const tallerDe = async (d) => (await d.collection("negocios").findOne({ _id: "taller" }))?.owner || null;
 // Saca un auto del inventario (queda en depósito dentro de la publicación). Devuelve el auto o null.
 async function sacar(d, u, b) {
-  const it = (u.inventory || [])[+b.i];
+  let it = (u.inventory || [])[+b.i];
   if (!it || it.name !== b.name || +new Date(it.at) !== +new Date(b.at) || it.category !== "Concesionario") return null;
-  const r = await d.collection("users").updateOne({ id: u.id }, { $pull: { inventory: { name: it.name, at: it.at } } });
-  return r.modifiedCount ? it : null;
+  const r = await d.collection("users").updateOne({ id: u.id }, { $pull: { inventory: { name: it.name, at: it.at } } }); if (!r.modifiedCount) return null;
+  if (!it.placa) it = { ...it, placa: await nuevaPlaca(d, { modelo: it.name, dueno: u.id, duenoN: nombreDe(u) }) }; // autos viejos sin placa
+  return it;
 }
 // Paga al vendedor en la cuenta que eligió (efectivo o tarjeta). Si ya no la tiene, va a efectivo.
 async function pagarA(d, uid, pago, monto) {
@@ -26,7 +28,7 @@ async function pagarA(d, uid, pago, monto) {
   if (!(await us.updateOne(f, { $inc: { [k]: monto } })).modifiedCount) await us.updateOne({ id: uid }, { $inc: { balance: monto } });
 }
 const avisar = async (d, uid, title, body) => { await d.collection("notifs").insertOne({ uid, title, body, at: new Date(), read: false }); await enviarPush(uid, { title, body, url: "/darkweb" }); };
-const entrega = (car, extra = {}) => ({ ...car, at: new Date(), robado: true, placa: car.placa || placa(), ...extra });
+const entrega = (car, extra = {}) => ({ ...car, at: new Date(), robado: true, placa: car.placa || null, ...extra });
 
 export async function GET(req) {
   const u = await apiUser(); if (!u?.cedula || !vpn(u)) return bad("Necesitas una VPN", 403);
@@ -47,7 +49,7 @@ export async function POST(req) {
       const car = await sacar(d, u, b); if (!car) return bad("Ese vehículo ya no está en tu inventario");
       const dueño = await tallerDe(d), base = { tipo: "oferta", seller: u.id, sellerName: yo, car, precio, pago: b.pago, chat: [], at };
       if (!dueño || dueño === u.id) { // sin taller con dueño: aceptación automática
-        await pagarA(d, u.id, b.pago, precio); await col.insertOne({ ...base, estado: "vendida", vendido: precio });
+        await traspasarPlaca(d, car.placa); await pagarA(d, u.id, b.pago, precio); await col.insertOne({ ...base, estado: "vendida", vendido: precio });
         await d.collection("tx").insertOne({ user: u.id, type: "venta", item: `Auto vendido (Dark Web): ${car.name}`, amount: precio, at });
         await avisar(d, u.id, "Auto vendido", `Nadie tiene el Taller clandestino, así que se aceptó solo: +${money(precio)} por ${car.name}.`);
         return NextResponse.json({ ok: true, auto: true });
@@ -72,7 +74,7 @@ export async function POST(req) {
       const l = await col.findOneAndUpdate({ ...mine(id), tipo: "oferta", estado: "abierta", "propuesta.by": { $ne: u.id } }, { $set: { estado: "cerrando" } });
       if (!l) return bad("No hay una propuesta de la otra parte para aceptar"); const m = l.propuesta.monto;
       if (!(await us.updateOne({ id: l.buyer, "cuentas.com.saldo": { $gte: m } }, { $inc: { "cuentas.com.saldo": -m } })).modifiedCount) { await col.updateOne({ _id: id }, { $set: { estado: "abierta" } }); return bad("El taller no tiene saldo suficiente en su Tarjeta de Comerciante"); }
-      await pagarA(d, l.seller, l.pago, m); await us.updateOne({ id: l.buyer }, { $push: { inventory: entrega(l.car, { price: m }) } });
+      await traspasarPlaca(d, l.car.placa); await pagarA(d, l.seller, l.pago, m); await us.updateOne({ id: l.buyer }, { $push: { inventory: entrega(l.car, { price: m }) } });
       await col.updateOne({ _id: id }, { $set: { estado: "vendida", vendido: m }, $push: { chat: { sys: true, txt: `Trato cerrado por ${money(m)}`, at } } });
       await d.collection("tx").insertMany([{ user: l.seller, type: "venta", item: `Auto vendido (Dark Web): ${l.car.name}`, amount: m, at }, { user: l.buyer, type: "compra", item: `Auto comprado (Taller): ${l.car.name}`, amount: -m, at }]);
       await avisar(d, l.seller, "Trato cerrado", `Vendiste ${l.car.name} por ${money(m)}.`); await avisar(d, l.buyer, "Trato cerrado", `Compraste ${l.car.name} por ${money(m)}. Ya está en tu inventario.`);

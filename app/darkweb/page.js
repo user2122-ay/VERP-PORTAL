@@ -6,11 +6,12 @@ import { db } from "@/lib/db";
 import { metodosDe } from "@/lib/pago";
 import { NEGOCIOS, ensureNegocios } from "@/lib/negocios";
 import { esRol } from "@/lib/rol";
+import { tieneVpn } from "@/lib/vpn";
 import { Lock } from "lucide-react";
 export const dynamic = "force-dynamic";
 export default async function P() {
   const u = await needUser();
-  if (!(u.inventory || []).some((i) => i.sku === "vpn")) return (<Shell user={u}><div className="card" style={{ maxWidth: 520, margin: "40px auto", textAlign: "center", borderColor: "var(--bad)" }}><Lock size={48} color="#ff4d5e" /><h2>Acceso denegado</h2><p className="mut">Necesitas una VPN para entrar a la Dark Web. Cómprala en la Tienda del Mercado.</p><span className="tag" style={{ color: "var(--bad)" }}>Conexión no segura · Acceso bloqueado</span></div></Shell>);
+  if (!tieneVpn(u)) return (<Shell user={u}><div className="card" style={{ maxWidth: 520, margin: "40px auto", textAlign: "center", borderColor: "var(--bad)" }}><Lock size={48} color="#ff4d5e" /><h2>Acceso denegado</h2><p className="mut">Necesitas una VPN para entrar a la Dark Web. Compra el acceso (dura 5 días) en la Tienda del Mercado.</p><span className="tag" style={{ color: "var(--bad)" }}>Conexión no segura · Acceso bloqueado</span></div></Shell>);
   const d = await db(); await ensureNegocios(d);
   const t = await d.collection("negocios").findOne({ _id: "taller" }), dueño = t?.owner ? await d.collection("users").findOne({ id: t.owner }, { projection: { name: 1, cedula: 1 } }) : null;
   const autos = (u.inventory || []).map((i, k) => ({ i: k, name: i.name, at: new Date(i.at).toISOString(), category: i.category, placa: i.placa || "", robado: !!i.robado })).filter((x) => x.category === "Concesionario");

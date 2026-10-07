@@ -11,9 +11,16 @@ function Buscador({ onPick, ph = "Nombre, Roblox o cédula" }) {
   return (<><form className="row2" onSubmit={async (e) => { e.preventDefault(); setR((await get("m=buscar&q=" + encodeURIComponent(q)))?.users || []); }}><input value={q} onChange={(e) => setQ(e.target.value)} placeholder={ph} /><button className="btn g"><Search size={16} />Buscar</button></form>
     {r.map((x) => <div key={x.id} className="card" style={{ cursor: "pointer", padding: 10, marginTop: 6 }} onClick={() => { onPick(x); setR([]); setQ(""); }}>{x.label}</div>)}</>);
 }
+function Matricula({ abrir }) {
+  const [q, setQ] = useState(""), [r, setR] = useState(undefined);
+  return (<><form className="row2" onSubmit={async (e) => { e.preventDefault(); setR((await get("m=placa&q=" + encodeURIComponent(q)))?.p || null); }}><input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Matrícula (ej: VEN-482)" /><button className="btn g"><Search size={16} />Buscar</button></form>
+    {r === null && <p className="mut">No hay ningún auto con esa matrícula.</p>}
+    {r && <div className={"card" + (r.robado ? " rob" : "")} style={{ marginTop: 8 }}><b style={{ fontSize: 20 }}>{r.placa}</b> {r.robado && <span className="rob-t" style={{ fontSize: 11 }}>ROBADO</span>}<div>{r.modelo}{r.color ? ` · ${r.color}` : ""}</div><div className="mut">{r.estado}</div>
+      <div style={{ marginTop: 6 }}>Propietario: {r.dueno ? <b>{r.dueno.label}</b> : <span className="mut">sin propietario registrado</span>}</div>{r.dueno && <button className="btn g" style={{ marginTop: 6 }} onClick={() => abrir(r.dueno.id)}>Ver ficha del propietario</button>}</div>}</>);
+}
 function Ciudadanos() {
-  const [f, setF] = useState(null);
-  return (<><div className="card"><Buscador onPick={async (x) => setF(await get("m=ficha&id=" + x.id))} /></div>
+  const [f, setF] = useState(null), abrir = async (id) => setF(await get("m=ficha&id=" + id));
+  return (<><div className="card"><b>Buscar ciudadano</b><Buscador onPick={(x) => abrir(x.id)} /><b style={{ display: "block", marginTop: 14 }}>Buscar auto por matrícula</b><Matricula abrir={abrir} /></div>
     {f && <div style={{ display: "grid", gap: 12 }}><div style={{ maxWidth: 520 }}><CedulaCard c={f.cedula} /></div>
       <div className="card"><b>Datos</b><div className="mut">Línea: {f.linea || "sin chip"}</div><b style={{ display: "block", marginTop: 8 }}>Vehículos</b>{f.autos.map((a, k) => <div key={k}>{a.name} {a.placa && <span className="mut">· {a.placa}</span>} {a.robado && <span className="rob-t" style={{ fontSize: 11 }}>ROBADO</span>}</div>)}{!f.autos.length && <div className="mut">Sin vehículos.</div>}</div>
       <div className="card"><b>Historial de arrestos ({f.arrestos.length})</b>{f.arrestos.map((a) => <div key={a.id} style={{ padding: "6px 0", borderTop: "1px solid var(--bd)" }}>{a.cargos}<div className="mut">{fec(a.at)} · multa {$(a.multa)} (cobrado {$(a.cobrado)}) · {a.minutos} min · {a.por}</div></div>)}{!f.arrestos.length && <div className="mut">Sin antecedentes.</div>}</div>
@@ -43,7 +50,7 @@ function Reportes() {
   useEffect(() => { cargar(); const x = setInterval(cargar, 8000); return () => clearInterval(x); }, []);
   return (<>{l.map((r) => { const k = r.src + r.id; return (<div key={k} className={"card" + (r.resuelto ? "" : " rob")}><div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center" }}><b>{r.titulo}</b>
     <label style={{ display: "flex", gap: 8, alignItems: "center" }}><span className="mut">{r.resuelto ? "Resuelto" : "Pendiente"}</span><button className={"sw" + (r.resuelto ? " on" : "")} aria-label="Resolver problema" onClick={async () => { if (await post({ accion: "repEstado", src: r.src, id: r.id, resuelto: !r.resuelto })) cargar(); }} /></label></div>
-    <div className="mut">{fec(r.at)}{r.por ? ` · ${r.por}` : ""}</div>{r.img && <img src={r.img} alt="" style={{ width: "100%", maxWidth: 320, borderRadius: 10, margin: "6px 0" }} />}<div>{r.det}</div>
+    <div className="mut">{fec(r.at)}{r.por ? ` · ${r.por}` : ""}</div><div>{r.det}</div>
     {ab === k && <><div className="chatb">{r.seg.map((n, i) => <div key={i}><b>{n.by}</b> <span className="mut">{fec(n.at)}</span><div>{n.txt}</div></div>)}{!r.seg.length && <span className="mut">Sin seguimiento.</span>}</div>
       <form className="row2" onSubmit={async (x) => { const b = fd(x); if (await post({ accion: "repNota", src: r.src, id: r.id, txt: b.txt })) { x.target.reset(); cargar(); } }}><input name="txt" placeholder="Añadir seguimiento" /><button className="btn g">Añadir</button></form></>}
     <button className="btn g" style={{ marginTop: 8 }} onClick={() => setAb(ab === k ? null : k)}>{ab === k ? "Ocultar seguimiento" : `Seguimiento (${r.seg.length})`}</button></div>); })}{!l.length && <div className="card mut">No hay reportes.</div>}</>);

@@ -3,6 +3,7 @@ import { ObjectId } from "mongodb";
 import { db } from "@/lib/db";
 import { apiUser } from "@/lib/auth";
 import { esRol, nombreDe } from "@/lib/rol";
+import { normPlaca } from "@/lib/placa";
 const bad = (m, s = 400) => NextResponse.json({ error: m }, { status: s });
 const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), money = (n) => "$" + Number(n).toLocaleString("es"), txt = (s, n = 400) => String(s || "").trim().slice(0, n);
 const oid = (s) => { try { return new ObjectId(String(s)); } catch { return null; } };
@@ -24,6 +25,13 @@ export async function GET(req) {
     return NextResponse.json({ cedula: x.cedula, linea: x.chip?.num || null, autos: (x.inventory || []).filter((i) => i.category === "Concesionario").map((i) => ({ name: i.name, placa: i.placa || "", robado: !!i.robado })),
       arrestos: ar.map((a) => ({ id: String(a._id), cargos: a.cargos, multa: a.multa, cobrado: a.cobrado, minutos: a.minutos, por: a.porName, at: a.at })), expedientes: ex.map((e) => ({ id: String(e._id), titulo: e.titulo, estado: e.estado })) });
   }
+  if (m === "placa") { // buscar un auto por matrícula: muestra el dueño oficial (si el auto se vendió en la Dark Web, ya no figura)
+    const key = normPlaca(p.get("q")); if (key.length < 4) return NextResponse.json({ p: null });
+    let r = await d.collection("placas").findOne({ _id: key }), dueno = null;
+    if (!r) { const h = await us.findOne({ inventory: { $elemMatch: { placa: key } } }); const it = h?.inventory.find((i) => i.placa === key); if (!it) return NextResponse.json({ p: null }); r = { placa: key, modelo: it.name, color: it.color || "", robado: !!it.robado, estado: "Registro antiguo", dueno: it.robado ? null : h.id }; }
+    if (r.dueno) { const o = await us.findOne({ id: r.dueno, cedula: { $exists: true } }); if (o) dueno = pub(o); }
+    return NextResponse.json({ p: { placa: r.placa, modelo: r.modelo, color: r.color, robado: !!r.robado, estado: r.estado, dueno } });
+  }
   if (m === "exp") {
     const l = await d.collection("expedientes").find().sort({ at: -1 }).limit(40).toArray();
     return NextResponse.json({ exps: l.map((e) => ({ id: String(e._id), titulo: e.titulo, desc: e.desc, estado: e.estado, creador: e.creadorName, at: e.at, sujetos: e.sujetosN || [], notas: e.notas || [] })) });
@@ -31,7 +39,7 @@ export async function GET(req) {
   if (m === "rep") {
     const a = await d.collection("reports").find().sort({ at: -1 }).limit(40).toArray(), b = await d.collection("reportes").find().sort({ at: -1 }).limit(40).toArray();
     const r = [...a.map((x) => ({ src: "e", id: String(x._id), titulo: `911 · ${x.tipo}`, det: `${x.zona}${x.calle ? " · " + x.calle : ""} — ${x.desc}`, por: x.nombre, resuelto: x.estado === "resuelto", seg: x.seg || [], at: x.at })),
-      ...b.map((x) => ({ src: "v", id: String(x._id), titulo: `${x.tipo}: ${x.modelo}`, det: `Color ${x.color || "—"} · Placa ${x.placa || "—"}${x.specs ? " · " + x.specs : ""}`, img: x.img, por: x.denuncia || "", resuelto: x.estado === "resuelto", seg: x.seg || [], at: x.at }))].sort((x, y) => +new Date(y.at) - +new Date(x.at));
+      ...b.map((x) => ({ src: "v", id: String(x._id), titulo: `${x.tipo}: ${x.modelo}`, det: `Color ${x.color || "—"} · Placa ${x.placa || "—"}${x.specs ? " · " + x.specs : ""}`, por: x.denuncia || "", resuelto: x.estado === "resuelto", seg: x.seg || [], at: x.at }))].sort((x, y) => +new Date(y.at) - +new Date(x.at));
     return NextResponse.json({ reps: r });
   }
   return bad("Consulta inválida");

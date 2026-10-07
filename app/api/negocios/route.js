@@ -3,6 +3,7 @@ import { ObjectId } from "mongodb";
 import { db } from "@/lib/db";
 import { apiUser } from "@/lib/auth";
 import { pagoKey } from "@/lib/pago";
+import { tieneVpn } from "@/lib/vpn";
 import { NEGOCIOS, MIN_HERRAMIENTA, ensureNegocios } from "@/lib/negocios";
 const bad = (m, s = 400) => NextResponse.json({ error: m }, { status: s });
 export async function POST(req) {
@@ -11,7 +12,7 @@ export async function POST(req) {
   await ensureNegocios(d); const neg = d.collection("negocios"), at = new Date();
   if (b.accion === "comprar") {
     const pk = pagoKey(u, b.pago); if (!pk) return bad("Método de pago inválido");
-    if (n0.oculto && !(u.inventory || []).some((i) => i.sku === "vpn")) return bad("Necesitas una VPN para entrar a la Dark Web");
+    if (n0.oculto && !tieneVpn(u)) return bad("Necesitas una VPN para entrar a la Dark Web");
     if (!u.cuentas?.com) return bad("Necesitas la Tarjeta de Comerciante ($50 en el Mercado) para comprar un negocio");
     if (!(await neg.updateOne({ _id: b.key, owner: null }, { $set: { owner: u.id, desde: at } })).modifiedCount) return bad("Este negocio ya tiene dueño");
     if (!(await d.collection("users").updateOne({ id: u.id, [pk]: { $gte: n0.precio } }, { $inc: { [pk]: -n0.precio } })).modifiedCount) { await neg.updateOne({ _id: b.key }, { $set: { owner: null } }); return bad("Saldo insuficiente"); }

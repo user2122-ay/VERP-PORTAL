@@ -6,9 +6,10 @@ import { LUGARES } from "@/lib/zonas";
 import { BANCOS } from "@/lib/bancos";
 import { nuevaCuenta } from "@/lib/tarjeta";
 import { OPS, numeroDe } from "@/lib/redes";
-import { placa } from "@/lib/placa";
+import { nuevaPlaca, registrarPlaca } from "@/lib/placa";
+import { nombreDe } from "@/lib/rol";
 const err = (m, s = 400) => NextResponse.json({ error: m }, { status: s });
-const CATS = ["Concesionario", "Propiedades", "Licencias", "Objetos", "Armas"], INICIAL = 5000;
+const CATS = ["Concesionario", "Propiedades", "Licencias", "Objetos", "Armas", "Herramientas", "Telefonía", "Tecnología"], INICIAL = 5000;
 const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), str = (s, n = 80) => String(s || "").trim().slice(0, n), up = (s, n = 40) => str(s, n).replace(/\s+/g, " ").toUpperCase();
 const oid = (s) => { try { return new ObjectId(String(s)); } catch { return null; } };
 export async function GET(req) {
@@ -53,7 +54,8 @@ export async function POST(req) {
     }
     case "invAgregar": {
       const id = oid(b.itemId), it = id && (await d.collection("items").findOne({ _id: id })); if (!it) return err("Artículo no existe", 404);
-      await users.updateOne({ id: t.id }, { $push: { inventory: { name: it.name, category: it.category, price: it.price, at, admin: true, sku: it.sku || null, tipo: it.tipo || null, ubicacion: it.ubicacion || null, img: it.img || null, placa: it.category === "Concesionario" ? placa() : null } } });
+      const pl = it.category === "Concesionario" ? await nuevaPlaca(d, { modelo: it.name, dueno: t.id, duenoN: nombreDe(t) }) : null;
+      await users.updateOne({ id: t.id }, { $push: { inventory: { name: it.name, category: it.category, price: it.price, at, admin: true, sku: it.sku || null, tipo: it.tipo || null, ubicacion: it.ubicacion || null, img: it.img || null, placa: pl, vence: it.dias ? new Date(Date.now() + it.dias * 864e5) : null } } });
       await d.collection("notifs").insertOne({ uid: t.id, title: "Artículo recibido", body: `Un administrador agregó ${it.name} a tu inventario.`, at, read: false });
       await log("invAgregar", quien, { item: it.name }); break;
     }
@@ -132,7 +134,8 @@ export async function POST(req) {
         await d.collection("notifs").insertOne({ uid: r.user, title: "Robo rechazado", body: `Tu solicitud de robo (${r.modelo}) fue rechazada: ${razon}`, at, read: false }); await log("roboNo", r.modelo, { user: r.userName }); break;
       }
       await users.updateOne({ id: r.user }, { $push: { inventory: { name: r.modelo, category: "Concesionario", price: 0, at, sku: null, tipo: "vehiculo", img: r.img, placa: r.placa, color: r.color, specs: r.specs, robado: true } } });
-      await d.collection("reportes").insertOne({ tipo: "Vehículo robado", modelo: r.modelo, color: r.color, placa: r.placa, specs: r.specs, img: r.img, estado: "pendiente", seg: [], at });
+      await d.collection("reportes").insertOne({ tipo: "Vehículo robado", modelo: r.modelo, color: r.color, placa: r.placa, specs: r.specs, estado: "pendiente", seg: [], at });
+      await registrarPlaca(d, r.placa, { modelo: r.modelo, color: r.color, robado: true, estado: "Robado (sin propietario registrado)" });
       await d.collection("robos").updateOne({ _id: id }, { $set: { estado: "aprobado", por: a.name, resuelto: at } });
       await d.collection("notifs").insertOne({ uid: r.user, title: "Robo aprobado", body: `${r.modelo} (${r.placa}) ya está en tu inventario como ROBADO. La policía recibió el reporte.`, at, read: false }); await log("roboOk", r.modelo, { user: r.userName, placa: r.placa }); break;
     }
