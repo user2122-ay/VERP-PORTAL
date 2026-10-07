@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { apiUser } from "@/lib/auth";
 import { fmtTel, normNum } from "@/lib/redes";
+import { enviarPush } from "@/lib/push";
 export const dynamic = "force-dynamic";
 const bad = (m, s = 400) => NextResponse.json({ error: m }, { status: s });
 export async function GET(req) {
@@ -34,9 +35,11 @@ export async function POST(req) {
   if (b.accion === "enviar") {
     const texto = String(b.texto || "").trim().slice(0, 500), para = normNum(b.para);
     if (!texto || !para) return bad("Mensaje inválido");
-    if (!(await users.findOne({ "chip.num": para }))) return bad("Ese número no existe");
+    const rec = await users.findOne({ "chip.num": para }); if (!rec) return bad("Ese número no existe");
     if ((await d.collection("wa_msgs").countDocuments({ de: me, at: { $gte: new Date(Date.now() - 60000) } })) >= 30) return bad("Vas muy rápido, espera un momento");
-    await d.collection("wa_msgs").insertOne({ de: me, para, texto, at: new Date(), leido: false }); return NextResponse.json({ ok: true });
+    await d.collection("wa_msgs").insertOne({ de: me, para, texto, at: new Date(), leido: false });
+    await enviarPush(rec.id, { title: rec.wa?.contactos?.find((c) => c.num === me)?.alias || u.chip.nombre || fmtTel(me), body: texto.slice(0, 100), url: "/whatsapp", tag: "wa-" + me });
+    return NextResponse.json({ ok: true });
   }
   return bad("Acción inválida");
 }

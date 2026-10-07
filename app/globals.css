@@ -43,3 +43,4 @@ h1,h2{margin:.2em 0}.mut{color:var(--mut);font-size:14px}.big{font-size:34px;fon
 .wa-i{display:flex;gap:8px;padding:10px;border-top:1px solid var(--bd)}.wa-r{padding:12px 14px;border-bottom:1px solid var(--bd);cursor:pointer;display:flex;justify-content:space-between;gap:8px}
 @media(min-width:761px){.wa-back{display:none}}
 @media(max-width:760px){.wa{grid-template-columns:1fr}.wa .wa-c{display:none}.wa.sel .wa-l{display:none}.wa.sel .wa-c{display:flex}}
+.modal{position:fixed;inset:0;z-index:200;background:#000a;display:grid;place-items:center;padding:16px}

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { apiUser } from "@/lib/auth";
+import { enviarPush } from "@/lib/push";
 import { impuesto } from "@/lib/economia";
 import { BANCOS, ESPERA_MIN, feeInterbancario } from "@/lib/bancos";
 const bad = (m, s = 400) => NextResponse.json({ error: m }, { status: s });
@@ -27,6 +28,7 @@ export async function POST(req) {
     await d.collection("users").updateOne({ id: to.id }, { $inc: { [`cuentas.${a}.saldo`]: m } });
     await d.collection("tx").insertMany([...txs, { user: to.id, type: "transferencia", item: `Recibido de ${nom(u)}${n} (${BANCOS[a].corto})`, amount: m, at }]);
     await d.collection("notifs").insertMany([{ uid: u.id, title: "Transferencia enviada", body: `Enviaste $${$} a ${nom(to)}. Impuesto: $${fee}.`, at, read: false }, { uid: to.id, title: "Transferencia recibida", body: `${nom(u)} te envió $${$}${n}.`, at, read: false }]);
+    await enviarPush(to.id, { title: "Transferencia recibida", body: `${nom(u)} te envió $${$}.`, url: "/banco" });
     return NextResponse.json({ ok: true });
   }
   await d.collection("pendientes").insertOne({ from: u.id, to: to.id, banco: a, monto: m, nota, deNombre: nom(u), aNombre: nom(to), llega: new Date(Date.now() + ESPERA_MIN * 60000) });
