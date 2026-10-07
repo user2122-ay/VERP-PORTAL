@@ -3,6 +3,9 @@ import { ObjectId } from "mongodb";
 import { db } from "@/lib/db";
 import { adminUser } from "@/lib/admin";
 import { LUGARES } from "@/lib/zonas";
+import { BANCOS } from "@/lib/bancos";
+import { nuevaCuenta } from "@/lib/tarjeta";
+import { OPS, numeroDe } from "@/lib/redes";
 const err = (m, s = 400) => NextResponse.json({ error: m }, { status: s });
 const CATS = ["Concesionario", "Propiedades", "Licencias", "Objetos", "Armas"], INICIAL = 5000;
 const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), str = (s, n = 80) => String(s || "").trim().slice(0, n), up = (s, n = 40) => str(s, n).replace(/\s+/g, " ").toUpperCase();
@@ -12,7 +15,7 @@ export async function GET(req) {
   const p = new URL(req.url).searchParams, d = await db(), users = d.collection("users"), uid = p.get("uid");
   if (uid) {
     const x = await users.findOne({ id: uid }); if (!x) return err("Usuario no existe", 404);
-    return NextResponse.json({ user: { id: x.id, name: x.name, balance: x.balance || 0, cedula: x.cedula || null, chip: x.chip?.num || null, cuentas: Object.fromEntries(Object.entries(x.cuentas || {}).map(([k, c]) => [k, { saldo: c.saldo }])), inventory: (x.inventory || []).map((i) => ({ name: i.name, category: i.category, price: i.price, at: i.at })) } });
+    return NextResponse.json({ user: { id: x.id, name: x.name, balance: x.balance || 0, cedula: x.cedula || null, chip: x.chip?.num || null, plan: x.plan ? { monto: x.plan.monto } : null, cuentas: Object.fromEntries(Object.entries(x.cuentas || {}).map(([k, c]) => [k, { saldo: c.saldo }])), inventory: (x.inventory || []).map((i) => ({ name: i.name, category: i.category, price: i.price, at: i.at })) } });
   }
   const q = str(p.get("q"), 40); if (!q) return NextResponse.json({ users: [] });
   const rx = new RegExp(esc(q), "i"), dg = q.replace(/\D/g, "").replace(/^0+/, "");
@@ -73,10 +76,44 @@ export async function POST(req) {
       const doc = { name: str(b.name), category: cat, price, desc: str(b.desc, 400), brand: str(b.brand), year: str(b.year, 10), clase: str(b.clase, 30), ubicacion: str(b.ubicacion, 80), impuesto: Number.isFinite(imp) && imp > 0 ? imp : 0, img: str(b.img, 500), stock: b.stock ? Math.floor(Number(b.stock)) || -1 : -1 };
       await d.collection("items").insertOne(doc); await log("addItem", doc.name, { price, category: cat }); break;
     }
+    case "cuentaQuitar": {
+      const k = b.banco; if (!BANCOS[k] || !t.cuentas?.[k]) return err("No tiene esa tarjeta");
+      await users.updateOne({ id: t.id }, { $unset: { [`cuentas.${k}`]: "" } }); await log("cuentaQuitar", quien, { banco: k, saldoPerdido: t.cuentas[k].saldo }); break;
+    }
+    case "cuentaDar": {
+      const k = b.banco; if (!BANCOS[k]) return err("Banco inválido"); if (t.cuentas?.[k]) return err("Ya tiene esa tarjeta");
+      const cu = await nuevaCuenta(k); if (BANCOS[k].comercial) cu.proximo = new Date(Date.now() + 7 * 864e5);
+      await users.updateOne({ id: t.id, [`cuentas.${k}`]: { $exists: false } }, { $set: { [`cuentas.${k}`]: cu } });
+      await d.collection("notifs").insertOne({ uid: t.id, title: "Tarjeta entregada", body: `Un administrador te entregó la tarjeta ${BANCOS[k].nombre}.`, at, read: false }); await log("cuentaDar", quien, { banco: k }); break;
+    }
+    case "chipQuitar": { if (!t.chip) return err("No tiene chip"); await users.updateOne({ id: t.id }, { $unset: { chip: "", plan: "" } }); await log("chipQuitar", quien, { numero: t.chip.num }); break; }
+    case "chipDar": {
+      if (t.chip) return err("Ya tiene chip"); if (!t.cedula) return err("No tiene cédula"); let num = null;
+      for (const op of [...OPS].sort(() => Math.random() - 0.5)) { const n = numeroDe(t.cedula.num, op); if (!(await users.findOne({ "chip.num": n }))) { num = n; break; } }
+      if (!num) return err("No hay número libre para esa cédula"); await users.updateOne({ id: t.id }, { $set: { chip: { num, nombre: "", at } } }); await log("chipDar", quien, { numero: num }); break;
+    }
+    case "planQuitar": { if (!t.plan) return err("No tiene plan"); await users.updateOne({ id: t.id }, { $unset: { plan: "" } }); await log("planQuitar", quien, { monto: t.plan.monto }); break; }
+    case "addCasas": {
+      const tipo = String(b.tipo); if (!["0", "1", "2", "3"].includes(tipo)) return err("Tipo de casa inválido");
+      let h; try { h = new URL(b.img); } catch { return err("Link de imagen inválido"); } if (h.protocol !== "https:") return err("La imagen debe ser un link https (Discord)");
+      const region = str(b.region, 40), price = Number(b.price), imp = Number(b.impuesto || 0); if (!region || !Number.isFinite(price) || price < 0) return err("Región o precio inválido");
+      const nums = []; for (const p of String(b.numeros || "").split(/[\s,;]+/).filter(Boolean)) { const m = /^(\d+)-(\d+)$/.exec(p); if (m) { for (let i = +m[1]; i <= +m[2] && nums.length <= 500; i++) nums.push(String(i)); } else if (/^\d+$/.test(p)) nums.push(p); else return err(`Número inválido: ${p}`); }
+      if (!nums.length || nums.length > 500) return err("Escribe de 1 a 500 números de casa (puedes usar rangos: 401-420)");
+      const col = d.collection("items"), ya = new Set((await col.find({ category: "Propiedades", tipo, region, numero: { $in: nums } }, { projection: { numero: 1 } }).toArray()).map((x) => x.numero)), nuevos = [...new Set(nums)].filter((n) => !ya.has(n));
+      if (nuevos.length) await col.insertMany(nuevos.map((n) => ({ name: `Casa tipo ${tipo}`, category: "Propiedades", tipo, region, numero: n, ubicacion: `${region} ${n}`, price, impuesto: imp > 0 ? imp : 0, img: h.href, desc: `Casa tipo ${tipo} en ${region}`, brand: "", year: "", clase: "", stock: 1 })));
+      await log("addCasas", `Tipo ${tipo} · ${region}`, { creadas: nuevos.length, repetidas: nums.length - nuevos.length, price }); break;
+    }
+    case "editTipo": {
+      const tipo = String(b.tipo); if (!["0", "1", "2", "3"].includes(tipo)) return err("Tipo inválido"); const f = { category: "Propiedades", tipo }, set = {}; if (str(b.region)) f.region = str(b.region, 40);
+      if (str(b.img, 500)) { let h; try { h = new URL(b.img); } catch { return err("Link inválido"); } if (h.protocol !== "https:") return err("La imagen debe ser https"); set.img = h.href; }
+      for (const k of ["price", "impuesto"]) if (b[k] !== "" && b[k] != null) { const n = Number(b[k]); if (!Number.isFinite(n) || n < 0) return err(`${k} inválido`); set[k] = n; }
+      if (!Object.keys(set).length) return err("No hay cambios"); const r = await d.collection("items").updateMany(f, { $set: set }); await log("editTipo", `Tipo ${tipo}${f.region ? " · " + f.region : ""}`, { casas: r.modifiedCount, ...set }); break;
+    }
     case "setPrice": {
-      const id = oid(b.id), price = Number(b.price); if (!id || !Number.isFinite(price) || price < 0) return err("Datos inválidos");
-      const it = await d.collection("items").findOneAndUpdate({ _id: id }, { $set: { price } }); if (!it) return err("Artículo no existe", 404);
-      await log("setPrice", it.name, { antes: it.price, despues: price }); break;
+      const id = oid(b.id); if (!id) return err("Datos inválidos"); const set = {};
+      for (const k of ["price", "impuesto"]) if (b[k] !== "" && b[k] != null) { const n = Number(b[k]); if (!Number.isFinite(n) || n < 0) return err(`${k} inválido`); set[k] = n; }
+      if (!Object.keys(set).length) return err("No hay cambios"); const it = await d.collection("items").findOneAndUpdate({ _id: id }, { $set: set }); if (!it) return err("Artículo no existe", 404);
+      await log("setPrice", it.name, { antes: { price: it.price, impuesto: it.impuesto }, despues: set }); break;
     }
     case "delItem": {
       const id = oid(b.id), it = id && (await d.collection("items").findOneAndDelete({ _id: id })); if (!it) return err("Artículo no existe", 404);

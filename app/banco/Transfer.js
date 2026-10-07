@@ -25,7 +25,7 @@ export default function Transfer({ owned, fee, inflacion }) {
   const { err, ok, busy, send } = useForm("/api/banco", (j) => j.espera ? `Enviada. Llegará en ${j.espera} minutos.` : "Transferencia enviada");
   return (<form className="card" onSubmit={send} style={{ marginTop: 14 }}><h3 style={{ margin: 0 }}>Pago móvil / Transferencia</h3>
     <label>Mi banco</label><Sel name="desde" list={owned} />
-    <label>Banco del destinatario</label><Sel name="hacia" list={Object.keys(BANCOS)} />
+    <label>Banco del destinatario</label><Sel name="hacia" list={Object.keys(BANCOS).filter((k) => !BANCOS[k].comercial)} />
     <label>Cédula del destinatario</label><input name="cedula" required inputMode="numeric" placeholder="V-00.000.002" autoComplete="off" />
     <label>Usuario de Roblox</label><input name="roblox" required autoComplete="off" />
     <label>Monto ($)</label><input name="monto" type="number" min="1" required />

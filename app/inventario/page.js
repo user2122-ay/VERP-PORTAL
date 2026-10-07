@@ -1,5 +1,5 @@
 import Shell from "@/components/Shell";
-import { BvcCard, MerCard } from "../banco/Cards";
+import { BvcCard, MerCard, ComCard } from "../banco/Cards";
 import { needUser } from "@/lib/auth";
 import { BANCOS } from "@/lib/bancos";
 import { fmtTel } from "@/lib/redes";
@@ -8,8 +8,8 @@ const G = { display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(300px,
 export default async function P() {
   const u = await needUser(), cu = u.cuentas || {}, own = Object.keys(BANCOS).filter((k) => cu[k]), items = u.inventory || [];
   return (<Shell user={u}><div style={{ maxWidth: 1100, margin: "0 auto" }}><h2>Inventario</h2>
-    {own.length > 0 && <><h3>Tarjetas bancarias</h3><div style={G}>{own.map((k) => <div key={k}>{k === "bvc" ? <BvcCard c={u.cedula} cuenta={cu[k]} /> : <MerCard c={u.cedula} cuenta={cu[k]} />}</div>)}</div></>}
-    {u.chip && <div className="card" style={{ marginTop: 14 }}><span className="tag">Línea telefónica</span><div><b>{fmtTel(u.chip.num)}</b></div><div className="mut">Chip de VE WhatsApp</div></div>}
+    {own.length > 0 && <><h3>Tarjetas bancarias</h3><div style={G}>{own.map((k) => <div key={k}>{k === "bvc" ? <BvcCard c={u.cedula} cuenta={cu[k]} /> : k === "mer" ? <MerCard c={u.cedula} cuenta={cu[k]} /> : <ComCard c={u.cedula} cuenta={cu[k]} />}</div>)}</div></>}
+    {u.chip && <div className="card" style={{ marginTop: 14 }}><span className="tag">Línea telefónica</span><div><b>{fmtTel(u.chip.num)}</b></div><div className="mut">Chip de VE WhatsApp{u.plan ? ` · Plan $${u.plan.monto}/semana` : ""}</div></div>}
     <h3 style={{ marginTop: 18 }}>Artículos</h3>
     {items.length ? <div className="grid">{items.map((i, k) => <div className="card" key={k}><span className="tag">{i.category}</span><div><b>{i.name}</b></div><div className="mut">Pagado: ${Number(i.price).toLocaleString("es")} · {new Date(i.at).toLocaleDateString("es")}</div></div>)}</div> : <div className="card mut">Aún no tienes artículos. Visita el Mercado.</div>}</div></Shell>);
 }

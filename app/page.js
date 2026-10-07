@@ -13,7 +13,7 @@ export default async function P() {
   const bancos = Object.keys(BANCOS).reduce((a, k) => a + (cu[k]?.saldo || 0), 0), sin = await d.collection("notifs").countDocuments({ uid: u.id, read: false });
   const mov = await d.collection("tx").find({ user: u.id }).sort({ at: -1 }).limit(5).toArray(), av = await d.collection("notifs").find({ uid: u.id }).sort({ at: -1 }).limit(4).toArray();
   return (<Shell user={u}><div style={{ maxWidth: 1100, margin: "0 auto" }}>
-    <div className="hero"><img src="/ve-logo.png" alt="" /><p style={{ margin: 0, opacity: 0.85 }}>{hola},</p><h2 style={{ margin: "2px 0 14px" }}>{u.cedula.nombres.split(" ")[0]} {u.cedula.apellidos.split(" ")[0]}</h2>
+    <div className="hero"><img src="/banner.jpg" alt="VE:RP" className="hero-b" /><p style={{ margin: 0, opacity: 0.85 }}>{hola},</p><h2 style={{ margin: "2px 0 14px" }}>{u.cedula.nombres.split(" ")[0]} {u.cedula.apellidos.split(" ")[0]}</h2>
       <small style={{ opacity: 0.8 }}>Patrimonio total</small><div className="big">{$(u.balance + bancos)}</div>
       <div className="stats"><div><small>Efectivo</small><b>{$(u.balance)}</b></div><div><small>En bancos</small><b>{$(bancos)}</b></div><div><small>Avisos sin leer</small><b>{sin}</b></div><div><small>Rango</small><b>{u.rank ? u.rank.replace("_", " ") : "Ciudadano"}</b></div></div></div>
     <div className="tiles">{MODULOS.map(([h, t, s, I]) => <Link key={h} href={h} className="tile"><I size={26} className="neon" /><b>{t}</b><span className="mut">{s}</span></Link>)}</div>

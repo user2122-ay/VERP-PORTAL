@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
 import { db } from "@/lib/db";
 import { apiUser } from "@/lib/auth";
+import { waListo } from "@/lib/redes";
 export const dynamic = "force-dynamic";
 const bad = (m, s = 400) => NextResponse.json({ error: m }, { status: s });
 const HORAS = 24, HOSTS = ["cdn.discordapp.com", "media.discordapp.net"];
@@ -11,7 +12,7 @@ async function col() { const c = (await db()).collection("wa_estados"); if (!idx
 const contactos = (u) => (u.wa?.contactos || []).map((c) => c.num);
 const oid = (s) => { try { return new ObjectId(String(s)); } catch { return null; } };
 export async function GET(req) {
-  const u = await apiUser(); if (!u?.chip) return bad("Sin línea", 401);
+  const u = await apiUser(); if (!waListo(u)) return bad("Sin línea", 401);
   const c = await col(), me = u.chip.num, now = new Date(), img = new URL(req.url).searchParams.get("img");
   if (img) {
     const _id = oid(img), e = _id && (await c.findOne({ _id, expira: { $gt: now } }));
@@ -30,7 +31,7 @@ export async function GET(req) {
   return NextResponse.json({ mio: g[me] || { mio: true, nombre: "Mi estado", items: [] }, contactos: lista.filter((x) => !x.mio).sort((a, b) => +new Date(b.items.at(-1).at) - +new Date(a.items.at(-1).at)) });
 }
 export async function POST(req) {
-  const u = await apiUser(); if (!u?.chip) return bad("Sin línea", 401);
+  const u = await apiUser(); if (!waListo(u)) return bad("Sin línea", 401);
   const b = await req.json(), c = await col(), me = u.chip.num;
   if (b.accion === "subir") {
     const at = new Date(), doc = { num: me, desc: String(b.desc || "").trim().slice(0, 140), at, expira: new Date(+at + HORAS * 3600e3), vistas: [] };

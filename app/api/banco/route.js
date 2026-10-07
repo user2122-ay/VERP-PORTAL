@@ -10,7 +10,7 @@ const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 export async function POST(req) {
   const u = await apiUser(); if (!u?.cedula) return bad("Sin sesión", 401);
   const b = await req.json(), m = Math.floor(Number(b.monto)), nota = String(b.nota || "").trim().slice(0, 60), de = b.desde, a = b.hacia;
-  if (!BANCOS[de] || !BANCOS[a]) return bad("Banco inválido");
+  if (!BANCOS[de] || !BANCOS[a] || BANCOS[de].comercial || BANCOS[a].comercial) return bad("Banco inválido");
   if (!u.cuentas?.[de]) return bad("No tienes tarjeta de ese banco");
   if (!(m > 0) || m > 1e9) return bad("Monto inválido");
   const ced = String(b.cedula || "").replace(/\D/g, "").replace(/^0+/, ""), rbx = String(b.roblox || "").trim();

@@ -25,3 +25,13 @@ export function MerCard({ c, cuenta, promo }) {
     <X l="8%" t="88%" s={3.4} c="#fff" fw={600}>{promo ? "TU NOMBRE" : nombre(c).toUpperCase()}</X>
     <div className="t" style={{ left: "73%", top: "74%", width: "21%", height: "18%", background: "#fff", borderRadius: "8%", display: "flex", alignItems: "center", justifyContent: "center" }}><img src="/verp-logo.png" alt="VERP" style={{ width: "88%", height: "88%", objectFit: "contain" }} /></div></div>);
 }
+// Tarjeta de comerciante: recibe lo que se vende en tus negocios.
+export function ComCard({ c, cuenta, promo }) {
+  return (<div className="bk" style={{ background: "linear-gradient(135deg,#1c1c1c,#3a2f10 60%,#b8860b)" }}>
+    <img src="/ve-logo.png" alt="" className="t" style={{ left: "6%", top: "8%", height: "15%" }} />
+    <X l="22%" t="9%" s={6.5} c="#f1d27a">COMERCIANTE</X><X l="22%" t="22%" s={3} c="#e8dcb0" fw={400}>VERP · Tarjeta de negocios</X>
+    <div className="t" style={{ left: "8%", top: "40%", width: "13%", height: "16%", borderRadius: "12%", background: "linear-gradient(135deg,#f1d27a,#b8860b)" }} />
+    <X l="8%" t="60%" s={5.2} c="#f1d27a" ls=".06em">{promo ? "7900 •••• •••• ••••" : grp(cuenta.num)}</X>
+    <CardSecret b="com" mer promo={promo} />
+    <X l="8%" t="88%" s={3.4} c="#f1d27a" fw={600}>{promo ? "TU NOMBRE" : nombre(c).toUpperCase()}</X></div>);
+}

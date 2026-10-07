@@ -9,7 +9,7 @@ export async function POST(req) {
   const u = await apiUser(); if (!u?.cedula) return bad("Sin sesión", 401);
   const j = await req.json(), k = j.banco, b = BANCOS[k], pk = pagoKey(u, j.pago); if (!b) return bad("Banco inválido"); if (!pk) return bad("Método de pago inválido");
   if (u.cuentas?.[k]) return bad("Ya tienes esta tarjeta");
-  const d = await db(), cuenta = await nuevaCuenta(k);
+  const d = await db(), cuenta = await nuevaCuenta(k); if (b.comercial) cuenta.proximo = new Date(Date.now() + 7 * 864e5);
   const r = await d.collection("users").updateOne({ id: u.id, [pk]: { $gte: b.precio }, [`cuentas.${k}`]: { $exists: false } }, { $inc: { [pk]: -b.precio }, $set: { [`cuentas.${k}`]: cuenta } });
   if (!r.modifiedCount) return bad("Saldo insuficiente");
   const at = new Date();

@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { apiUser } from "@/lib/auth";
-import { fmtTel, normNum } from "@/lib/redes";
+import { waListo, fmtTel, normNum } from "@/lib/redes";
 import { enviarPush } from "@/lib/push";
 export const dynamic = "force-dynamic";
 const bad = (m, s = 400) => NextResponse.json({ error: m }, { status: s });
 export async function GET(req) {
-  const u = await apiUser(); if (!u?.chip) return bad("Sin línea", 401);
+  const u = await apiUser(); if (!waListo(u)) return bad("Sin línea", 401);
   const con = new URL(req.url).searchParams.get("con") || "", me = u.chip.num, d = await db(), col = d.collection("wa_msgs");
   const msgs = await col.find({ $or: [{ de: me }, { para: me }] }).sort({ at: -1 }).limit(400).toArray(), conv = new Map(), otro = (m) => (m.de === me ? m.para : m.de);
   for (const m of msgs) { const o = otro(m); if (!conv.has(o)) conv.set(o, { num: o, ultimo: m.texto, at: m.at, sin: 0 }); if (m.para === me && !m.leido) conv.get(o).sin++; }
@@ -19,7 +19,7 @@ export async function GET(req) {
   return NextResponse.json({ yo: { num: me, nombre: u.chip.nombre }, lista, chat, nombre: nombres[con] || "" });
 }
 export async function POST(req) {
-  const u = await apiUser(); if (!u?.chip) return bad("Sin línea", 401);
+  const u = await apiUser(); if (!waListo(u)) return bad("Sin línea", 401);
   const b = await req.json(), me = u.chip.num, d = await db(), users = d.collection("users");
   if (b.accion === "perfil") {
     const n = String(b.nombre || "").trim().slice(0, 24); if (!n) return bad("Escribe un nombre");

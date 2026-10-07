@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { apiUser } from "@/lib/auth";
 import { CHIP_PRECIO, OPS, numeroDe, fmtTel } from "@/lib/redes";
 import { pagoKey } from "@/lib/pago";
+import { acreditarNegocio } from "@/lib/negocios";
 const bad = (m, s = 400) => NextResponse.json({ error: m }, { status: s });
 export async function POST(req) {
   const u = await apiUser(); if (!u?.cedula) return bad("Sin sesión", 401);
@@ -16,5 +17,6 @@ export async function POST(req) {
   const at = new Date();
   await d.collection("tx").insertOne({ user: u.id, type: "compra", item: "Chip VE WhatsApp", amount: -CHIP_PRECIO, at });
   await d.collection("notifs").insertOne({ uid: u.id, title: "Chip entregado", body: `Tu línea es ${fmtTel(num)}. Ya puedes usar VE WhatsApp.`, at, read: false });
+  await acreditarNegocio(d, "movil", CHIP_PRECIO, "Venta: Chip VE WhatsApp");
   return NextResponse.json({ ok: true });
 }
