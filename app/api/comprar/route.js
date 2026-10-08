@@ -6,7 +6,8 @@ import { pagoKey } from "@/lib/pago";
 import { nuevaPlaca, normPlaca } from "@/lib/placa";
 import { nombreDe } from "@/lib/rol";
 import { COLORES_CASA } from "@/lib/catalogo";
-import { acreditarNegocio } from "@/lib/negocios";
+import { acreditarNegocio, NEGOCIOS } from "@/lib/negocios";
+import { iva as ivaDe, ingresarTesoreria } from "@/lib/tesoreria";
 import { licTipo, tieneLic, numeroLicencia } from "@/lib/licencia";
 const err = (m, s = 400) => NextResponse.json({ error: m }, { status: s });
 export async function POST(req) {
@@ -15,7 +16,8 @@ export async function POST(req) {
   let _id; try { _id = new ObjectId(String(b.id)); } catch { return err("No disponible", 404); }
   const d = await db(), items = d.collection("items"), it = await items.findOne({ _id });
   if (!it || it.stock === 0) return err("No disponible", 404);
-  const lt = licTipo(it);
+  const lt = licTipo(it), imp = ivaDe(it.price), total = it.price + imp; // ITBMS 7% sobre el precio
+
   if (it.category === "Concesionario" && !tieneLic(u, "conducir")) return err("Necesitas la Licencia de Conducir para comprar vehículos", 403);
   if (it.category === "Armas" && !tieneLic(u, "armas")) return err("Necesitas la Licencia de Armas para comprar armas", 403);
   if (lt && tieneLic(u, lt)) return err("Ya tienes esta licencia");
@@ -24,10 +26,14 @@ export async function POST(req) {
   const pl = it.category === "Concesionario" ? await nuevaPlaca(d, { modelo: it.name, dueno: u.id, duenoN: nombreDe(u) }) : null;
   const color = it.category === "Propiedades" ? (COLORES_CASA.includes(b.color) ? b.color : COLORES_CASA[0]) : null;
   const vence = it.dias ? new Date(Date.now() + it.dias * 864e5) : null;
-  const r = await d.collection("users").updateOne({ id: u.id, [pk]: { $gte: it.price }, ...(lt && it.sku ? { inventory: { $not: { $elemMatch: { sku: it.sku } } } } : {}) }, { $inc: { [pk]: -it.price }, $push: { inventory: { name: it.name, category: it.category, price: it.price, at: new Date(), sku: it.sku || null, tipo: it.tipo || null, ubicacion: it.ubicacion || null, img: it.img || null, placa: pl, color, vence, licNum: lt ? numeroLicencia(lt) : null } } });
+  const r = await d.collection("users").updateOne({ id: u.id, [pk]: { $gte: total }, ...(lt && it.sku ? { inventory: { $not: { $elemMatch: { sku: it.sku } } } } : {}) }, { $inc: { [pk]: -total }, $push: { inventory: { name: it.name, category: it.category, price: it.price, at: new Date(), sku: it.sku || null, tipo: it.tipo || null, ubicacion: it.ubicacion || null, img: it.img || null, placa: pl, color, vence, licNum: lt ? numeroLicencia(lt) : null } } });
   if (!r.modifiedCount) { if (pl) await d.collection("placas").deleteOne({ _id: normPlaca(pl) }); if (it.stock > 0) await items.updateOne({ _id }, { $inc: { stock: 1 } }); return err("Saldo insuficiente"); }
-  await d.collection("tx").insertOne({ user: u.id, type: "compra", item: it.name, amount: -it.price, at: new Date() });
-  await d.collection("notifs").insertOne({ uid: u.id, title: "Compra realizada", body: `Compraste ${it.name} por $${it.price.toLocaleString("es")}.${pl ? ` Placa: ${pl}.` : ""}${color ? ` Color: ${color}.` : ""}`, at: new Date(), read: false });
-  await acreditarNegocio(d, it.negocio, it.price, `Venta: ${it.name}`);
+  await d.collection("tx").insertOne({ user: u.id, type: "compra", item: `${it.name} (incluye ITBMS 7%: $${imp.toLocaleString("es")})`, amount: -total, at: new Date() });
+  await d.collection("notifs").insertOne({ uid: u.id, title: "Compra realizada", body: `Compraste ${it.name} por $${it.price.toLocaleString("es")} + ITBMS 7% ($${imp.toLocaleString("es")}) = $${total.toLocaleString("es")}.${pl ? ` Placa: ${pl}.` : ""}${color ? ` Color: ${color}.` : ""}`, at: new Date(), read: false });
+  // El ITBMS va a la Tesorería. Si el dueño del negocio decidió NO pagarlo, ese 7% se queda con él y queda anotado como evadido.
+  const neg = it.negocio ? await d.collection("negocios").findOne({ _id: it.negocio }) : null, remite = !neg?.owner || neg.pagaImpuesto !== false;
+  if (remite) await ingresarTesoreria(d, imp, `ITBMS 7%: ${it.name}`, neg?.owner ? NEGOCIOS[it.negocio]?.nombre || it.negocio : "Mercado");
+  else await d.collection("negocios").updateOne({ _id: it.negocio }, { $inc: { evadido: imp } });
+  await acreditarNegocio(d, it.negocio, it.price + (remite ? 0 : imp), `Venta: ${it.name}${remite ? "" : " (ITBMS no remitido)"}`);
   return NextResponse.json({ ok: true });
 }

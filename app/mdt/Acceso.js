@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 // Sonidos de la MDT (sintetizados, sin archivos): arranque y acceso concedido.
-const sonar = (notas, tipo = "sine") => { try { const a = new (window.AudioContext || window.webkitAudioContext)(); notas.forEach(([f, t, d]) => { const o = a.createOscillator(), g = a.createGain(), s = a.currentTime + t; o.type = tipo; o.frequency.value = f; g.gain.setValueAtTime(0.0001, s); g.gain.exponentialRampToValueAtTime(0.16, s + 0.03); g.gain.exponentialRampToValueAtTime(0.0001, s + d); o.connect(g); g.connect(a.destination); o.start(s); o.stop(s + d + 0.05); }); setTimeout(() => a.close(), 3500); } catch {} };
+export const sonar = (notas, tipo = "sine") => { try { const a = new (window.AudioContext || window.webkitAudioContext)(); notas.forEach(([f, t, d]) => { const o = a.createOscillator(), g = a.createGain(), s = a.currentTime + t; o.type = tipo; o.frequency.value = f; g.gain.setValueAtTime(0.0001, s); g.gain.exponentialRampToValueAtTime(0.16, s + 0.03); g.gain.exponentialRampToValueAtTime(0.0001, s + d); o.connect(g); g.connect(a.destination); o.start(s); o.stop(s + d + 0.05); }); setTimeout(() => a.close(), 3500); } catch {} };
 export const SND = { boot: [[220, 0, 0.18], [330, 0.14, 0.18], [440, 0.28, 0.2], [660, 0.44, 0.3]], ok: [[523, 0, 0.16], [659, 0.14, 0.16], [784, 0.28, 0.16], [1047, 0.42, 0.5]], no: [[180, 0, 0.25], [140, 0.2, 0.35]] };
 export default function Acceso({ info, onOk }) {
   const [lin, setLin] = useState([]), [listo, setListo] = useState(false), [placa, setPlaca] = useState(""), [err, setErr] = useState(""), [ok, setOk] = useState(false), ref = useRef(false);

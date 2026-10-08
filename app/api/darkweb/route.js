@@ -16,7 +16,7 @@ const tallerDe = async (d) => (await d.collection("negocios").findOne({ _id: "ta
 // Saca un auto del inventario (queda en depósito dentro de la publicación). Devuelve el auto o null.
 async function sacar(d, u, b) {
   let it = (u.inventory || [])[+b.i];
-  if (!it || it.name !== b.name || +new Date(it.at) !== +new Date(b.at) || it.category !== "Concesionario") return null;
+  if (!it || it.name !== b.name || +new Date(it.at) !== +new Date(b.at) || it.category !== "Concesionario" || it.loc === "casa") return null; // un auto guardado en el garaje no se puede vender
   const r = await d.collection("users").updateOne({ id: u.id }, { $pull: { inventory: { name: it.name, at: it.at } } }); if (!r.modifiedCount) return null;
   if (!it.placa) it = { ...it, placa: await nuevaPlaca(d, { modelo: it.name, dueno: u.id, duenoN: nombreDe(u) }) }; // autos viejos sin placa
   return it;
@@ -89,6 +89,19 @@ export async function POST(req) {
       const precio = Math.floor(Number(b.precio)); if (!(precio >= 1 && precio <= 50000000)) return bad("Precio inválido");
       const car = await sacar(d, u, b); if (!car) return bad("Ese vehículo ya no está en tu inventario");
       await col.insertOne({ tipo: "reventa", seller: u.id, sellerName: yo, car, precio, estado: "abierta", chat: [], at }); return NextResponse.json({ ok: true });
+    }
+    case "ventaSistema": { // el dueño del taller vende un auto robado a la página: máximo $15.000 y como mucho $1.000 más de lo que pagó
+      if ((await tallerDe(d)) !== u.id) return bad("Solo el dueño del Taller clandestino puede vender a la página", 403);
+      const it = (u.inventory || [])[+b.i]; if (!it || it.category !== "Concesionario" || !it.robado || it.loc === "casa") return bad("Elige un auto robado que lleves encima (no en el garaje)");
+      const pagado = Math.max(0, Number(it.price) || 0), tope = Math.min(15000, pagado + 1000), precio = Math.floor(Number(b.precio));
+      if (!(precio >= 1)) return bad("Precio inválido"); if (precio > tope) return bad(`Máximo ${money(tope)}: lo compraste en ${money(pagado)} y solo puedes ganar $1.000 (tope $15.000)`);
+      if (!pagoKey(u, b.pago)) return bad("Cuenta de cobro inválida");
+      const car = await sacar(d, u, b); if (!car) return bad("Ese vehículo ya no está en tu inventario");
+      await traspasarPlaca(d, car.placa); await pagarA(d, u.id, b.pago, precio);
+      await col.insertOne({ tipo: "sistema", seller: u.id, sellerName: yo, car, precio, estado: "vendida", vendido: precio, comprado: pagado, chat: [], at });
+      await d.collection("tx").insertOne({ user: u.id, type: "venta", item: `Auto vendido a la página (Dark Web): ${car.name}`, amount: precio, at });
+      await avisar(d, u.id, "Auto vendido a la página", `Vendiste ${car.name} por ${money(precio)} (lo compraste en ${money(pagado)}).`);
+      return NextResponse.json({ ok: true, precio });
     }
     case "comprar": { // compra de un auto puesto a la venta por el taller
       const id = oid(b.id), pk = pagoKey(u, b.pago); if (!id) return bad("Publicación inválida"); if (!pk) return bad("Método de pago inválido");

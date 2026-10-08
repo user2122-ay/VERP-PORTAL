@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { apiUser } from "@/lib/auth";
-import { LUGARES_CASA, ESPERA_GUARDAR, guardable } from "@/lib/casa";
+import { LUGARES_CASA, ESPERA_GUARDAR, guardable, esAuto } from "@/lib/casa";
 import { casaRef } from "@/lib/mdt";
 const bad = (m, s = 400) => NextResponse.json({ error: m }, { status: s });
 export async function POST(req) {
@@ -16,9 +16,11 @@ export async function POST(req) {
   if (b.accion === "guardar") {
     if (it.loc === "casa") return bad("Ya está guardado en casa"); if (!guardable(it)) return bad("Ese objeto no se puede guardar en una casa");
     if (!inv.some((i) => i.category === "Propiedades" && casaRef(i.name, i.at) === b.casa)) return bad("Elige una de tus casas");
-    if (!LUGARES_CASA.includes(b.lugar)) return bad("Elige en qué parte de la casa lo escondes");
+    const auto = esAuto(it), lugar = auto ? "Garaje" : b.lugar;
+    if (!LUGARES_CASA.includes(lugar)) return bad("Elige en qué parte de la casa lo escondes");
+    if (auto && inv.some((i) => esAuto(i) && i.loc === "casa" && i.casa === b.casa)) return bad("El garaje de esa casa ya tiene un auto. Solo cabe uno por garaje");
     const falta = u.guardarAt ? ESPERA_GUARDAR - (Date.now() - +new Date(u.guardarAt)) : 0; if (falta > 0) return bad(`Espera ${Math.ceil(falta / 60000)} min para guardar otro objeto`);
-    const r = await us.updateOne({ id: u.id, $or: [{ guardarAt: { $exists: false } }, { guardarAt: { $lte: new Date(Date.now() - ESPERA_GUARDAR) } }], inventory: { $elemMatch: { name: it.name, at: it.at, loc: { $ne: "casa" } } } }, { $set: { "inventory.$.loc": "casa", "inventory.$.casa": b.casa, "inventory.$.lugar": b.lugar, guardarAt: new Date() } });
+    const r = await us.updateOne({ id: u.id, $and: [{ $or: [{ guardarAt: { $exists: false } }, { guardarAt: { $lte: new Date(Date.now() - ESPERA_GUARDAR) } }] }, { inventory: { $elemMatch: { name: it.name, at: it.at, loc: { $ne: "casa" } } } }, ...(auto ? [{ inventory: { $not: { $elemMatch: { category: "Concesionario", loc: "casa", casa: b.casa } } } }] : [])] }, { $set: { "inventory.$.loc": "casa", "inventory.$.casa": b.casa, "inventory.$.lugar": lugar, guardarAt: new Date() } });
     if (!r.modifiedCount) return bad("No se pudo guardar. Intenta de nuevo"); return NextResponse.json({ ok: true });
   }
   return bad("Acción inválida");

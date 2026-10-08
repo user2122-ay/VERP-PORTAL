@@ -12,11 +12,11 @@ export async function GET(req) {
   for (const m of msgs) { const o = otro(m); if (!conv.has(o)) conv.set(o, { num: o, ultimo: m.texto, at: m.at, sin: 0 }); if (m.para === me && !m.leido) conv.get(o).sin++; }
   const alias = Object.fromEntries((u.wa?.contactos || []).map((c) => [c.num, c.alias]));
   for (const n of Object.keys(alias)) if (!conv.has(n)) conv.set(n, { num: n, ultimo: "", at: null, sin: 0 });
-  const nombres = Object.fromEntries((await d.collection("users").find({ "chip.num": { $in: [...conv.keys()] } }, { projection: { chip: 1 } }).toArray()).map((x) => [x.chip.num, x.chip.nombre]));
-  const lista = [...conv.values()].map((x) => ({ ...x, alias: alias[x.num] || nombres[x.num] || fmtTel(x.num) })).sort((a, b) => (b.at ? +new Date(b.at) : 0) - (a.at ? +new Date(a.at) : 0));
+  const rows = await d.collection("users").find({ "chip.num": { $in: [...conv.keys()] } }, { projection: { chip: 1, "cedula.avatar": 1 } }).toArray(), nombres = Object.fromEntries(rows.map((x) => [x.chip.num, x.chip.nombre])), fotos = Object.fromEntries(rows.map((x) => [x.chip.num, x.cedula?.avatar || null]));
+  const lista = [...conv.values()].map((x) => ({ ...x, alias: alias[x.num] || nombres[x.num] || fmtTel(x.num), foto: fotos[x.num] || null })).sort((a, b) => (b.at ? +new Date(b.at) : 0) - (a.at ? +new Date(a.at) : 0));
   const chat = con ? msgs.filter((m) => otro(m) === con).reverse().map((m) => ({ id: String(m._id), mio: m.de === me, texto: m.texto, at: m.at })) : [];
   if (con) await col.updateMany({ de: con, para: me, leido: { $ne: true } }, { $set: { leido: true } });
-  return NextResponse.json({ yo: { num: me, nombre: u.chip.nombre }, lista, chat, nombre: nombres[con] || "" });
+  return NextResponse.json({ yo: { num: me, nombre: u.chip.nombre, foto: u.cedula?.avatar || null }, lista, chat, nombre: nombres[con] || "", foto: fotos[con] || null });
 }
 export async function POST(req) {
   const u = await apiUser(); if (!waListo(u)) return bad("Sin línea", 401);

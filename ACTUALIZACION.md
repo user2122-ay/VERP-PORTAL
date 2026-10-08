@@ -49,3 +49,16 @@ lib/rol.js, lib/placa.js, components/CedulaCard.js, app/darkweb/*, app/delictivo
   - El Developer se fija a la primera cuenta que inicie sesión con ese usuario (así nadie puede quedarse con el nombre si lo cambias). Para más seguridad usa `DEVELOPER_IDS` (IDs de Discord). Hay que **cerrar sesión y volver a entrar una vez** para activarlo.
   - Quien asignes debe haber iniciado sesión en el portal al menos una vez.
 - Colecciones nuevas: `allanamientos`, `config`.
+
+## Actualización 6: tesorería, impuestos, sueldos, garaje y staff con placa
+- **Garaje**: los autos (normales o robados) se guardan en una casa, en el garaje. **Solo cabe un auto por casa.** Los objetos robados también se pueden guardar en casa. Un auto guardado no se puede robar ni vender hasta que lo saques.
+- **Staff con placa**: se eliminaron las variables `FUNDACION_IDS`, `ASUNTOS_INTERNOS_IDS`, `MODERACION_IDS` y todas las `*_ROLE_IDS` de staff. Solo entra a Administración quien esté asignado en **Administración → Staff**, y al entrar pide su **placa** (5 fallos = 5 minutos bloqueado; la sesión dura 8 horas). El Developer entra con su placa (`DEV-001` si no tiene otra). **Developer, Fundación y Asuntos Internos pueden añadir y quitar staff** (la placa es obligatoria y no se repite). Quien ya estaba asignado sin placa debe recibir una.
+- **MDT · agregar agente**: departamentos Ministro del Interior, Policía Nacional Bolivariana, SEBIN y CICPC, más el **sueldo semanal**.
+- **MDT · Mi sueldo**: cada agente elige en qué cuenta recibe el sueldo (efectivo o cualquiera de sus tarjetas, menos la de Comerciante).
+- **MDT · Tesorería** (solo Ministro del Interior): saldo, ingresos y egresos, movimientos, nómina de la semana, y qué negocios pagan o evaden impuestos. El botón **Liberar sueldos** paga a cada agente desde la Tesorería (una vez cada 7 días por agente; si no alcanza el dinero, paga a quienes alcance). Queda en la auditoría.
+- **ITBMS 7%**: todo lo que se compra en el Mercado lleva 7% sobre el precio (se muestra el total antes de pagar) y va a la Tesorería. El mercado negro (Dark Web, taller clandestino) **no paga impuestos**. Si el dueño de un negocio decide **no pagar**, ese 7% se queda con él y la Tesorería lo registra como evadido. Se cambia en Inventario → Negocios.
+- **Inventario → Negocios**: al comprar un negocio aparece esta pestaña con el panel para cambiar precios y decidir si paga el impuesto.
+- **Taller clandestino → vender a la página**: un auto robado se vende por un máximo de $15.000 y solo puedes ganar $1.000 sobre lo que pagaste (si lo compraste en $4.500, lo vendes hasta en $5.500).
+- **WhatsApp**: se quitó subir fotos de la galería. Los estados son un **link** de foto (jpg, png, gif, webp) o video (mp4, webm, mov) de Discord o Imgur. La foto de perfil de cada contacto es su avatar de Roblox (el de la cédula).
+- Colecciones nuevas: `tesoreria` y el documento `config` `{_id:"tesoreria"}`. Sin variables nuevas.
+- **Para pausar**: membresías de booster y beneficios automáticos siguen anotados para después.

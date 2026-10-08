@@ -5,7 +5,7 @@ import { apiUser } from "@/lib/auth";
 import { waListo } from "@/lib/redes";
 export const dynamic = "force-dynamic";
 const bad = (m, s = 400) => NextResponse.json({ error: m }, { status: s });
-const HORAS = 24, HOSTS = ["cdn.discordapp.com", "media.discordapp.net"];
+const HORAS = 24, HOSTS = ["cdn.discordapp.com", "media.discordapp.net", "i.imgur.com"], FOTO = /\.(jpe?g|png|gif|webp)$/i, VIDEO = /\.(mp4|webm|mov)$/i;
 let idx = false;
 // Los estados duran 24 h: el índice TTL de Mongo borra el documento entero (incluida la imagen) al llegar a "expira".
 async function col() { const c = (await db()).collection("wa_estados"); if (!idx) { idx = true; await c.createIndex({ expira: 1 }, { expireAfterSeconds: 0 }).catch(() => {}); } return c; }
@@ -21,14 +21,14 @@ export async function GET(req) {
     return new Response(Buffer.from(m[2], "base64"), { headers: { "Content-Type": "image/jpeg", "Cache-Control": "private, max-age=3600" } });
   }
   const nums = [me, ...contactos(u)], docs = await c.find({ num: { $in: nums }, expira: { $gt: now } }, { projection: { img: 0 } }).sort({ at: 1 }).toArray();
-  const nom = Object.fromEntries((await (await db()).collection("users").find({ "chip.num": { $in: nums } }, { projection: { chip: 1 } }).toArray()).map((x) => [x.chip.num, x.chip.nombre])), alias = Object.fromEntries((u.wa?.contactos || []).map((x) => [x.num, x.alias])), g = {};
+  const nom = Object.fromEntries((await (await db()).collection("users").find({ "chip.num": { $in: nums } }, { projection: { chip: 1, "cedula.avatar": 1 } }).toArray()).map((x) => [x.chip.num, x])), alias = Object.fromEntries((u.wa?.contactos || []).map((x) => [x.num, x.alias])), g = {};
   for (const e of docs) {
-    const o = (g[e.num] ||= { num: e.num, mio: e.num === me, nombre: e.num === me ? "Mi estado" : alias[e.num] || nom[e.num] || e.num, items: [], visto: true });
-    o.items.push({ id: String(e._id), at: e.at, desc: e.desc || "", url: e.tipo === "url" ? e.url : null, vistas: e.num === me ? e.vistas || [] : undefined });
+    const o = (g[e.num] ||= { num: e.num, mio: e.num === me, nombre: e.num === me ? "Mi estado" : alias[e.num] || nom[e.num]?.chip?.nombre || e.num, foto: nom[e.num]?.cedula?.avatar || (e.num === me ? u.cedula?.avatar : null) || null, items: [], visto: true });
+    o.items.push({ id: String(e._id), at: e.at, desc: e.desc || "", url: e.tipo === "url" ? e.url : null, video: e.media === "video", vistas: e.num === me ? e.vistas || [] : undefined });
     if (e.num !== me && !(e.vistas || []).some((v) => v.num === me)) o.visto = false;
   }
   const lista = Object.values(g);
-  return NextResponse.json({ mio: g[me] || { mio: true, nombre: "Mi estado", items: [] }, contactos: lista.filter((x) => !x.mio).sort((a, b) => +new Date(b.items.at(-1).at) - +new Date(a.items.at(-1).at)) });
+  return NextResponse.json({ mio: g[me] || { mio: true, nombre: "Mi estado", foto: u.cedula?.avatar || null, items: [] }, contactos: lista.filter((x) => !x.mio).sort((a, b) => +new Date(b.items.at(-1).at) - +new Date(a.items.at(-1).at)) });
 }
 export async function POST(req) {
   const u = await apiUser(); if (!waListo(u)) return bad("Sin línea", 401);
@@ -36,14 +36,11 @@ export async function POST(req) {
   if (b.accion === "subir") {
     const at = new Date(), doc = { num: me, desc: String(b.desc || "").trim().slice(0, 140), at, expira: new Date(+at + HORAS * 3600e3), vistas: [] };
     if ((await c.countDocuments({ num: me, expira: { $gt: at } })) >= 5) return bad("Máximo 5 estados activos a la vez");
-    if (b.url) {
-      let h; try { h = new URL(b.url); } catch { return bad("Link inválido"); }
-      if (h.protocol !== "https:" || !HOSTS.includes(h.hostname)) return bad("Solo links de imágenes de Discord (cdn.discordapp.com)");
-      doc.tipo = "url"; doc.url = h.href;
-    } else {
-      const s = String(b.img || ""); if (!/^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(s) || s.length > 450000) return bad("Imagen inválida o muy pesada");
-      doc.tipo = "img"; doc.img = s;
-    }
+    // Solo links: una foto (jpg, png, gif, webp) o un video (mp4, webm, mov) de Discord o Imgur. Ya no se sube desde la galería.
+    let h; try { h = new URL(String(b.url || "").trim()); } catch { return bad("Pega el link de tu foto o video"); }
+    if (h.protocol !== "https:" || !HOSTS.includes(h.hostname)) return bad("El link debe ser de Discord (cdn.discordapp.com) o Imgur (i.imgur.com)");
+    const media = VIDEO.test(h.pathname) ? "video" : FOTO.test(h.pathname) ? "foto" : null; if (!media) return bad("El link debe terminar en una foto (jpg, png, gif, webp) o un video (mp4, webm, mov)");
+    doc.tipo = "url"; doc.url = h.href; doc.media = media;
     await c.insertOne(doc); return NextResponse.json({ ok: true });
   }
   const _id = oid(b.id); if (!_id) return bad("No existe", 404);

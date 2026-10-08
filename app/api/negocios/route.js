@@ -29,6 +29,10 @@ export async function POST(req) {
     const set = { price }; if (b.key === "concesionario" && b.impuesto !== "" && b.impuesto != null) { const i = Number(b.impuesto); if (!Number.isFinite(i) || i < 0) return bad("Impuesto inválido"); set.impuesto = i; }
     await d.collection("items").updateOne({ _id }, { $set: set }); return NextResponse.json({ ok: true });
   }
+  if (b.accion === "impuesto") { // el dueño decide si paga o no el ITBMS (7%) de lo que vende
+    if (b.key === "taller") return bad("El mercado negro no paga impuestos"); const paga = b.paga === true;
+    await neg.updateOne({ _id: b.key }, { $set: { pagaImpuesto: paga } }); return NextResponse.json({ ok: true });
+  }
   if (b.accion === "planes" && b.key === "movil") {
     const p = (b.planes || []).map(Number); if (p.length !== 3 || p.some((x) => !(x >= 10 && x <= 1000))) return bad("Los 3 planes deben valer entre $10 y $1.000");
     await neg.updateOne({ _id: "movil" }, { $set: { planes: p.sort((x, y) => x - y) } }); return NextResponse.json({ ok: true });

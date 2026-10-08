@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { Search, Shield, FileText, Gavel, Siren, Plus, Home } from "lucide-react";
+import { Search, Shield, FileText, Gavel, Siren, Plus, Home, Wallet, Landmark } from "lucide-react";
 import CedulaCard from "@/components/CedulaCard";
 import ZoomMap from "@/components/ZoomMap";
 import Acceso from "./Acceso";
@@ -88,12 +88,47 @@ function Casas({ aprueba, yo }) {
         {x.estado === "pendiente" && aprueba && x.porId === yo && <span className="mut">Otro comisario debe aprobar tu solicitud.</span>}
         {["aprobada", "ejecutada"].includes(x.estado) && x.porId === yo && x.vence && new Date(x.vence) > new Date() && <button className="btn" onClick={async () => { const j = await post({ accion: "allanEntrar", id: x.id }); if (j) { setDentro(j); cargar(); } }}>Entrar a revisar (hasta {fec2(x.vence)})</button>}</div></div>))}{!l.length && <div className="card mut">No hay solicitudes de allanamiento.</div>}</>);
 }
-const TABS = [["Ciudadanos", Shield, Ciudadanos], ["Expedientes", FileText, Expedientes], ["Arrestos", Gavel, Arrestos], ["Reportes", Siren, Reportes], ["Casas", Home, Casas]];
+function Sueldo() {
+  const [s, setS] = useState(null), cargar = async () => setS(await get("m=sueldo")); useEffect(() => { cargar(); }, []);
+  if (!s) return <p className="mut">Cargando...</p>;
+  return (<div className="card"><b>Mi sueldo</b><div className="big" style={{ fontSize: 26 }}>{$(s.sueldo)} <span className="mut" style={{ fontSize: 14 }}>por semana</span></div>
+    {s.ultimoPago && <div className="mut">Último pago: {fec(s.ultimoPago)}</div>}
+    {!s.sueldo && <p className="mut">Todavía no tienes sueldo asignado. Pídeselo a Asuntos Internos o Fundación.</p>}
+    {s.edita && <><label className="mut" style={{ display: "block", marginTop: 10 }}>¿Dónde quieres recibir tu sueldo?</label>
+      <select value={s.cuenta} onChange={async (e) => { if (await post({ accion: "sueldoCuenta", cuenta: e.target.value })) cargar(); }}>{s.cuentas.map((c) => <option key={c.k} value={c.k}>{c.label}</option>)}</select>
+      <p className="mut">El Ministro del Interior libera los sueldos cada semana y se depositan ahí. Si no tienes esa cuenta, se paga en efectivo.</p></>}</div>);
+}
+function Tesoreria() {
+  const [t, setT] = useState(null), [busy, setBusy] = useState(false), cargar = async () => setT(await get("m=tesoreria")); useEffect(() => { cargar(); }, []);
+  if (!t) return <p className="mut">Cargando...</p>;
+  const nomina = t.agentes.filter((a) => a.toca).reduce((n, a) => n + a.sueldo, 0);
+  const liberar = async () => {
+    if (!confirm(`Se pagarán ${$(nomina)} en sueldos desde la Tesorería. ¿Liberar los sueldos?`)) return; setBusy(true);
+    const j = await post({ accion: "liberarSueldos" }); setBusy(false);
+    if (j) { alert(`Sueldos liberados: ${j.pagados} agente(s), ${$(j.total)}.${j.sinFondos?.length ? `\nSin fondos para: ${j.sinFondos.join(", ")}` : ""}`); cargar(); }
+  };
+  return (<div style={{ display: "grid", gap: 12 }}>
+    <div className="card"><b>Tesorería del Estado</b><div className="big" style={{ fontSize: 30 }}>{$(t.saldo)}</div>
+      <div className="mut">Ingresos totales {$(t.ingresos)} · Egresos totales {$(t.egresos)}</div>
+      <p className="mut">Aquí llega el ITBMS (7%) de todo lo que se compra en el Mercado y de los negocios legales. El mercado negro no paga impuestos.</p></div>
+    <div className="card"><b>Sueldos de la semana</b>
+      {t.agentes.map((a) => <div key={a.id} style={{ display: "flex", justifyContent: "space-between", gap: 8, padding: "6px 0", borderTop: "1px solid var(--bd)" }}><span>{a.rango} {a.nombre}<div className="mut">{a.depto} · cobra en {a.cuenta === "efectivo" ? "efectivo" : a.cuenta.toUpperCase()}</div></span><span style={{ textAlign: "right" }}><b>{$(a.sueldo)}</b><div className="mut">{a.sueldo ? (a.toca ? "Pendiente de pago" : `Pagado ${fec(a.ultimoPago)}`) : "Sin sueldo"}</div></span></div>)}
+      {!t.agentes.length && <p className="mut">No hay agentes asignados.</p>}
+      <button className="btn" style={{ width: "100%", marginTop: 10 }} disabled={busy || !nomina} onClick={liberar}><Wallet size={16} />{nomina ? `Liberar sueldos (${$(nomina)})` : "No hay sueldos pendientes"}</button>
+      {nomina > t.saldo && <p style={{ color: "var(--bad)" }}>La Tesorería no alcanza para toda la nómina. Se pagará a quienes alcance.</p>}</div>
+    <div className="card"><b>Negocios legales e impuesto</b>
+      {t.negocios.map((n, k) => <div key={k} style={{ display: "flex", justifyContent: "space-between", gap: 8, padding: "6px 0", borderTop: "1px solid var(--bd)" }}><span>{n.nombre}<div className="mut">Dueño: {n.dueno}</div></span><span style={{ textAlign: "right" }}><b style={{ color: n.paga ? "var(--ok)" : "var(--bad)" }}>{n.paga ? "Paga impuestos" : "No paga impuestos"}</b>{n.evadido > 0 && <div className="mut">Evadido: {$(n.evadido)}</div>}</span></div>)}
+      {!t.negocios.length && <p className="mut">Ningún negocio legal tiene dueño todavía.</p>}</div>
+    <div className="card"><b>Movimientos (últimos 60)</b>
+      {t.mov.map((x, k) => <div key={k} style={{ display: "flex", justifyContent: "space-between", gap: 8, padding: "6px 0", borderTop: "1px solid var(--bd)" }}><span>{x.concepto}<div className="mut">{fec(x.at)}</div></span><b style={{ color: x.tipo === "ingreso" ? "var(--ok)" : "var(--bad)" }}>{x.tipo === "ingreso" ? "+" : "-"}{$(x.monto)}</b></div>)}
+      {!t.mov.length && <p className="mut">Aún no hay movimientos.</p>}</div></div>);
+}
+const TABS = [["Ciudadanos", Shield, Ciudadanos], ["Expedientes", FileText, Expedientes], ["Arrestos", Gavel, Arrestos], ["Reportes", Siren, Reportes], ["Casas", Home, Casas], ["Mi sueldo", Wallet, Sueldo]];
 export default function Mdt() {
   const [info, setInfo] = useState(null), [ok, setOk] = useState(false), [t, setT] = useState("Ciudadanos");
   useEffect(() => { (async () => { const j = await get("m=estado"); if (j) { setInfo(j); setOk(j.ok); } })(); }, []);
   if (!info) return null; if (!ok) return <Acceso info={info} onOk={() => setOk(true)} />;
-  const V = TABS.find((x) => x[0] === t)[2];
+  const tabs = [...TABS, ...(info.ministro ? [["Tesorería", Landmark, Tesoreria]] : [])], V = (tabs.find((x) => x[0] === t) || tabs[0])[2];
   return (<div style={{ maxWidth: 820, margin: "0 auto" }}><div style={{ display: "flex", gap: 12, alignItems: "center" }}><img src="/justicia-paz.png" alt="Justicia y Paz" style={{ height: 54, background: "#fff", borderRadius: 10, padding: 4 }} /><div><b style={{ fontSize: 18 }}>MDT · {info.ag.depto}</b><div className="mut">{info.ag.rango} {info.nombre} · @{info.discord} · Placa {info.ag.placa}</div></div></div>
-    <div style={{ display: "flex", gap: 8, margin: "12px 0", flexWrap: "wrap" }}>{TABS.map(([n, I]) => <button key={n} className={"btn " + (t === n ? "" : "g")} onClick={() => setT(n)}><I size={16} />{n}</button>)}</div><V aprueba={info.aprueba} yo={info.yo} /></div>);
+    <div style={{ display: "flex", gap: 8, margin: "12px 0", flexWrap: "wrap" }}>{tabs.map(([n, I]) => <button key={n} className={"btn " + (t === n ? "" : "g")} onClick={() => setT(n)}><I size={16} />{n}</button>)}</div><V aprueba={info.aprueba} yo={info.yo} /></div>);
 }

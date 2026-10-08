@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
 import { db } from "@/lib/db";
 import { adminUser, reviewUser } from "@/lib/admin";
-import { canAdmin } from "@/lib/roles";
-import { RANGOS_MDT } from "@/lib/mdt";
+import { canAdmin, canStaff } from "@/lib/roles";
+import { RANGOS_MDT, DEPTOS } from "@/lib/mdt";
 import { LUGARES } from "@/lib/zonas";
 import { BANCOS } from "@/lib/bancos";
 import { nuevaCuenta } from "@/lib/tarjeta";
@@ -15,6 +15,7 @@ import { licTipo, numeroLicencia } from "@/lib/licencia";
 const err = (m, s = 400) => NextResponse.json({ error: m }, { status: s });
 const CATS = ["Concesionario", "Propiedades", "Licencias", "Objetos", "Armas", "Herramientas", "Telefonía", "Tecnología"], INICIAL = 5000;
 const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), str = (s, n = 80) => String(s || "").trim().slice(0, n), up = (s, n = 40) => str(s, n).replace(/\s+/g, " ").toUpperCase();
+const money = (n) => "$" + Number(n).toLocaleString("es");
 const oid = (s) => { try { return new ObjectId(String(s)); } catch { return null; } };
 export async function GET(req) {
   const a = await adminUser(); if (!a) return err("Sin permiso", 403);
@@ -133,18 +134,21 @@ export async function POST(req) {
       await d.collection("audit").insertOne({ by: a.id, byName: a.name, rank: a.rank, act: "reporte911", objetivo: String(id), razon: "Reporte resuelto", at }); break;
     }
     case "staffSet": case "staffDel": { // solo el Developer asigna el staff de Administración
-      if (a.rank !== "DEVELOPER") return err("Solo el Developer asigna staff", 403);
-      if (b.a === "staffDel") { if (!t) return err("Falta el usuario"); await users.updateOne({ id: t.id }, { $unset: { staff: "", staffPlaca: "" } }); await log("staffDel", quien, {}); break; }
+      if (!canStaff(a.rank)) return err("Solo Developer, Fundación y Asuntos Internos asignan staff", 403);
+      if (b.a === "staffDel") { if (!t) return err("Falta el usuario"); if (t.dev) return err("No se puede quitar al Developer", 403); await users.updateOne({ id: t.id }, { $unset: { staff: "", staffPlaca: "" } }); await log("staffDel", quien, {}); break; }
       const x = await users.findOne({ name: new RegExp("^" + esc(str(b.username, 40)) + "$", "i") }); if (!x) return err("Esa persona debe iniciar sesión en el portal una vez primero");
       const rk = ["JUNTA_DIRECTIVA", "FUNDACION", "ASUNTOS_INTERNOS", "MODERACION"].includes(b.rango) ? b.rango : null; if (!rk) return err("Rango inválido");
-      await users.updateOne({ id: x.id }, { $set: { staff: rk, staffPlaca: up(b.placa, 20) } }); await d.collection("notifs").insertOne({ uid: x.id, title: "Ahora eres staff", body: "Te asignaron un rango en Administración. Vuelve a iniciar sesión si no ves el menú.", at, read: false }); await log("staffSet", `${x.name} (${x.id})`, { rango: rk }); break;
+      if (x.dev) return err("Ese usuario es Developer", 403); const placa = up(b.placa, 20); if (!placa) return err("La placa es obligatoria: sin ella no podrá entrar a Administración");
+      if (await users.findOne({ staffPlaca: placa, id: { $ne: x.id } })) return err("Esa placa ya la tiene otro integrante del staff");
+      await users.updateOne({ id: x.id }, { $set: { staff: rk, staffPlaca: placa }, $unset: { adminSesion: "" } }); await d.collection("notifs").insertOne({ uid: x.id, title: "Ahora eres staff", body: "Te asignaron un rango en Administración. Entra por el menú y escribe tu placa.", at, read: false }); await log("staffSet", `${x.name} (${x.id})`, { rango: rk }); break;
     }
     case "agenteSet": case "agenteDel": { // asigna o quita agentes de la MDT
       if (b.a === "agenteDel") { if (!t) return err("Falta el usuario"); await users.updateOne({ id: t.id }, { $unset: { agente: "", mdtSesion: "" } }); await log("agenteDel", quien, {}); break; }
       const x = await users.findOne({ name: new RegExp("^" + esc(str(b.username, 40)) + "$", "i") }); if (!x) return err("Esa persona debe iniciar sesión en el portal una vez primero");
-      const rango = RANGOS_MDT.includes(b.rango) ? b.rango : null, placa = up(b.placa, 20), depto = str(b.depto, 40); if (!rango || !placa || !depto) return err("Completa rango, placa y departamento");
+      const rango = RANGOS_MDT.includes(b.rango) ? b.rango : null, placa = up(b.placa, 20), depto = str(b.depto, 40), sueldo = Math.floor(Number(b.sueldo)); if (!rango || !placa || !depto) return err("Completa rango, placa y departamento");
+      if (!DEPTOS.includes(depto)) return err("Departamento inválido"); if (!Number.isFinite(sueldo) || sueldo < 0 || sueldo > 10000000) return err("Escribe el sueldo semanal (0 a $10.000.000)");
       if (await users.findOne({ "agente.placa": placa, id: { $ne: x.id } })) return err("Esa placa ya la tiene otro agente");
-      await users.updateOne({ id: x.id }, { $set: { agente: { rango, placa, depto } } }); await d.collection("notifs").insertOne({ uid: x.id, title: "Asignado a la MDT", body: `${rango} · ${depto} · Placa ${placa}. Entra por el menú MDT.`, at, read: false }); await log("agenteSet", `${x.name} (${x.id})`, { rango, placa, depto }); break;
+      await users.updateOne({ id: x.id }, { $set: { "agente.rango": rango, "agente.placa": placa, "agente.depto": depto, "agente.sueldo": sueldo } }); await d.collection("notifs").insertOne({ uid: x.id, title: "Asignado a la MDT", body: `${rango} · ${depto} · Placa ${placa} · Sueldo ${money(sueldo)} semanal. Entra por el menú MDT y elige en qué banco quieres recibirlo.`, at, read: false }); await log("agenteSet", `${x.name} (${x.id})`, { rango, placa, depto, sueldo }); break;
     }
     case "roboOk": case "roboNo": {
       const id = oid(b.id), r = id && (await d.collection("robos").findOne({ _id: id, estado: "pendiente" })); if (!r) return err("Solicitud no encontrada", 404);

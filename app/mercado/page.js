@@ -12,6 +12,7 @@ import { licTipo, tieneLic } from "@/lib/licencia";
 import { MessageCircle, Lock } from "lucide-react";
 import Link from "next/link";
 import Negocios from "./Negocios";
+import { iva } from "@/lib/tesoreria";
 export const dynamic = "force-dynamic";
 // Botones de arriba: cada categoría tiene su propio lugar. "Todo" muestra todo junto.
 const CHIPS = ["Todo", "Tarjetas", "Licencias", "Concesionario", "Propiedades", "Armas", "Herramientas", "Telefonía", "Tecnología", "Negocios"];
@@ -34,7 +35,7 @@ export default async function P({ searchParams }) {
     {items.length > 0 && <>{cat === "Todo" && <h3 style={{ marginTop: 16 }}>Artículos</h3>}
       <div className="grid" style={{ marginTop: cat === "Todo" ? 0 : 6 }}>{items.map((i) => { const b = bloqueo(i); return (<div className="card" key={String(i._id)} style={b ? { opacity: 0.6 } : undefined}><div className="mi">{i.img ? <img src={i.img} alt="" /> : <span className="mut">Sin foto</span>}</div>
         <span className="tag">{i.category}</span><div><b>{i.name}</b></div><div className="mut">{i.brand} {i.year}{i.clase ? ` · Clase ${i.clase}` : ""}</div>{i.ubicacion && <div className="mut">Ubicación: {i.ubicacion}</div>}{i.impuesto ? <div className="mut">Impuesto mensual: ${Number(i.impuesto).toLocaleString("es")}</div> : null}{i.desc && <div className="mut">{i.desc}</div>}
-        <div className="big" style={{ fontSize: 22 }}>${i.price.toLocaleString("es")}</div>{b && b !== "Ya la tienes" && <div style={{ color: "var(--bad)", fontSize: 13, display: "flex", gap: 4, alignItems: "center" }}><Lock size={14} />{b}</div>}
-        <Buy metodos={metodos} id={String(i._id)} colores={i.category === "Propiedades" ? COLORES_CASA : null} bloqueo={b} /></div>); })}</div></>}
+        <div className="big" style={{ fontSize: 22 }}>${i.price.toLocaleString("es")}</div><div className="mut" style={{ fontSize: 12 }}>+ ITBMS 7%: ${iva(i.price).toLocaleString("es")} · Total ${(i.price + iva(i.price)).toLocaleString("es")}</div>{b && b !== "Ya la tienes" && <div style={{ color: "var(--bad)", fontSize: 13, display: "flex", gap: 4, alignItems: "center" }}><Lock size={14} />{b}</div>}
+        <Buy total={i.price + iva(i.price)} metodos={metodos} id={String(i._id)} colores={i.category === "Propiedades" ? COLORES_CASA : null} bloqueo={b} /></div>); })}</div></>}
     {!items.length && cat !== "Tarjetas" && <div className="card mut">No hay artículos en esta categoría todavía.</div>}</Shell>);
 }

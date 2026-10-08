@@ -15,5 +15,5 @@ export default async function Negocios({ u }) {
     <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(320px,1fr))" }}>{lista.map(([k, n]) => { const o = docs[k]?.owner; return (<div key={k}><div className="card"><img src={n.img} alt={n.nombre} style={{ width: "100%", aspectRatio: "16/10", objectFit: "cover", borderRadius: 12 }} />
       <div style={{ marginTop: 8 }}><b>{n.nombre}</b></div><div className="mut">{n.edita}</div><div className="big" style={{ fontSize: 22 }}>${n.precio.toLocaleString("es")}</div>
       {o ? <span className="tag">{o === u.id ? "Eres el dueño" : `Dueño: ${dueños[o] || "—"}`}</span> : <Comprar url="/api/negocios" body={{ accion: "comprar", key: k }} metodos={metodos} msg="¡Negocio comprado! Ya puedes administrarlo." label="Comprar negocio" />}</div>
-      {o === u.id && <Gestion k={k} items={items[k] || []} planes={planes} />}</div>); })}</div></>);
+      {o === u.id && <Gestion k={k} items={items[k] || []} planes={planes} paga={docs[k]?.pagaImpuesto !== false} />}</div>); })}</div></>);
 }

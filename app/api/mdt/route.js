@@ -3,7 +3,10 @@ import { ObjectId } from "mongodb";
 import { db } from "@/lib/db";
 import { apiUser } from "@/lib/auth";
 import { nombreDe } from "@/lib/rol";
-import { agenteDe, aprobador, casaRef } from "@/lib/mdt";
+import { agenteDe, aprobador, casaRef, esMinistro, SEMANA } from "@/lib/mdt";
+import { BANCOS } from "@/lib/bancos";
+import { NEGOCIOS } from "@/lib/negocios";
+import { saldoTesoreria, egresarTesoreria } from "@/lib/tesoreria";
 import { normPlaca } from "@/lib/placa";
 import { licTipo } from "@/lib/licencia";
 const bad = (m, s = 400) => NextResponse.json({ error: m }, { status: s });
@@ -17,7 +20,7 @@ const pub = (x) => ({ id: x.id, label: `${x.cedula.nombres} ${x.cedula.apellidos
 
 export async function GET(req) {
   const p = new URL(req.url).searchParams, m = p.get("m");
-  if (m === "estado") { const u = await policia(true); if (!u) return bad("Sin permiso", 403); return NextResponse.json({ ok: fresca(u), ag: u.ag, nombre: nombreDe(u), discord: u.name, yo: u.id, aprueba: aprobador(u.ag) }); }
+  if (m === "estado") { const u = await policia(true); if (!u) return bad("Sin permiso", 403); return NextResponse.json({ ok: fresca(u), ag: u.ag, nombre: nombreDe(u), discord: u.name, yo: u.id, aprueba: aprobador(u.ag), ministro: esMinistro(u.ag) }); }
   const u = await policia(); if (!u) return bad("Sin sesión de la MDT", 401);
   const d = await db(), us = d.collection("users");
   if (m === "buscar") {
@@ -58,6 +61,20 @@ export async function GET(req) {
       ...b.map((x) => ({ src: "v", id: String(x._id), titulo: `${x.tipo}: ${x.modelo}`, det: `Color ${x.color || "—"} · Placa ${x.placa || "—"}${x.specs ? " · " + x.specs : ""}`, por: x.denuncia || "", atiende: x.atiende || null, resuelto: x.estado === "resuelto", seg: x.seg || [], at: x.at }))].sort((x, y) => +new Date(y.at) - +new Date(x.at));
     return NextResponse.json({ reps: r });
   }
+  if (m === "sueldo") { // sueldo semanal del agente y la cuenta donde lo recibe
+    const cu = Object.keys(u.cuentas || {}).filter((k) => !BANCOS[k]?.comercial).map((k) => ({ k, label: BANCOS[k]?.nombre || k }));
+    return NextResponse.json({ sueldo: u.agente?.sueldo || 0, cuenta: u.agente?.cuenta || "efectivo", cuentas: [{ k: "efectivo", label: "Efectivo" }, ...cu], ultimoPago: u.agente?.ultimoPago || null, edita: !!u.agente });
+  }
+  if (m === "tesoreria") { // SOLO el Ministro del Interior
+    if (!esMinistro(u.ag)) return bad("Solo el Ministro del Interior ve la Tesorería", 403);
+    const mov = await d.collection("tesoreria").find().sort({ at: -1 }).limit(60).toArray(), ags = await us.find({ agente: { $exists: true } }).limit(300).toArray();
+    const tot = await d.collection("tesoreria").aggregate([{ $group: { _id: "$tipo", t: { $sum: "$monto" } } }]).toArray(), suma = (k) => tot.find((x) => x._id === k)?.t || 0;
+    const negs = await d.collection("negocios").find({ owner: { $ne: null }, _id: { $ne: "taller" } }).toArray(), dn = Object.fromEntries((await us.find({ id: { $in: negs.map((n) => n.owner) } }, { projection: { id: 1, name: 1, cedula: 1 } }).toArray()).map((x) => [x.id, x.cedula ? `${x.cedula.nombres.split(" ")[0]} ${x.cedula.apellidos.split(" ")[0]}` : x.name]));
+    return NextResponse.json({ saldo: await saldoTesoreria(d), ingresos: suma("ingreso"), egresos: suma("egreso"),
+      mov: mov.map((x) => ({ tipo: x.tipo, monto: x.monto, concepto: x.concepto, at: x.at })),
+      agentes: ags.map((x) => ({ id: x.id, nombre: x.cedula ? `${x.cedula.nombres.split(" ")[0]} ${x.cedula.apellidos.split(" ")[0]}` : x.name, rango: x.agente.rango, depto: x.agente.depto, sueldo: x.agente.sueldo || 0, cuenta: x.agente.cuenta || "efectivo", ultimoPago: x.agente.ultimoPago || null, toca: !x.agente.ultimoPago || Date.now() - +new Date(x.agente.ultimoPago) >= SEMANA })),
+      negocios: negs.map((n) => ({ nombre: NEGOCIOS[n._id]?.nombre || n._id, dueno: dn[n.owner] || "—", paga: n.pagaImpuesto !== false, evadido: n.evadido || 0 })) });
+  }
   return bad("Consulta inválida");
 }
 
@@ -70,6 +87,29 @@ export async function POST(req) {
     await us.updateOne({ id: u.id }, { $set: { mdtSesion: at }, $unset: { mdtFail: "" } }); return NextResponse.json({ ok: true });
   }
   switch (b.accion) {
+    case "sueldoCuenta": { // el agente elige en qué banco recibe su sueldo
+      if (!u.agente) return bad("Tu cargo no tiene sueldo asignado"); const k = String(b.cuenta || "");
+      if (k !== "efectivo" && (!u.cuentas?.[k] || BANCOS[k]?.comercial)) return bad("No tienes esa cuenta bancaria");
+      await us.updateOne({ id: u.id }, { $set: { "agente.cuenta": k } }); return NextResponse.json({ ok: true });
+    }
+    case "liberarSueldos": { // SOLO el Ministro del Interior: paga a cada agente su sueldo semanal desde la Tesorería
+      if (!esMinistro(u.ag)) return bad("Solo el Ministro del Interior libera los sueldos", 403);
+      const ags = await us.find({ "agente.sueldo": { $gt: 0 } }).limit(300).toArray(), pagados = [], sinFondos = []; let total = 0;
+      for (const x of ags) {
+        const antes = x.agente.ultimoPago || null, hace = new Date(Date.now() - SEMANA), s = x.agente.sueldo;
+        // reclama el pago de esta semana (evita pagar dos veces si se pulsa dos veces seguidas)
+        const c = await us.updateOne({ id: x.id, $or: [{ "agente.ultimoPago": { $exists: false } }, { "agente.ultimoPago": null }, { "agente.ultimoPago": { $lte: hace } }] }, { $set: { "agente.ultimoPago": at } }); if (!c.modifiedCount) continue;
+        const nom = x.cedula ? `${x.cedula.nombres.split(" ")[0]} ${x.cedula.apellidos.split(" ")[0]}` : x.name;
+        if (!(await egresarTesoreria(d, s, `Sueldo: ${x.agente.rango} ${nom}`, x.id))) { await us.updateOne({ id: x.id }, antes ? { $set: { "agente.ultimoPago": antes } } : { $unset: { "agente.ultimoPago": "" } }); sinFondos.push(nom); continue; }
+        const k = x.agente.cuenta && x.cuentas?.[x.agente.cuenta] && !BANCOS[x.agente.cuenta]?.comercial ? x.agente.cuenta : "efectivo", campo = k === "efectivo" ? "balance" : `cuentas.${k}.saldo`;
+        await us.updateOne({ id: x.id }, { $inc: { [campo]: s } });
+        await d.collection("tx").insertOne({ user: x.id, type: "sueldo", item: `Sueldo semanal (${x.agente.depto})`, amount: s, at });
+        await d.collection("notifs").insertOne({ uid: x.id, title: "Sueldo recibido", body: `El Ministerio del Interior te pagó ${money(s)} en ${k === "efectivo" ? "efectivo" : BANCOS[k].nombre}.`, at, read: false });
+        pagados.push(nom); total += s;
+      }
+      await d.collection("audit").insertOne({ by: u.id, byName: u.name, rank: u.ag.rango, act: "liberarSueldos", objetivo: `${pagados.length} agentes`, razon: "Nómina semanal", detalle: { total, sinFondos }, at });
+      return NextResponse.json({ ok: true, pagados: pagados.length, total, sinFondos });
+    }
     case "expNuevo": {
       const titulo = txt(b.titulo, 100); if (titulo.length < 3) return bad("Escribe un título");
       const s = b.sujeto ? await us.findOne({ id: txt(b.sujeto, 30), cedula: { $exists: true } }) : null;

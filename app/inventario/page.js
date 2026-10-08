@@ -8,19 +8,29 @@ import LicenciaCard from "@/components/LicenciaCard";
 import { licTipo } from "@/lib/licencia";
 import Link from "next/link";
 import { Guardar, Sacar } from "./Guardar";
-import { guardable, ESPERA_GUARDAR } from "@/lib/casa";
+import { guardable, esAuto, ESPERA_GUARDAR } from "@/lib/casa";
+import Gestion from "../negocios/Gestion";
+import { NEGOCIOS, ensureNegocios, planesDe } from "@/lib/negocios";
 import { casaRef } from "@/lib/mdt";
 export const dynamic = "force-dynamic";
 const G = { display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(300px,1fr))", gap: 14 };
 export default async function P({ searchParams }) {
   const u = await needUser(), cu = u.cuentas || {}, own = Object.keys(BANCOS).filter((k) => cu[k]), items = u.inventory || [], nombres = [...new Set(items.filter((i) => !i.img).map((i) => i.name))];
-  const v = searchParams?.v === "casa" ? "casa" : "personal", personal = items.filter((i) => i.loc !== "casa"), enCasa = items.filter((i) => i.loc === "casa");
+  const dd = await db(); await ensureNegocios(dd);
+  const misNeg = (await dd.collection("negocios").find({ owner: u.id }).toArray()).filter((n) => NEGOCIOS[n._id]), planes = await planesDe(dd), itemsNeg = {};
+  for (const n of misNeg) itemsNeg[n._id] = (await dd.collection("items").find({ negocio: n._id }).sort({ name: 1 }).limit(300).toArray()).map((i) => ({ id: String(i._id), name: i.name, price: i.price, impuesto: i.impuesto || 0 }));
+  const v = searchParams?.v === "casa" ? "casa" : searchParams?.v === "negocios" && misNeg.length ? "negocios" : "personal", personal = items.filter((i) => i.loc !== "casa"), enCasa = items.filter((i) => i.loc === "casa");
   const casas = items.filter((i) => i.category === "Propiedades"), opcCasas = casas.map((c) => ({ ref: casaRef(c.name, c.at), label: `${c.name}${c.ubicacion ? " · " + c.ubicacion : ""}` })), espera = u.guardarAt ? Math.max(0, ESPERA_GUARDAR - (Date.now() - +new Date(u.guardarAt))) : 0;
   const lics = personal.filter((i) => licTipo(i)), otros = personal.filter((i) => !licTipo(i));
   const fotos = nombres.length ? Object.fromEntries((await (await db()).collection("items").find({ name: { $in: nombres } }, { projection: { name: 1, img: 1 } }).toArray()).map((x) => [x.name, x.img])) : {};
   return (<Shell user={u}><div style={{ maxWidth: 1100, margin: "0 auto" }}><h2>Inventario</h2>
-    <div style={{ display: "flex", gap: 8, margin: "8px 0 12px" }}><Link className={"btn " + (v === "personal" ? "" : "g")} href="/inventario">Personal</Link><Link className={"btn " + (v === "casa" ? "" : "g")} href="/inventario?v=casa">Casa{enCasa.length ? ` (${enCasa.length})` : ""}</Link></div>
-    {v === "casa" ? (<>
+    <div style={{ display: "flex", gap: 8, margin: "8px 0 12px" }}><Link className={"btn " + (v === "personal" ? "" : "g")} href="/inventario">Personal</Link><Link className={"btn " + (v === "casa" ? "" : "g")} href="/inventario?v=casa">Casa{enCasa.length ? ` (${enCasa.length})` : ""}</Link>{misNeg.length > 0 && <Link className={"btn " + (v === "negocios" ? "" : "g")} href="/inventario?v=negocios">Negocios ({misNeg.length})</Link>}</div>
+    {v === "negocios" ? (<>
+      <p className="mut">Aquí administras tus negocios: cambia los precios de lo que vendes y decide si pagas el ITBMS (7%). Lo que vendes llega a tu Tarjeta de Comerciante.</p>
+      {misNeg.map((n) => { const x = NEGOCIOS[n._id]; return (<div key={n._id} style={{ marginBottom: 14 }}><div className="card"><img src={x.img} alt={x.nombre} style={{ width: "100%", maxWidth: 420, aspectRatio: "16/10", objectFit: "cover", borderRadius: 12 }} /><div style={{ marginTop: 8 }}><b>{x.nombre}</b> <span className="tag">Eres el dueño</span></div><div className="mut">{x.edita}</div></div>
+        <Gestion k={n._id} items={itemsNeg[n._id] || []} planes={planes} paga={n.pagaImpuesto !== false} /></div>); })}
+    </>) : null}
+    {v === "negocios" ? null : v === "casa" ? (<>
       <p className="mut">Lo que guardas en casa no se puede robar en un asalto: solo te pueden robar lo que llevas encima. Para guardar otro objeto hay que esperar 10 minutos.</p>
       {!casas.length && <div className="card mut">Necesitas una casa para guardar cosas. Compra una en el Mercado → Propiedades.</div>}
       {casas.map((c) => { const ref = casaRef(c.name, c.at), its = enCasa.filter((i) => i.casa === ref), por = its.reduce((g, i) => ((g[i.lugar || "Sin especificar"] = g[i.lugar || "Sin especificar"] || []).push(i), g), {});
@@ -37,6 +47,6 @@ export default async function P({ searchParams }) {
       <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}><span className="tag">{i.category}</span>{i.robado && <span className="rob-t">ROBADO</span>}</div><div><b>{i.name}</b></div>
       {i.placa && <div className="mut">Placa: <b>{i.placa}</b>{i.color ? ` · ${i.color}` : ""}</div>}{i.ubicacion && <div className="mut">Ubicación: {i.ubicacion}</div>}{i.color && !i.placa && <div className="mut">Color: {i.color}</div>}{i.vence && <div className="mut">{new Date(i.vence) > new Date() ? "Vence" : "Expiró"}: {new Date(i.vence).toLocaleDateString("es")}</div>}
       <div className="mut">{i.robado ? "Robado" : "Pagado"}: ${Number(i.price).toLocaleString("es")} · {new Date(i.at).toLocaleDateString("es")}</div>
-      {guardable(i) && casas.length > 0 && <Guardar name={i.name} at={new Date(i.at).toISOString()} casas={opcCasas} espera={espera} />}</div>); })}</div> : <div className="card mut">No llevas nada encima. Visita el Mercado.</div>}
+      {guardable(i) && casas.length > 0 && <Guardar name={i.name} at={new Date(i.at).toISOString()} casas={opcCasas} espera={espera} auto={esAuto(i)} />}</div>); })}</div> : <div className="card mut">No llevas nada encima. Visita el Mercado.</div>}
     </>)}</div></Shell>);
 }
