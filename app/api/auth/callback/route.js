@@ -16,7 +16,7 @@ export async function GET(req) {
   let dev = devIds.includes(d.id);
   if (!dev && devNames.includes(un)) { const pin = await (await db()).collection("config").findOneAndUpdate({ _id: "dev:" + un }, { $setOnInsert: { id: d.id, at: new Date() } }, { upsert: true, returnDocument: "after" }); dev = pin?.id === d.id; }
   const avatar = d.avatar ? `https://cdn.discordapp.com/avatars/${d.id}/${d.avatar}.png` : null;
-  await (await db()).collection("users").updateOne({ id: d.id }, { $set: { id: d.id, name: d.username, avatar, ...flagsDe(mj.roles), dev }, $setOnInsert: { balance: 15000, inventory: [], createdAt: new Date() } }, { upsert: true });
+  await (await db()).collection("users").updateOne({ id: d.id }, { $set: { id: d.id, name: d.username, avatar, ...flagsDe(mj.roles), dev }, $setOnInsert: { balance: 5000, inventory: [], createdAt: new Date() } }, { upsert: true });
   const res = NextResponse.redirect(new URL("/", req.url));
   res.cookies.set("s", await sign({ id: d.id }), { httpOnly: true, secure: true, sameSite: "lax", maxAge: 604800, path: "/" });
   res.cookies.delete("cv"); return res;

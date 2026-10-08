@@ -102,12 +102,3 @@ h1,h2{margin:.2em 0}.mut{color:var(--mut);font-size:14px}.big{font-size:34px;fon
 .tv-heart{position:absolute;left:50%;top:45%;margin:-48px;z-index:5;color:#ff2d55;animation:tvheart .8s ease both;pointer-events:none}
 .tv-mq{white-space:nowrap;overflow:hidden}.tv-mq span{display:inline-block;padding-left:100%;animation:tvmq 9s linear infinite}@keyframes tvmq{to{transform:translateX(-100%)}}
 @media(max-width:560px){.tv{height:calc(100vh - 130px);border-radius:0;border-left:0;border-right:0}}
-.miembros{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700;padding:3px 9px;border:1px solid var(--bd);border-radius:99px;white-space:nowrap;color:var(--tx)}
-.cu{position:relative;overflow:hidden;border-radius:18px;background:#020733;border:1px solid var(--bd);margin-top:16px;min-height:460px;display:grid;justify-items:center;align-content:end;padding:0 12px 14px;color:#fff}
-.cu:before{content:"";position:absolute;inset:0;background:url(/ve-logo-full.png) center/contain no-repeat;opacity:.17;pointer-events:none}
-.cu-top{position:absolute;top:14px;left:0;right:0;display:flex;justify-content:space-between;padding:0 clamp(10px,5vw,70px);z-index:2}
-.cu-s{display:flex;align-items:flex-start;gap:8px}.cu-s:first-child{flex-direction:row}.cu-pct{font-weight:900;font-size:20px;margin-top:30px;text-shadow:0 2px 6px #000}
-.cu-ring{position:relative;width:84px;height:84px}.cu-ring span{position:absolute;inset:0;display:grid;place-items:center;font-size:28px}.cu-n{display:block;text-align:center;font-size:18px;font-family:Georgia,serif;text-shadow:0 2px 6px #000}
-.cu-av{position:relative;z-index:1;height:min(340px,62vw);width:auto;margin-top:110px;object-fit:contain}.cu-pie{position:relative;z-index:2;text-align:center;margin-top:6px}
-@keyframes cu-flota{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
-@keyframes cu-tiembla{0%,100%{transform:translateX(0) rotate(0)}25%{transform:translateX(-3px) rotate(-1.5deg)}75%{transform:translateX(3px) rotate(1.5deg)}}

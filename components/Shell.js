@@ -1,19 +1,11 @@
 "use client";
 import Link from "next/link";
-import { useState, useEffect } from "react";
-import { abrev } from "@/lib/abrev";
 import { usePathname } from "next/navigation";
 import PushAsk from "./PushAsk";
 import { canReview } from "@/lib/roles";
 import { tieneVpn } from "@/lib/vpn";
-import { LayoutDashboard, Contact, Store, Siren, Landmark, Bell, Package, Smartphone, Briefcase, ShieldCheck, Sun, Moon, LogOut, Globe, Skull, Shield, Users } from "lucide-react";
+import { LayoutDashboard, Contact, Store, Siren, Landmark, Bell, Package, Smartphone, Briefcase, ShieldCheck, Sun, Moon, LogOut, Globe, Skull, Shield } from "lucide-react";
 const L = [["/", "Panel", LayoutDashboard], ["/cedula", "Cédula", Contact], ["/banco", "Banco", Landmark], ["/mercado", "Mercado", Store], ["/inventario", "Inventario", Package], ["/whatsapp", "Teléfono", Smartphone], ["/notificaciones", "Avisos", Bell], ["/emergencias", "911", Siren]];
-// Miembros registrados en la página (se actualiza solo cada minuto)
-function Miembros() {
-  const [n, setN] = useState(null);
-  useEffect(() => { let on = true; const f = () => fetch("/api/miembros").then((r) => r.json()).then((j) => on && setN(j.n)).catch(() => {}); f(); const t = setInterval(f, 6e4); return () => { on = false; clearInterval(t); }; }, []);
-  return n == null ? null : <span className="miembros" title={`${n.toLocaleString("es")} miembros registrados`}><Users size={14} />{abrev(n)}</span>;
-}
 export default function Shell({ user, children }) {
   const p = usePathname();
   function toggle(e) {
@@ -25,7 +17,7 @@ export default function Shell({ user, children }) {
   }
   const vpn = tieneVpn(user);
   const items = [...L, ...(vpn ? [["/darkweb", "Dark Web", Globe]] : []), ...(user.delictivo || user.rank === "FUNDACION" ? [["/delictivo", "Delictivo", Skull]] : []), ...(user.agente || user.dev ? [["/mdt", "MDT", Shield]] : []), ...(canReview(user.rank) ? [["/admin", "Administración", ShieldCheck]] : [])];
-  return (<><div className="top"><img src="/logo.png" alt="VE:RP" /><Miembros />
+  return (<><div className="top"><img src="/logo.png" alt="VE:RP" />
     <nav className="nav">{items.map(([h, t, I]) => <Link key={h} href={h} className={p === h ? "on" : ""}><I size={18} className="neon" />{t}</Link>)}</nav>
     <button className="btn g" onClick={toggle} aria-label="Cambiar tema"><Sun size={18} className="neon" /></button>
     <a className="btn g" href="/api/auth/logout" aria-label="Salir"><LogOut size={18} className="neon" /></a></div>

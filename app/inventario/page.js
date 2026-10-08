@@ -12,6 +12,9 @@ import { estaRetenido } from "@/lib/decomiso";
 import { estadoMulta } from "@/lib/multas";
 import { revendible } from "@/lib/usados";
 import Revender from "./Revender";
+import Comida from "./Comida";
+import Needs from "@/components/Needs";
+import { esComida, needsDe } from "@/lib/comida";
 import PagarMulta from "./PagarMulta";
 import { Receipt } from "lucide-react";
 import { Guardar, Sacar } from "./Guardar";
@@ -29,18 +32,20 @@ export default async function P({ searchParams }) {
   const misNeg = (await dd.collection("negocios").find({ owner: u.id }).toArray()).filter((n) => NEGOCIOS[n._id]), planes = await planesDe(dd), itemsNeg = {}, recientes = {};
   for (const n of misNeg) recientes[n._id] = (await dd.collection("tx").find({ user: u.id, type: "venta", neg: n._id }).sort({ at: -1 }).limit(6).toArray()).map((t) => ({ item: t.item, amount: t.amount, at: t.at }));
   for (const n of misNeg) itemsNeg[n._id] = (await dd.collection("items").find({ negocio: n._id }).sort({ name: 1 }).limit(300).toArray()).map((i) => ({ id: String(i._id), name: i.name, price: i.price, impuesto: i.impuesto || 0 }));
-  const v = searchParams?.v === "casa" ? "casa" : searchParams?.v === "multas" ? "multas" : searchParams?.v === "negocios" && misNeg.length ? "negocios" : "personal", personal = items.filter((i) => i.loc !== "casa"), enCasa = items.filter((i) => i.loc === "casa");
+  const v = searchParams?.v === "comida" ? "comida" : searchParams?.v === "casa" ? "casa" : searchParams?.v === "multas" ? "multas" : searchParams?.v === "negocios" && misNeg.length ? "negocios" : "personal", personal = items.filter((i) => i.loc !== "casa" && !esComida(i)), enCasa = items.filter((i) => i.loc === "casa");
   const casas = items.filter((i) => i.category === "Propiedades"), opcCasas = casas.map((c) => ({ ref: casaRef(c.name, c.at), label: `${c.name}${c.ubicacion ? " · " + c.ubicacion : ""}` })), espera = u.guardarAt ? Math.max(0, ESPERA_GUARDAR - (Date.now() - +new Date(u.guardarAt))) : 0;
   const lics = personal.filter((i) => licTipo(i)), otros = personal.filter((i) => !licTipo(i));
+  const nd = needsDe(u), fi = (i) => ({ fid: i.fid, name: i.name, tipo: i.tipo, img: i.img, sube: i.sube, caduca: new Date(i.caduca).toISOString() }), comidaItems = items.filter((i) => esComida(i) && i.fid).map(fi), nevera = u.nevera ? { name: u.nevera.name, img: u.nevera.img, cap: u.nevera.cap, items: (u.nevera.items || []).map(fi) } : null;
   const fotos = nombres.length ? Object.fromEntries((await (await db()).collection("items").find({ name: { $in: nombres } }, { projection: { name: 1, img: 1 } }).toArray()).map((x) => [x.name, x.img])) : {};
   return (<Shell user={u}><div style={{ maxWidth: 1100, margin: "0 auto" }}><h2>Inventario</h2>
-    <div style={{ display: "flex", gap: 8, margin: "8px 0 12px" }}><Link className={"btn " + (v === "personal" ? "" : "g")} href="/inventario">Personal</Link><Link className={"btn " + (v === "casa" ? "" : "g")} href="/inventario?v=casa">Casa{enCasa.length ? ` (${enCasa.length})` : ""}</Link><Link className={"btn " + (v === "multas" ? "" : "g")} href="/inventario?v=multas" style={hayVencida ? { borderColor: "var(--bad)", color: v === "multas" ? undefined : "var(--bad)" } : undefined}><Receipt size={16} />Multas{debe.length ? ` (${debe.length})` : ""}</Link>{misNeg.length > 0 && <Link className={"btn " + (v === "negocios" ? "" : "g")} href="/inventario?v=negocios">Negocios ({misNeg.length})</Link>}</div>
+    <div style={{ display: "flex", gap: 8, margin: "8px 0 12px" }}><Link className={"btn " + (v === "personal" ? "" : "g")} href="/inventario">Personal</Link><Link className={"btn " + (v === "casa" ? "" : "g")} href="/inventario?v=casa">Casa{enCasa.length ? ` (${enCasa.length})` : ""}</Link><Link className={"btn " + (v === "comida" ? "" : "g")} href="/inventario?v=comida">Comida</Link><Link className={"btn " + (v === "multas" ? "" : "g")} href="/inventario?v=multas" style={hayVencida ? { borderColor: "var(--bad)", color: v === "multas" ? undefined : "var(--bad)" } : undefined}><Receipt size={16} />Multas{debe.length ? ` (${debe.length})` : ""}</Link>{misNeg.length > 0 && <Link className={"btn " + (v === "negocios" ? "" : "g")} href="/inventario?v=negocios">Negocios ({misNeg.length})</Link>}</div>
     {v === "negocios" ? (<>
       <p className="mut">Aquí administras tus negocios: cambia los precios de lo que vendes y decide si pagas el ITBMS. Lo que vendes llega a tu Tarjeta de Comerciante.</p>
       {misNeg.map((n) => { const x = NEGOCIOS[n._id]; return (<div key={n._id} style={{ marginBottom: 14 }}><div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(300px,1fr))", gap: 14, alignItems: "start" }}><div className="card" style={{ margin: 0 }}><img src={x.img} alt={x.nombre} style={{ width: "100%", aspectRatio: "16/10", objectFit: "cover", borderRadius: 12 }} /><div style={{ marginTop: 8 }}><b>{x.nombre}</b> <span className="tag">Eres el dueño</span></div><div className="mut">{x.edita}</div></div>
           <Finanzas f={finanzasDe(n)} recientes={recientes[n._id] || []} nombre={x.nombre} /></div>
         <Gestion k={n._id} items={itemsNeg[n._id] || []} planes={planes} paga={n.pagaImpuesto !== false} /></div>); })}
     </>) : null}
+    {v === "comida" && (<><Needs h={nd.h} s={nd.s} /><Comida items={comidaItems} nevera={nevera} /></>)}
     {v === "multas" && (<>
       <p className="mut">Las multas de la Policía Nacional Bolivariana no se cobran solas: las pagas tú cuando quieras, pero tienes mínimo 10 días. Si una vence sin pagar es <b>desacato</b> y el oficial puede detenerte o retenerte la licencia.</p>
       {multas.map((m) => { const col = m.est === "vencida" ? "var(--bad)" : m.est === "pagada" ? "var(--ok)" : "#ff9f1a", dias = Math.ceil((new Date(m.vence) - Date.now()) / 864e5); return (<div key={m.id} className="card" style={{ borderColor: col }}>
@@ -49,7 +54,7 @@ export default async function P({ searchParams }) {
         {m.desacato && <div style={{ color: "var(--bad)", marginTop: 4 }}>Desacato: {m.desacato.tipo} ({m.desacato.detalle})</div>}{m.pagadaAt && <div className="mut">Pagada el {new Date(m.pagadaAt).toLocaleDateString("es")}</div>}
         {m.est !== "pagada" && <PagarMulta id={m.id} monto={m.monto} metodos={metodos} />}</div>); })}
       {!multas.length && <div className="card mut">No tienes multas. ¡Sigue así!</div>}</>)}
-    {v === "negocios" || v === "multas" ? null : v === "casa" ? (<>
+    {v === "negocios" || v === "multas" || v === "comida" ? null : v === "casa" ? (<>
       <p className="mut">Lo que guardas en casa no se puede robar en un asalto: solo te pueden robar lo que llevas encima. Para guardar otro objeto hay que esperar 10 minutos.</p>
       {!casas.length && <div className="card mut">Necesitas una casa para guardar cosas. Compra una en el Mercado → Propiedades.</div>}
       {casas.map((c) => { const ref = casaRef(c.name, c.at), its = enCasa.filter((i) => i.casa === ref), por = its.reduce((g, i) => ((g[i.lugar || "Sin especificar"] = g[i.lugar || "Sin especificar"] || []).push(i), g), {});

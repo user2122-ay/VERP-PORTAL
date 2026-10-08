@@ -25,6 +25,7 @@ export async function POST(req) {
     let _id; try { _id = new ObjectId(String(b.id)); } catch { return bad("Artículo inválido"); }
     const it = await d.collection("items").findOne({ _id, negocio: b.key }); if (!it) return bad("Ese artículo no es de tu negocio", 404);
     const price = Number(b.price); if (!Number.isFinite(price) || price < 0) return bad("Precio inválido");
+    if ((it.category === "Comida" || it.category === "Bebidas") && price > 500) return bad("El precio máximo de comida y bebida es $500");
     if (b.key === "toolstore" && price < MIN_HERRAMIENTA) return bad(`El precio mínimo es $${MIN_HERRAMIENTA}`);
     const set = { price }; if (b.key === "concesionario" && b.impuesto !== "" && b.impuesto != null) { const i = Number(b.impuesto); if (!Number.isFinite(i) || i < 0) return bad("Impuesto inválido"); set.impuesto = i; }
     await d.collection("items").updateOne({ _id }, { $set: set }); return NextResponse.json({ ok: true });
