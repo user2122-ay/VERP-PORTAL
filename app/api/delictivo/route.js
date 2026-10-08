@@ -5,6 +5,7 @@ import { apiUser } from "@/lib/auth";
 import { esRol, nombreDe } from "@/lib/rol";
 import { nuevaPlaca, registrarPlaca } from "@/lib/placa";
 import { enviarPush } from "@/lib/push";
+import { estaRetenido } from "@/lib/decomiso";
 const bad = (m, s = 400) => NextResponse.json({ error: m }, { status: s });
 const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), money = (n) => "$" + Number(n).toLocaleString("es");
 const oid = (s) => { try { return new ObjectId(String(s)); } catch { return null; } };
@@ -12,7 +13,7 @@ const https = (s) => { try { const h = new URL(s); return h.protocol === "https:
 const avisar = async (d, uid, title, body) => { await d.collection("notifs").insertOne({ uid, title, body, at: new Date(), read: false }); await enviarPush(uid, { title, body, url: "/notificaciones" }); };
 const LIM = 200000;
 // Lo que una persona lleva encima (lo guardado en casa NO se puede robar).
-const llevaEncima = (t) => (t.inventory || []).filter((i) => i.loc !== "casa" && !["Propiedades", "Licencias"].includes(i.category) && i.sku !== "vpn").map((i) => ({ name: i.name, at: new Date(i.at).toISOString(), category: i.category, placa: i.placa || "", img: i.img || "" }));
+const llevaEncima = (t) => (t.inventory || []).filter((i) => i.loc !== "casa" && !["Propiedades", "Licencias"].includes(i.category) && i.sku !== "vpn" && !estaRetenido(i)).map((i) => ({ name: i.name, at: new Date(i.at).toISOString(), category: i.category, placa: i.placa || "", img: i.img || "" }));
 
 export async function GET(req) { // buscador de ciudadanos para asaltar
   const u = await apiUser(); if (!u?.cedula || !(await esRol(u, "delictivo"))) return bad("Sin permiso", 403);

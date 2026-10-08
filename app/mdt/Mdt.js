@@ -1,11 +1,12 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { Search, Shield, FileText, Gavel, Siren, Plus, Home, Wallet, Landmark } from "lucide-react";
+import { Search, Shield, FileText, Gavel, Siren, Plus, Home, Wallet, Landmark, Receipt, Lock } from "lucide-react";
 import CedulaCard from "@/components/CedulaCard";
 import ZoomMap from "@/components/ZoomMap";
 import Acceso from "./Acceso";
 import { RANGOS_POR_DEPTO, DEPTOS } from "@/lib/mdt";
 import LicenciaCard from "@/components/LicenciaCard";
+const fecC = (d) => new Date(d).toLocaleDateString("es", { day: "2-digit", month: "short", year: "numeric" });
 const $ = (n) => `$${Number(n || 0).toLocaleString("es")}`, fec = (d) => new Date(d).toLocaleString("es", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
 const get = async (q) => { const r = await fetch("/api/mdt?" + q, { cache: "no-store" }); return r.ok ? r.json() : null; };
 const post = async (b) => { const r = await fetch("/api/mdt", { method: "POST", body: JSON.stringify(b) }), j = await r.json().catch(() => ({})); if (!r.ok) { alert(j.error || "Error"); return null; } return j; };
@@ -36,9 +37,10 @@ function Ciudadanos() {
   const [f, setF] = useState(null), abrir = async (id) => setF(await get("m=ficha&id=" + id));
   return (<><div className="card"><b>Buscar ciudadano</b><Buscador onPick={(x) => abrir(x.id)} /><b style={{ display: "block", marginTop: 14 }}>Buscar auto por matrícula</b><Matricula abrir={abrir} /></div>
     {f && <div style={{ display: "grid", gap: 12 }}><div style={{ maxWidth: 520 }}><CedulaCard c={f.cedula} /></div>
-      <div className="card"><b>Datos</b><div className="mut">Línea: {f.linea || "sin chip"}</div><b style={{ display: "block", marginTop: 8 }}>Vehículos</b>{f.autos.map((a, k) => <div key={k} style={{ display: "flex", gap: 10, alignItems: "center", padding: "6px 0" }}>{a.img && <img src={a.img} alt="" style={{ width: 84, height: 52, objectFit: "cover", borderRadius: 8 }} />}<div>{a.name} {a.placa && <span className="mut">· {a.placa}</span>} {a.robado && <span className="rob-t" style={{ fontSize: 11 }}>ROBADO</span>}<div className="mut">{a.color}{a.detalles?.length ? ` · ${a.detalles.join(", ")}` : ""}</div></div></div>)}{!f.autos.length && <div className="mut">Sin vehículos.</div>}</div>
-      <div className="card"><b>Licencias</b>{[["conducir", "Conducir"], ["armas", "Armas"], ["embarcaciones", "Embarcaciones"]].map(([t, n]) => { const l = f.licencias.find((x) => x.tipo === t); return <div key={t} style={{ display: "flex", justifyContent: "space-between", gap: 8, padding: "4px 0" }}><span>{n}</span>{l ? <b style={{ color: "var(--ok)" }}>Tiene · {l.num}</b> : <b style={{ color: "var(--bad)" }}>No tiene</b>}</div>; })}
+      <div className="card"><b>Datos</b><div className="mut">Línea: {f.linea || "sin chip"}</div><b style={{ display: "block", marginTop: 8 }}>Vehículos</b>{f.autos.map((a, k) => <div key={k} style={{ display: "flex", gap: 10, alignItems: "center", padding: "6px 0" }}>{a.img && <img src={a.img} alt="" style={{ width: 84, height: 52, objectFit: "cover", borderRadius: 8 }} />}<div>{a.name} {a.placa && <span className="mut">· {a.placa}</span>} {a.robado && <span className="rob-t" style={{ fontSize: 11 }}>ROBADO</span>}{a.ret && <span className="tag" style={{ color: "#ff9f1a" }}>RETENIDO hasta {fecC(a.ret)}</span>}<div className="mut">{a.color}{a.detalles?.length ? ` · ${a.detalles.join(", ")}` : ""}</div></div></div>)}{!f.autos.length && <div className="mut">Sin vehículos.</div>}</div>
+      <div className="card"><b>Licencias</b>{[["conducir", "Conducir"], ["armas", "Armas"], ["embarcaciones", "Embarcaciones"]].map(([t, n]) => { const l = f.licencias.find((x) => x.tipo === t); return <div key={t} style={{ display: "flex", justifyContent: "space-between", gap: 8, padding: "4px 0" }}><span>{n}</span>{l ? (l.ret ? <b style={{ color: "#ff9f1a" }}>Retenida hasta {fecC(l.ret)}</b> : <b style={{ color: "var(--ok)" }}>Tiene · {l.num}</b>) : <b style={{ color: "var(--bad)" }}>No tiene</b>}</div>; })}
         {f.licencias.length > 0 && <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))", gap: 12, marginTop: 10 }}>{f.licencias.map((l, k) => <LicenciaCard key={k} tipo={l.tipo} c={f.cedula} num={l.num} emision={l.at} />)}</div>}</div>
+      <div className="card"><b>Multas ({f.multas.length})</b>{f.multas.map((m) => <FilaMulta key={m.id} m={m} />)}{!f.multas.length && <div className="mut">Sin multas.</div>}{f.retenidos.length > 0 && <><b style={{ display: "block", marginTop: 10 }}>Objetos retenidos</b>{f.retenidos.map((r, k) => <div key={k} style={{ padding: "4px 0" }}>{r.name} <span className="mut">· hasta {fecC(r.hasta)} · {r.por}{r.motivo ? ` · ${r.motivo}` : ""}</span></div>)}</>}</div>
       <div className="card"><b>Historial de arrestos ({f.arrestos.length})</b>{f.arrestos.map((a) => <div key={a.id} style={{ padding: "6px 0", borderTop: "1px solid var(--bd)" }}>{a.cargos}<div className="mut">{fec(a.at)} · multa {$(a.multa)} (cobrado {$(a.cobrado)}) · {a.minutos} min · {a.por}</div></div>)}{!f.arrestos.length && <div className="mut">Sin antecedentes.</div>}</div>
       <div className="card"><b>Expedientes ({f.expedientes.length})</b>{f.expedientes.map((e) => <div key={e.id}>{e.titulo} <span className="tag">{e.estado}</span></div>)}{!f.expedientes.length && <div className="mut">Ninguno.</div>}</div></div>}</>);
 }
@@ -143,12 +145,46 @@ Sin fondos para: ${j.sinFondos.join(", ")}` : ""}`); setSl(""); cargar(); }
       {t.mov.map((x, k) => <div key={k} style={{ display: "flex", justifyContent: "space-between", gap: 8, padding: "6px 0", borderTop: "1px solid var(--bd)" }}><span>{x.concepto}<div className="mut">{fec(x.at)}</div></span><b style={{ color: x.tipo === "ingreso" ? "var(--ok)" : "var(--bad)" }}>{x.tipo === "ingreso" ? "+" : "-"}{$(x.monto)}</b></div>)}
       {!t.mov.length && <p className="mut">Aún no hay movimientos.</p>}</div></div>);
 }
-const TABS = [["Ciudadanos", Shield, Ciudadanos], ["Expedientes", FileText, Expedientes], ["Arrestos", Gavel, Arrestos], ["Reportes", Siren, Reportes], ["Casas", Home, Casas], ["Mi sueldo", Wallet, Sueldo]];
+const ESTADO = { pendiente: ["Pendiente", "#ff9f1a"], pagada: ["Pagada", "var(--ok)"], vencida: ["VENCIDA · desacato", "var(--bad)"] };
+function FilaMulta({ m, reload, pnb, ver }) {
+  const [modo, setModo] = useState(null), [e, a] = ESTADO[m.estado] || ESTADO.pendiente;
+  return (<div style={{ padding: "8px 0", borderTop: "1px solid var(--bd)" }}><div style={{ display: "flex", justifyContent: "space-between", gap: 8, flexWrap: "wrap" }}><div>{ver && <b>{m.sujetoN}</b>} <b>{$(m.monto)}</b> <span className="tag" style={{ color: a, border: `1px solid ${a}` }}>{e}</span></div><span className="mut">{fec(m.at)}</span></div>
+    <div>{m.articulos.join(" · ")}</div>{m.motivo && <div className="mut">{m.motivo}</div>}
+    <div className="mut">{m.por} · plazo hasta {fecC(m.vence)}{m.pagadaAt ? ` · pagada el ${fecC(m.pagadaAt)}` : ""}</div>
+    {m.desacato && <div style={{ color: "var(--bad)" }}>Desacato: {m.desacato.tipo} ({m.desacato.detalle}) · {m.desacato.por}</div>}
+    {pnb && m.estado === "vencida" && !m.desacato && <div style={{ marginTop: 6 }}>{!modo && <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}><button className="btn g" onClick={() => setModo("detencion")}>Detener</button><button className="btn g" onClick={() => setModo("licencia")}>Retirar licencia</button></div>}
+      {modo === "detencion" && <form className="row2" onSubmit={async (ev) => { const f = fd(ev); if (await post({ accion: "desacato", id: m.id, tipo: "detencion", minutos: f.minutos })) reload(); }}><input name="minutos" type="number" min="1" max="600" placeholder="Minutos detenido" required /><button className="btn">Detener</button><button type="button" className="btn g" onClick={() => setModo(null)}>Cancelar</button></form>}
+      {modo === "licencia" && <form className="row2" onSubmit={async (ev) => { const f = fd(ev); if (await post({ accion: "desacato", id: m.id, tipo: "licencia", licencia: f.licencia, dias: f.dias })) reload(); }}><select name="licencia"><option value="conducir">Licencia de Conducir</option><option value="armas">Licencia de Armas</option></select><input name="dias" type="number" min="1" max="365" placeholder="Días retenida" required /><button className="btn">Retener</button><button type="button" className="btn g" onClick={() => setModo(null)}>Cancelar</button></form>}</div>}</div>);
+}
+function Multas({ pnb }) {
+  const [l, setL] = useState([]), [f, setF] = useState("todas"), [s, setS] = useState(null), cargar = async (x = f) => setL((await get("m=multas&f=" + x))?.multas || []);
+  useEffect(() => { cargar(); }, [f]);
+  return (<>{pnb ? <form className="card" onSubmit={async (e) => { const b = fd(e); if (!s) return alert("Elige al ciudadano"); if (await post({ accion: "multar", ...b, sujeto: s.id })) { e.target.reset(); setS(null); cargar(); } }}><b>Poner una multa</b><p className="mut" style={{ margin: "4px 0" }}>No se cobra sola: le llega al ciudadano a Inventario → Multas y la paga cuando quiera. Tiene mínimo {PLAZO_MIN} días; si vence sin pagar es desacato.</p>
+      <div className="mut">Ciudadano: {s ? <b>{s.label}</b> : "ninguno"}</div><Buscador onPick={setS} />
+      <input name="monto" type="number" min="1" max="1000000" placeholder="Monto ($)" required /><textarea name="articulos" rows={3} placeholder={"Artículos infringidos (uno por línea)\nEj: Art. 12 · Exceso de velocidad"} required /><input name="motivo" maxLength={300} placeholder="Observaciones (opcional)" />
+      <label className="mut">Plazo para pagar (días, mínimo {PLAZO_MIN})</label><input name="dias" type="number" min={PLAZO_MIN} max="60" defaultValue={PLAZO_MIN} required /><button className="btn"><Plus size={16} />Multar</button></form>
+      : <div className="card mut">Solo la Policía Nacional Bolivariana puede poner multas. Aquí puedes consultarlas.</div>}
+    <div style={{ display: "flex", gap: 6, flexWrap: "wrap", margin: "6px 0" }}>{[["todas", "Todas"], ["pendiente", "Pendientes"], ["vencida", "Vencidas"], ["pagada", "Pagadas"]].map(([k, t]) => <button key={k} className={"btn " + (f === k ? "" : "g")} style={{ padding: "6px 12px" }} onClick={() => setF(k)}>{t}</button>)}</div>
+    <div className="card">{l.map((m) => <FilaMulta key={m.id} m={m} ver pnb={pnb} reload={() => cargar()} />)}{!l.length && <div className="mut">No hay multas en esta lista.</div>}</div></>);
+}
+function Decomisos() {
+  const [s, setS] = useState(null), [it, setIt] = useState([]), [act, setAct] = useState([]), ver = async (x) => setIt((await get("m=inv&id=" + x.id))?.items || []), cargar = async () => setAct((await get("m=decomisos"))?.l || []);
+  useEffect(() => { cargar(); }, []);
+  return (<><div className="card"><b>Decomisar</b><p className="mut" style={{ margin: "4px 0" }}>Armas, licencia de armas, licencia de conducir y autos (lo que lleve encima). Le aparece en el inventario como <b>retenido</b> los días que elijas; pasado el plazo se le devuelve solo.</p>
+      <div className="mut">Ciudadano: {s ? <b>{s.label}</b> : "ninguno"}</div><Buscador onPick={(x) => { setS(x); ver(x); }} />
+      {s && it.map((i) => <form key={i.name + i.at} style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", padding: "8px 0", borderTop: "1px solid var(--bd)" }} onSubmit={async (e) => { const f = fd(e); if (await post({ accion: "decomisar", sujeto: s.id, name: i.name, at: i.at, dias: f.dias, motivo: f.motivo })) { ver(s); cargar(); } }}>
+        {i.img && <img src={i.img} alt="" style={{ width: 64, height: 40, objectFit: "cover", borderRadius: 6 }} />}<div style={{ flex: "1 1 160px" }}><b>{i.name}</b> <span className="tag">{i.category}</span>{i.placa && <span className="mut"> · {i.placa}</span>}{i.ret && <div style={{ color: "#ff9f1a", fontSize: 13 }}>Ya retenido hasta {fecC(i.ret.hasta)}</div>}</div>
+        {!i.ret && <><input name="dias" type="number" min="1" max="365" placeholder="Días" required style={{ width: 80, margin: 0 }} /><input name="motivo" placeholder="Motivo" required minLength={5} maxLength={300} style={{ flex: "1 1 140px", margin: 0 }} /><button className="btn">Decomisar</button></>}</form>)}
+      {s && !it.length && <p className="mut">No lleva armas, licencias de armas/conducir ni autos encima.</p>}</div>
+    <div className="card"><b>Retenciones activas ({act.length})</b>{act.map((r, k) => <div key={k} style={{ display: "flex", justifyContent: "space-between", gap: 8, padding: "8px 0", borderTop: "1px solid var(--bd)", flexWrap: "wrap" }}><div><b>{r.name}</b> <span className="tag">{r.category}</span><div className="mut">{r.sujetoN} · hasta {fecC(r.hasta)} · {r.por}{r.motivo ? ` · ${r.motivo}` : ""}</div></div><button className="btn g" onClick={async () => { if (confirm("¿Devolver este objeto ahora?") && (await post({ accion: "liberar", sujeto: r.sujeto, name: r.name, at: r.at }))) { cargar(); if (s) ver(s); } }}>Devolver</button></div>)}{!act.length && <div className="mut">No hay objetos retenidos.</div>}</div></>);
+}
+const PLAZO_MIN = 10;
+const TABS = [["Ciudadanos", Shield, Ciudadanos], ["Expedientes", FileText, Expedientes], ["Arrestos", Gavel, Arrestos], ["Multas", Receipt, Multas], ["Decomisos", Lock, Decomisos], ["Reportes", Siren, Reportes], ["Casas", Home, Casas], ["Mi sueldo", Wallet, Sueldo]];
 export default function Mdt() {
   const [info, setInfo] = useState(null), [ok, setOk] = useState(false), [t, setT] = useState("Ciudadanos");
   useEffect(() => { (async () => { const j = await get("m=estado"); if (j) { setInfo(j); setOk(j.ok); } })(); }, []);
   if (!info) return null; if (!ok) return <Acceso info={info} onOk={() => setOk(true)} />;
   const tabs = [...TABS, ...(info.ministro ? [["Tesorería", Landmark, Tesoreria]] : [])], V = (tabs.find((x) => x[0] === t) || tabs[0])[2];
   return (<div style={{ maxWidth: 820, margin: "0 auto" }}><div style={{ display: "flex", gap: 12, alignItems: "center" }}><img src="/justicia-paz.png" alt="Justicia y Paz" style={{ height: 54, background: "#fff", borderRadius: 10, padding: 4 }} /><div><b style={{ fontSize: 18 }}>MDT · {info.ag.depto}</b><div className="mut">{info.ag.rango} {info.nombre} · @{info.discord} · Placa {info.ag.placa}</div></div></div>
-    <div style={{ display: "flex", gap: 8, margin: "12px 0", flexWrap: "wrap" }}>{tabs.map(([n, I]) => <button key={n} className={"btn " + (t === n ? "" : "g")} onClick={() => setT(n)}><I size={16} />{n}</button>)}</div><V aprueba={info.aprueba} yo={info.yo} /></div>);
+    <div style={{ display: "flex", gap: 8, margin: "12px 0", flexWrap: "wrap" }}>{tabs.map(([n, I]) => <button key={n} className={"btn " + (t === n ? "" : "g")} onClick={() => setT(n)}><I size={16} />{n}</button>)}</div><V aprueba={info.aprueba} yo={info.yo} pnb={info.pnb} /></div>);
 }

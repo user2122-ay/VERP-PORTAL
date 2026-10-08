@@ -9,6 +9,7 @@ import { nuevaPlaca, traspasarPlaca } from "@/lib/placa";
 import { tieneVpn } from "@/lib/vpn";
 import { factorHoy } from "@/lib/mnegro";
 import { enviarPush } from "@/lib/push";
+import { estaRetenido } from "@/lib/decomiso";
 const bad = (m, s = 400) => NextResponse.json({ error: m }, { status: s });
 const vpn = tieneVpn;
 const oid = (s) => { try { return new ObjectId(String(s)); } catch { return null; } };
@@ -17,7 +18,7 @@ const tallerDe = async (d) => (await d.collection("negocios").findOne({ _id: "ta
 // Saca un auto del inventario (queda en depósito dentro de la publicación). Devuelve el auto o null.
 async function sacar(d, u, b) {
   let it = (u.inventory || [])[+b.i];
-  if (!it || it.name !== b.name || +new Date(it.at) !== +new Date(b.at) || it.category !== "Concesionario" || it.loc === "casa") return null; // un auto guardado en el garaje no se puede vender
+  if (!it || it.name !== b.name || +new Date(it.at) !== +new Date(b.at) || it.category !== "Concesionario" || it.loc === "casa" || estaRetenido(it)) return null; // un auto guardado en el garaje no se puede vender
   const r = await d.collection("users").updateOne({ id: u.id }, { $pull: { inventory: { name: it.name, at: it.at } } }); if (!r.modifiedCount) return null;
   if (!it.placa) it = { ...it, placa: await nuevaPlaca(d, { modelo: it.name, dueno: u.id, duenoN: nombreDe(u) }) }; // autos viejos sin placa
   return it;

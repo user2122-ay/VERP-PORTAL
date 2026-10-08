@@ -9,6 +9,9 @@ import { NEGOCIOS } from "@/lib/negocios";
 import { saldoTesoreria, egresarTesoreria, tasaITBMS, setTasa } from "@/lib/tesoreria";
 import { normPlaca } from "@/lib/placa";
 import { licTipo } from "@/lib/licencia";
+import { estadoMulta, esPNB, PLAZO_MIN_DIAS, PLAZO_MAX_DIAS, MONTO_MAX } from "@/lib/multas";
+import { estaRetenido, decomisable, MAX_DIAS_RETENCION } from "@/lib/decomiso";
+import { enviarPush } from "@/lib/push";
 const bad = (m, s = 400) => NextResponse.json({ error: m }, { status: s });
 const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), money = (n) => "$" + Number(n).toLocaleString("es"), txt = (s, n = 400) => String(s || "").trim().slice(0, n);
 const oid = (s) => { try { return new ObjectId(String(s)); } catch { return null; } };
@@ -16,11 +19,12 @@ const COMISION = 0.05; // cada oficial presente en el arresto recibe el 5% de la
 const fresca = (u) => !!(u.mdtSesion && Date.now() - +new Date(u.mdtSesion) < 8 * 36e5);
 // Solo entra quien Administración asignó como agente (o el Developer) y ya ingresó su placa en las últimas 8 horas.
 async function policia(libre = false) { const u = await apiUser(); const ag = u && agenteDe(u); if (!ag) return null; if (!libre && !fresca(u)) return null; return { ...u, ag }; }
+const mu = (m) => ({ id: String(m._id), monto: m.monto, articulos: m.articulos || [], motivo: m.motivo || "", por: m.porName, sujetoN: m.sujetoN, at: m.at, vence: m.vence, estado: estadoMulta(m), pagadaAt: m.pagadaAt || null, desacato: m.desacato || null });
 const pub = (x) => ({ id: x.id, label: `${x.cedula.nombres} ${x.cedula.apellidos} · ${x.cedula.roblox}`, num: x.cedula.num });
 
 export async function GET(req) {
   const p = new URL(req.url).searchParams, m = p.get("m");
-  if (m === "estado") { const u = await policia(true); if (!u) return bad("Sin permiso", 403); return NextResponse.json({ ok: fresca(u), ag: u.ag, nombre: nombreDe(u), discord: u.name, yo: u.id, aprueba: aprobador(u.ag), ministro: esMinistro(u.ag) }); }
+  if (m === "estado") { const u = await policia(true); if (!u) return bad("Sin permiso", 403); return NextResponse.json({ ok: fresca(u), ag: u.ag, nombre: nombreDe(u), discord: u.name, yo: u.id, aprueba: aprobador(u.ag), ministro: esMinistro(u.ag), pnb: esPNB(u.ag) }); }
   const u = await policia(); if (!u) return bad("Sin sesión de la MDT", 401);
   const d = await db(), us = d.collection("users");
   if (m === "buscar") {
@@ -31,7 +35,7 @@ export async function GET(req) {
   if (m === "ficha") {
     const x = await us.findOne({ id: txt(p.get("id"), 30), cedula: { $exists: true } }); if (!x) return bad("No existe", 404);
     const ar = await d.collection("arrestos").find({ sujeto: x.id }).sort({ at: -1 }).limit(30).toArray(), ex = await d.collection("expedientes").find({ sujetos: x.id }).sort({ at: -1 }).limit(20).toArray();
-    return NextResponse.json({ licencias: (x.inventory || []).filter((i) => licTipo(i)).map((i) => ({ tipo: licTipo(i), num: i.licNum || "—", at: i.at })), cedula: x.cedula, linea: x.chip?.num || null, autos: (x.inventory || []).filter((i) => i.category === "Concesionario").map((i) => ({ name: i.name, placa: i.placa || "", robado: !!i.robado, color: i.color || "", detalles: i.detalles || [], img: i.img || "" })),
+    return NextResponse.json({ licencias: (x.inventory || []).filter((i) => licTipo(i)).map((i) => ({ tipo: licTipo(i), num: i.licNum || "—", at: i.at, ret: estaRetenido(i) ? i.retenido.hasta : null })), cedula: x.cedula, linea: x.chip?.num || null, autos: (x.inventory || []).filter((i) => i.category === "Concesionario").map((i) => ({ name: i.name, placa: i.placa || "", robado: !!i.robado, color: i.color || "", detalles: i.detalles || [], img: i.img || "", ret: estaRetenido(i) ? i.retenido.hasta : null })), retenidos: (x.inventory || []).filter(estaRetenido).map((i) => ({ name: i.name, category: i.category, hasta: i.retenido.hasta, por: i.retenido.porName, motivo: i.retenido.motivo || "" })), multas: (await d.collection("multas").find({ sujeto: x.id }).sort({ at: -1 }).limit(30).toArray()).map(mu),
       arrestos: ar.map((a) => ({ id: String(a._id), cargos: a.cargos, multa: a.multa, cobrado: a.cobrado, minutos: a.minutos, por: a.porName, at: a.at })), expedientes: ex.map((e) => ({ id: String(e._id), titulo: e.titulo, estado: e.estado })) });
   }
   if (m === "casas") { // ciudadanos con sus casas (para solicitar allanamiento)
@@ -84,6 +88,18 @@ export async function GET(req) {
       agentes: ags.map((x) => ({ id: x.id, nombre: x.cedula ? `${x.cedula.nombres.split(" ")[0]} ${x.cedula.apellidos.split(" ")[0]}` : x.name, rango: x.agente.rango, depto: x.agente.depto, sueldo: sd[claveSueldo(x.agente.depto, x.agente.rango)] || 0, cuenta: x.agente.cuenta || "efectivo", ultimoPago: x.agente.ultimoPago || null, toca: !x.agente.ultimoPago || Date.now() - +new Date(x.agente.ultimoPago) >= SEMANA })),
       negocios: negs.map((n) => ({ nombre: NEGOCIOS[n._id]?.nombre || n._id, dueno: dn[n.owner] || "—", paga: n.pagaImpuesto !== false, evadido: n.evadido || 0 })) });
   }
+  if (m === "multas") { // listado de multas
+    const f = p.get("f"), l = (await d.collection("multas").find({}).sort({ at: -1 }).limit(120).toArray()).map(mu).filter((x) => !f || f === "todas" || x.estado === f);
+    return NextResponse.json({ multas: l });
+  }
+  if (m === "inv") { // lo que un ciudadano lleva encima y se puede decomisar
+    const x = await us.findOne({ id: txt(p.get("id"), 30), cedula: { $exists: true } }); if (!x) return bad("No existe", 404);
+    return NextResponse.json({ items: (x.inventory || []).filter((i) => i.loc !== "casa" && decomisable(i, licTipo(i))).map((i) => ({ name: i.name, at: new Date(i.at).toISOString(), category: i.category, placa: i.placa || "", img: i.img || "", ret: estaRetenido(i) ? { hasta: i.retenido.hasta, por: i.retenido.porName } : null })) });
+  }
+  if (m === "decomisos") { // retenciones activas
+    const l = await us.find({ "inventory.retenido.hasta": { $gt: new Date() } }).limit(60).toArray();
+    return NextResponse.json({ l: l.flatMap((x) => (x.inventory || []).filter(estaRetenido).map((i) => ({ sujeto: x.id, sujetoN: pub(x).label, name: i.name, at: new Date(i.at).toISOString(), category: i.category, hasta: i.retenido.hasta, por: i.retenido.porName, motivo: i.retenido.motivo || "" }))) });
+  }
   return bad("Consulta inválida");
 }
 
@@ -96,6 +112,58 @@ export async function POST(req) {
     await us.updateOne({ id: u.id }, { $set: { mdtSesion: at }, $unset: { mdtFail: "" } }); return NextResponse.json({ ok: true });
   }
   switch (b.accion) {
+    case "multar": { // SOLO la PNB: la multa llega al Inventario del ciudadano; no se cobra sola
+      if (!esPNB(u.ag)) return bad("Solo la Policía Nacional Bolivariana puede poner multas", 403);
+      const s = await us.findOne({ id: txt(b.sujeto, 30), cedula: { $exists: true } }); if (!s) return bad("Elige al ciudadano");
+      const monto = Math.floor(Number(b.monto)), dias = Math.floor(Number(b.dias) || PLAZO_MIN_DIAS), articulos = (Array.isArray(b.articulos) ? b.articulos : String(b.articulos || "").split(/\n|;/)).map((x) => txt(x, 120)).filter(Boolean).slice(0, 10);
+      if (!(monto >= 1 && monto <= MONTO_MAX)) return bad(`El monto debe estar entre $1 y ${money(MONTO_MAX)}`); if (!articulos.length) return bad("Escribe al menos un artículo infringido");
+      if (dias < PLAZO_MIN_DIAS) return bad(`El plazo mínimo para pagar es de ${PLAZO_MIN_DIAS} días`); if (dias > PLAZO_MAX_DIAS) return bad(`El plazo máximo es de ${PLAZO_MAX_DIAS} días`);
+      if (s.id === u.id) return bad("No puedes multarte a ti mismo");
+      const vence = new Date(+at + dias * 864e5);
+      await d.collection("multas").insertOne({ sujeto: s.id, sujetoN: pub(s).label, monto, articulos, motivo: txt(b.motivo, 300), por: u.id, porName: `${u.ag.rango} ${yo}`, depto: u.ag.depto, estado: "pendiente", dias, at, vence });
+      const body = `${u.ag.rango} ${yo} te multó con ${money(monto)}. Artículos: ${articulos.join("; ")}. Tienes hasta el ${vence.toLocaleDateString("es")} (${dias} días) para pagarla en Inventario → Multas; si no, será desacato.`;
+      await d.collection("notifs").insertOne({ uid: s.id, title: "Recibiste una multa", body, at, read: false }); await enviarPush(s.id, { title: "Recibiste una multa", body: body.slice(0, 120), url: "/inventario?v=multas" });
+      return NextResponse.json({ ok: true });
+    }
+    case "desacato": { // multa vencida: el oficial decide entre detener o retirar la licencia
+      if (!esPNB(u.ag)) return bad("Solo la Policía Nacional Bolivariana", 403); const id = oid(b.id), c = d.collection("multas"), m = id && (await c.findOne({ _id: id }));
+      if (!m || estadoMulta(m) !== "vencida") return bad("Esa multa no está vencida", 409); if (m.desacato) return bad("Ya se aplicó una medida por esta multa", 409);
+      const s = await us.findOne({ id: m.sujeto }); if (!s) return bad("El ciudadano ya no existe", 404);
+      if (b.tipo === "detencion") {
+        const minutos = Math.floor(Number(b.minutos)); if (!(minutos >= 1 && minutos <= 600)) return bad("Escribe cuántos minutos queda detenido (1 a 600)");
+        await d.collection("arrestos").insertOne({ sujeto: s.id, sujetoN: pub(s).label, cargos: `Desacato: no pagó la multa de ${money(m.monto)} (${(m.articulos || []).join("; ")})`, multa: 0, cobrado: 0, minutos, oficiales: [u.id], comision: 0, por: u.id, porName: yo, at });
+        await c.updateOne({ _id: id }, { $set: { desacato: { tipo: "Detenido", por: yo, detalle: `${minutos} min`, at } } });
+        await d.collection("notifs").insertOne({ uid: s.id, title: "Detenido por desacato", body: `No pagaste a tiempo la multa de ${money(m.monto)}. Quedas detenido ${minutos} minutos.`, at, read: false }); return NextResponse.json({ ok: true });
+      }
+      if (b.tipo === "licencia") {
+        const dias = Math.floor(Number(b.dias)); if (!(dias >= 1 && dias <= MAX_DIAS_RETENCION)) return bad("Elige entre 1 y 365 días"); const tipo = b.licencia === "armas" ? "armas" : "conducir";
+        const li = (s.inventory || []).find((i) => licTipo(i) === tipo); if (!li) return bad(`El ciudadano no tiene Licencia de ${tipo === "armas" ? "Armas" : "Conducir"}`);
+        const ret = { hasta: new Date(+at + dias * 864e5), por: u.id, porName: `${u.ag.rango} ${yo}`, motivo: `Desacato: multa de ${money(m.monto)} sin pagar`, depto: u.ag.depto, at };
+        await us.updateOne({ id: s.id, inventory: { $elemMatch: { name: li.name, at: li.at } } }, { $set: { "inventory.$.retenido": ret } });
+        await d.collection("decomisos").insertOne({ sujeto: s.id, sujetoN: pub(s).label, objeto: li.name, ...ret });
+        await c.updateOne({ _id: id }, { $set: { desacato: { tipo: "Licencia retenida", por: yo, detalle: `${li.name} · ${dias} días`, at } } });
+        await d.collection("notifs").insertOne({ uid: s.id, title: "Licencia retenida", body: `Por no pagar la multa de ${money(m.monto)}, te retuvieron la ${li.name} por ${dias} días.`, at, read: false }); return NextResponse.json({ ok: true });
+      }
+      return bad("Elige una medida");
+    }
+    case "decomisar": { // cualquier agente: arma, licencia de armas, licencia de conducir o auto; el oficial elige los días
+      const s = await us.findOne({ id: txt(b.sujeto, 30), cedula: { $exists: true } }); if (!s) return bad("Elige al ciudadano"); if (s.id === u.id) return bad("No puedes decomisarte a ti mismo");
+      const dias = Math.floor(Number(b.dias)); if (!(dias >= 1 && dias <= MAX_DIAS_RETENCION)) return bad(`Elige entre 1 y ${MAX_DIAS_RETENCION} días`);
+      const motivo = txt(b.motivo, 300); if (motivo.length < 5) return bad("Escribe el motivo del decomiso");
+      const it = (s.inventory || []).find((i) => i.name === b.name && +new Date(i.at) === +new Date(b.at) && i.loc !== "casa"); if (!it || !decomisable(it, licTipo(it))) return bad("Ese objeto no se puede decomisar (solo armas, licencias de armas y conducir, y autos que lleve encima)");
+      if (estaRetenido(it)) return bad("Ese objeto ya está retenido", 409);
+      const ret = { hasta: new Date(+at + dias * 864e5), por: u.id, porName: `${u.ag.rango} ${yo}`, motivo, depto: u.ag.depto, at };
+      if (!(await us.updateOne({ id: s.id, inventory: { $elemMatch: { name: it.name, at: it.at, loc: { $ne: "casa" } } } }, { $set: { "inventory.$.retenido": ret } })).modifiedCount) return bad("No se pudo decomisar", 409);
+      await d.collection("decomisos").insertOne({ sujeto: s.id, sujetoN: pub(s).label, objeto: it.name, placa: it.placa || "", ...ret });
+      const body = `${ret.porName} te retuvo "${it.name}" por ${dias} días. Motivo: ${motivo}. Aparece en tu inventario como retenido y se te devuelve al terminar el plazo.`;
+      await d.collection("notifs").insertOne({ uid: s.id, title: "Objeto decomisado", body, at, read: false }); await enviarPush(s.id, { title: "Objeto decomisado", body: body.slice(0, 120), url: "/inventario" });
+      return NextResponse.json({ ok: true });
+    }
+    case "liberar": { // devolver antes de tiempo
+      const s = await us.findOne({ id: txt(b.sujeto, 30) }), it = s?.inventory?.find((i) => i.name === b.name && +new Date(i.at) === +new Date(b.at) && estaRetenido(i)); if (!it) return bad("Ese objeto ya no está retenido", 404);
+      await us.updateOne({ id: s.id, inventory: { $elemMatch: { name: it.name, at: it.at } } }, { $unset: { "inventory.$.retenido": "" } });
+      await d.collection("notifs").insertOne({ uid: s.id, title: "Objeto devuelto", body: `${u.ag.rango} ${yo} te devolvió "${it.name}".`, at, read: false }); return NextResponse.json({ ok: true });
+    }
     case "sueldoCuenta": { // el agente elige en qué banco recibe su sueldo
       if (!u.agente) return bad("Tu cargo no tiene sueldo asignado"); const k = String(b.cuenta || "");
       if (k !== "efectivo" && (!u.cuentas?.[k] || BANCOS[k]?.comercial)) return bad("No tienes esa cuenta bancaria");

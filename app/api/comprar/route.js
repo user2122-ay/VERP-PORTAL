@@ -9,7 +9,8 @@ import { COLORES_CASA, esUnico, yaTiene, mismo } from "@/lib/catalogo";
 import { colorValido, limpiarDetalles } from "@/lib/colores";
 import { acreditarNegocio, NEGOCIOS } from "@/lib/negocios";
 import { iva as ivaDe, ingresarTesoreria, tasaITBMS } from "@/lib/tesoreria";
-import { licTipo, tieneLic, numeroLicencia } from "@/lib/licencia";
+import { licTipo, tieneLic, tieneLicEntrada, numeroLicencia } from "@/lib/licencia";
+import { MAX_CASAS } from "@/lib/casa";
 const err = (m, s = 400) => NextResponse.json({ error: m }, { status: s });
 export async function POST(req) {
   const u = await apiUser(); if (!u?.cedula) return err("Sin sesión", 401);
@@ -21,7 +22,8 @@ export async function POST(req) {
 
   if (it.category === "Concesionario" && !tieneLic(u, "conducir")) return err("Necesitas la Licencia de Conducir para comprar vehículos", 403);
   if (it.category === "Armas" && !tieneLic(u, "armas")) return err("Necesitas la Licencia de Armas para comprar armas", 403);
-  if (lt && tieneLic(u, lt)) return err("Ya tienes esta licencia");
+  if (lt && tieneLicEntrada(u, lt)) return err("Ya tienes esta licencia (si la retuvo la policía, se te devuelve al terminar el plazo)");
+  if (it.category === "Propiedades" && (u.inventory || []).filter((i) => i.category === "Propiedades").length >= MAX_CASAS) return err(`Solo puedes tener ${MAX_CASAS} casas`);
   const unico = esUnico(it); if (unico && yaTiene(u, it)) return err("Ya tienes este objeto: solo se puede tener uno");
   const esAuto = it.category === "Concesionario"; if (esAuto && !colorValido(String(it._id), b.color)) return err("Ese color ya no está disponible. Elige otro de la lista");
   const detalles = esAuto ? limpiarDetalles(b.detalles) : null, vigente = it.dias ? (u.inventory || []).find((x) => mismo(x, it) && x.vence && +new Date(x.vence) > Date.now()) : null; // objetos con duración: se renuevan
