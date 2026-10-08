@@ -19,7 +19,7 @@ import Usados from "./Usados";
 import { iva, tasaITBMS } from "@/lib/tesoreria";
 export const dynamic = "force-dynamic";
 // Botones de arriba: cada categoría tiene su propio lugar. "Todo" muestra todo junto.
-const CHIPS = ["Todo", "Tarjetas", "Licencias", "Concesionario", "Propiedades", "Armas", "Herramientas", "Telefonía", "Tecnología", "Segunda mano", "Negocios"];
+const CHIPS = ["Todo", "Comida y bebida", "Tarjetas", "Licencias", "Concesionario", "Propiedades", "Armas", "Herramientas", "Telefonía", "Tecnología", "Segunda mano", "Negocios"];
 const G = { display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))", gap: 14 };
 export default async function P({ searchParams }) {
   const u = await needUser(), metodos = metodosDe(u), q = searchParams?.c || (searchParams?.s === "negocios" ? "Negocios" : "Todo"), cat = CHIPS.includes(q) ? q : "Todo";

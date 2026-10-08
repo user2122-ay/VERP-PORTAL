@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
 import { db } from "@/lib/db";
 import { adminUser, reviewUser } from "@/lib/admin";
+import { aplicarCK } from "@/lib/ck";
 import { canAdmin, canStaff } from "@/lib/roles";
 import { RANGOS_POR_DEPTO, DEPTOS } from "@/lib/mdt";
 import { LUGARES } from "@/lib/zonas";
@@ -13,7 +14,7 @@ import { nombreDe } from "@/lib/rol";
 import { NEGOCIO_DE } from "@/lib/negocios";
 import { licTipo, numeroLicencia } from "@/lib/licencia";
 const err = (m, s = 400) => NextResponse.json({ error: m }, { status: s });
-const CATS = ["Concesionario", "Propiedades", "Licencias", "Objetos", "Armas", "Herramientas", "Telefonía", "Tecnología"], INICIAL = 5000;
+const CATS = ["Concesionario", "Propiedades", "Licencias", "Objetos", "Armas", "Herramientas", "Telefonía", "Tecnología"];
 const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), str = (s, n = 80) => String(s || "").trim().slice(0, n), up = (s, n = 40) => str(s, n).replace(/\s+/g, " ").toUpperCase();
 const money = (n) => "$" + Number(n).toLocaleString("es");
 const oid = (s) => { try { return new ObjectId(String(s)); } catch { return null; } };
@@ -33,7 +34,7 @@ export async function POST(req) {
   const a = await reviewUser(); if (!a) return err("Sin permiso", 403);
   const b = await req.json(), d = await db(), users = d.collection("users"), at = new Date();
   const razon = str(b.razon, 300);
-  if (!canAdmin(a.rank) && !["roboOk", "roboNo"].includes(b.a)) return err("Tu rango solo puede revisar solicitudes", 403);
+  if (!canAdmin(a.rank) && !["roboOk", "roboNo", "apelOk", "apelNo"].includes(b.a)) return err("Tu rango solo puede revisar solicitudes", 403);
   // Toda acción administrativa (salvo marcar un reporte como resuelto) exige razón y queda en la colección "audit".
   if (!["done", "roboOk", "staffSet", "staffDel", "agenteSet", "agenteDel"].includes(b.a) && razon.length < 3) return err("La razón es obligatoria");
   const log = (act, objetivo, detalle) => d.collection("audit").insertOne({ by: a.id, byName: a.name, rank: a.rank, act, objetivo, razon, detalle, at });
@@ -73,9 +74,7 @@ export async function POST(req) {
     case "ck": {
       if (b.confirm !== "CK") return err('Escribe "CK" para confirmar'); if (t.id === a.id) return err("No puedes aplicarte CK a ti mismo");
       const num = t.chip?.num, snap = { cedula: t.cedula ? { num: t.cedula.num, nombres: t.cedula.nombres, apellidos: t.cedula.apellidos, roblox: t.cedula.roblox } : null, efectivo: t.balance, cuentas: Object.fromEntries(Object.entries(t.cuentas || {}).map(([k, c]) => [k, c.saldo])), articulos: (t.inventory || []).length, chip: num || null };
-      await users.updateOne({ id: t.id }, { $unset: { cedula: "", chip: "", wa: "", cuentas: "", push: "", verif: "", tarjeta: "", cvc: "", venc: "" }, $set: { balance: INICIAL, inventory: [] } });
-      await Promise.all([d.collection("tx").deleteMany({ user: t.id }), d.collection("notifs").deleteMany({ uid: t.id }), d.collection("pendientes").deleteMany({ $or: [{ from: t.id }, { to: t.id }] }),
-        ...(num ? [d.collection("wa_msgs").deleteMany({ $or: [{ de: num }, { para: num }] }), d.collection("wa_estados").deleteMany({ num })] : [])]);
+      await aplicarCK(d, t);
       await log("CK", quien, snap); break;
     }
     case "addItem": {
@@ -161,6 +160,13 @@ export async function POST(req) {
       await registrarPlaca(d, r.placa, { modelo: r.modelo, color: r.color, robado: true, estado: "Robado (sin propietario registrado)" });
       await d.collection("robos").updateOne({ _id: id }, { $set: { estado: "aprobado", por: a.name, resuelto: at } });
       await d.collection("notifs").insertOne({ uid: r.user, title: "Robo aprobado", body: `${r.modelo} (${r.placa}) ya está en tu inventario como ROBADO. La policía recibió el reporte.`, at, read: false }); await log("roboOk", r.modelo, { user: r.userName, placa: r.placa }); break;
+    }
+    case "apelOk": case "apelNo": {
+      const id = oid(b.id), r = id && (await d.collection("apelaciones").findOne({ _id: id, estado: "pendiente" })); if (!r) return err("Apelación no encontrada", 404); const ok = b.a === "apelOk";
+      await d.collection("apelaciones").updateOne({ _id: id }, { $set: { estado: ok ? "aprobada" : "denegada", por: a.name, motivo: razon, resuelto: at } });
+      if (ok) await users.updateOne({ id: r.uid }, { $unset: { muerte: "" }, $set: { cuerpo: { comida: { n: 100, t: at }, agua: { n: 100, t: at } } } });
+      await d.collection("notifs").insertOne({ uid: r.uid, title: ok ? "Apelación aprobada" : "Apelación denegada", body: ok ? "El Staff aprobó tu apelación: tu personaje sigue vivo con comida y agua al 100%." : `El Staff denegó tu apelación: ${razon}`, at, read: false });
+      await log(b.a, r.nombre, { causa: r.causa }); break;
     }
     default: return err("Acción desconocida");
   }

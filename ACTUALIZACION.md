@@ -102,3 +102,11 @@ lib/rol.js, lib/placa.js, components/CedulaCard.js, app/darkweb/*, app/delictivo
 ## Actualización 10: búsqueda en Multas
 - **MDT → Multas → Buscar**: Enter y el botón Buscar solo buscan; ya no pueden enviar el formulario de la multa ni reiniciar la página (también en teclados de celular). Enter dentro de un campo de una línea del formulario ya no lo envía por accidente.
 - La **pestaña de la MDT se recuerda**: si la página se recarga, vuelves a la misma pestaña y no a Ciudadanos.
+
+## Actualización 11: comida y agua, muerte por CK, panel nuevo y miembros
+- **Panel**: se quitó el acceso "VE WhatsApp" (queda el de Emergencias 911) y los cuadros de "Movimientos recientes" y "Avisos". En su lugar va el **sistema del cuerpo**: tu avatar de Roblox (cuerpo completo) con anillos de **Comida** y **Agua** (`app/Cuerpo.js`). El avatar se ve cada vez peor (gris, oscuro, tembloroso) mientras no comes ni bebes.
+- **Comida y agua** bajan solas hasta 0% en 24 horas desde la última vez que comiste o bebiste (`lib/cuerpo.js`, `HORAS`). Se compran en **Mercado → Comida y bebida** (agua, jugo, refresco, empanada, arepa, hamburguesa, pabellón); se consumen al instante, llevan ITBMS y se cobran con efectivo o tarjeta. Para agregar más: añade una línea `F(...)` en `lib/catalogo.js`.
+- **Moriste de sed o hambre = CK**: si comida o agua llega a 0% se bloquea toda la página (`/moriste`). Desde ahí puedes **Apelar CK** (escribes la razón, por ejemplo corte de luz; llega a Administración → **Apelaciones** y el Staff aprueba o deniega con razón) o **Crear otro usuario** (borra todo el personaje, `lib/ck.js`). Al enviar la apelación se le dice que abra un ticket en el Discord (pon `NEXT_PUBLIC_DISCORD_INVITE` para mostrar el botón). Si el Staff aprueba, vuelve con comida y agua al 100%. El Developer no se muere.
+- **Dinero inicial**: ahora **$15.000** al registrarse (y al crear otro usuario o tras un CK).
+- **Cabecera**: junto al logo se muestra cuántos **miembros** se han registrado (con cédula), abreviado (1.2k, 12.5k, 1.2M) y se actualiza cada minuto (`/api/miembros`, `lib/abrev.js`).
+- Colecciones nuevas en Mongo (se crean solas): `apelaciones`.

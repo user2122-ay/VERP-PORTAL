@@ -11,6 +11,7 @@ import { acreditarNegocio, NEGOCIOS } from "@/lib/negocios";
 import { iva as ivaDe, ingresarTesoreria, tasaITBMS } from "@/lib/tesoreria";
 import { licTipo, tieneLic, tieneLicEntrada, numeroLicencia } from "@/lib/licencia";
 import { MAX_CASAS } from "@/lib/casa";
+import { nivelDe, HORAS } from "@/lib/cuerpo";
 const err = (m, s = 400) => NextResponse.json({ error: m }, { status: s });
 export async function POST(req) {
   const u = await apiUser(); if (!u?.cedula) return err("Sin sesión", 401);
@@ -18,6 +19,7 @@ export async function POST(req) {
   let _id; try { _id = new ObjectId(String(b.id)); } catch { return err("No disponible", 404); }
   const d = await db(), items = d.collection("items"), it = await items.findOne({ _id });
   if (!it || it.stock === 0) return err("No disponible", 404);
+  if (it.consumo) return consumir(d, u, it, pk);
   const tasa = await tasaITBMS(d), pct = Math.round(tasa * 1000) / 10, lt = licTipo(it), imp = ivaDe(it.price, tasa), total = it.price + imp; // ITBMS ${pct}% sobre el precio
 
   if (it.category === "Concesionario" && !tieneLic(u, "conducir")) return err("Necesitas la Licencia de Conducir para comprar vehículos", 403);
@@ -45,4 +47,15 @@ export async function POST(req) {
   else await d.collection("negocios").updateOne({ _id: it.negocio }, { $inc: { evadido: imp } });
   await acreditarNegocio(d, it.negocio, it.price + (remite ? 0 : imp), `Venta: ${it.name}${remite ? "" : " (ITBMS no remitido)"}`);
   return NextResponse.json({ ok: true });
+}
+// Comida y bebida: se paga (con ITBMS) y se consume al instante; sube el nivel de comida o agua.
+async function consumir(d, u, it, pk) {
+  const { tipo, pct } = it.consumo, actual = nivelDe(u.cuerpo?.[tipo], HORAS[tipo]);
+  if (actual >= 95) return err(tipo === "agua" ? "Todavía no tienes sed" : "Todavía no tienes hambre");
+  const tasa = await tasaITBMS(d), imp = ivaDe(it.price, tasa), total = it.price + imp, nuevo = Math.min(100, actual + pct), pc = Math.round(tasa * 1000) / 10;
+  const r = await d.collection("users").updateOne({ id: u.id, [pk]: { $gte: total } }, { $inc: { [pk]: -total }, $set: { [`cuerpo.${tipo}`]: { n: nuevo, t: new Date() } } });
+  if (!r.modifiedCount) return err("Saldo insuficiente");
+  await d.collection("tx").insertOne({ user: u.id, type: "compra", item: `${it.name} (incluye ITBMS ${pc}%: $${imp.toLocaleString("es")})`, amount: -total, at: new Date() });
+  await ingresarTesoreria(d, imp, `ITBMS ${pc}%: ${it.name}`, "Mercado");
+  return NextResponse.json({ ok: true, nivel: Math.round(nuevo) });
 }
