@@ -95,3 +95,10 @@ lib/rol.js, lib/placa.js, components/CedulaCard.js, app/darkweb/*, app/delictivo
 ## Actualización 9: Mi sueldo y chip del Mercado
 - **MDT → Mi sueldo**: ya no muestra un sueldo fijo; muestra el **último pago** (monto y fecha) y el **historial de pagos** con fecha. Se sigue eligiendo en qué cuenta se recibe.
 - **Mercado → Chip de VE WhatsApp**: la tarjeta ahora tiene el mismo tamaño que las demás.
+
+## Corrección: buscador de la MDT
+- **MDT → Multas**: al pulsar "Buscar" ciudadano ya no se recarga la página ni te manda a Ciudadanos. El buscador estaba dentro del formulario de multar (dos formularios anidados) y enviaba el de afuera. Ahora es un buscador sin formulario, con Enter o el botón.
+
+## Actualización 10: búsqueda en Multas
+- **MDT → Multas → Buscar**: Enter y el botón Buscar solo buscan; ya no pueden enviar el formulario de la multa ni reiniciar la página (también en teclados de celular). Enter dentro de un campo de una línea del formulario ya no lo envía por accidente.
+- La **pestaña de la MDT se recuerda**: si la página se recarga, vuelves a la misma pestaña y no a Ciudadanos.

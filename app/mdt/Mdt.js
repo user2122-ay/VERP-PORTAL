@@ -13,7 +13,9 @@ const post = async (b) => { const r = await fetch("/api/mdt", { method: "POST", 
 const fd = (e) => { e.preventDefault(); return Object.fromEntries(new FormData(e.target)); };
 function Buscador({ onPick, ph = "Nombre, Roblox o cédula", m = "buscar" }) {
   const [q, setQ] = useState(""), [r, setR] = useState([]);
-  return (<><form className="row2" onSubmit={async (e) => { e.preventDefault(); setR((await get("m=" + m + "&q=" + encodeURIComponent(q)))?.users || []); }}><input value={q} onChange={(e) => setQ(e.target.value)} placeholder={ph} /><button className="btn g"><Search size={16} />Buscar</button></form>
+  // OJO: no es un <form> porque este buscador va dentro de otros formularios (Multas); un form dentro de otro hacía que "Buscar" enviara el de afuera y recargara la página.
+  const buscar = async () => setR((await get("m=" + m + "&q=" + encodeURIComponent(q)))?.users || []);
+  return (<><div className="row2"><input value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" || e.keyCode === 13) { e.preventDefault(); e.stopPropagation(); buscar(); } }} onKeyPress={(e) => { if (e.key === "Enter") e.preventDefault(); }} enterKeyHint="search" placeholder={ph} /><button type="button" className="btn g" onClick={buscar}><Search size={16} />Buscar</button></div>
     {r.map((x) => <div key={x.id} className="card" style={{ cursor: "pointer", padding: 10, marginTop: 6 }} onClick={() => { onPick(x); setR([]); setQ(""); }}>{x.label}</div>)}</>);
 }
 function AutoCard({ r, abrir }) {
@@ -159,7 +161,7 @@ function FilaMulta({ m, reload, pnb, ver }) {
 function Multas({ pnb }) {
   const [l, setL] = useState([]), [f, setF] = useState("todas"), [s, setS] = useState(null), cargar = async (x = f) => setL((await get("m=multas&f=" + x))?.multas || []);
   useEffect(() => { cargar(); }, [f]);
-  return (<>{pnb ? <form className="card" onSubmit={async (e) => { const b = fd(e); if (!s) return alert("Elige al ciudadano"); if (await post({ accion: "multar", ...b, sujeto: s.id })) { e.target.reset(); setS(null); cargar(); } }}><b>Poner una multa</b><p className="mut" style={{ margin: "4px 0" }}>No se cobra sola: le llega al ciudadano a Inventario → Multas y la paga cuando quiera. Tiene mínimo {PLAZO_MIN} días; si vence sin pagar es desacato.</p>
+  return (<>{pnb ? <form className="card" onKeyDown={(e) => { if (e.key === "Enter" && e.target.tagName === "INPUT") e.preventDefault(); }} onSubmit={async (e) => { const b = fd(e); if (!s) return alert("Elige al ciudadano"); if (await post({ accion: "multar", ...b, sujeto: s.id })) { e.target.reset(); setS(null); cargar(); } }}><b>Poner una multa</b><p className="mut" style={{ margin: "4px 0" }}>No se cobra sola: le llega al ciudadano a Inventario → Multas y la paga cuando quiera. Tiene mínimo {PLAZO_MIN} días; si vence sin pagar es desacato.</p>
       <div className="mut">Ciudadano: {s ? <b>{s.label}</b> : "ninguno"}</div><Buscador onPick={setS} />
       <input name="monto" type="number" min="1" max="1000000" placeholder="Monto ($)" required /><textarea name="articulos" rows={3} placeholder={"Artículos infringidos (uno por línea)\nEj: Art. 12 · Exceso de velocidad"} required /><input name="motivo" maxLength={300} placeholder="Observaciones (opcional)" />
       <label className="mut">Plazo para pagar (días, mínimo {PLAZO_MIN})</label><input name="dias" type="number" min={PLAZO_MIN} max="60" defaultValue={PLAZO_MIN} required /><button className="btn"><Plus size={16} />Multar</button></form>
@@ -182,9 +184,11 @@ const PLAZO_MIN = 10;
 const TABS = [["Ciudadanos", Shield, Ciudadanos], ["Expedientes", FileText, Expedientes], ["Arrestos", Gavel, Arrestos], ["Multas", Receipt, Multas], ["Decomisos", Lock, Decomisos], ["Reportes", Siren, Reportes], ["Casas", Home, Casas], ["Mi sueldo", Wallet, Sueldo]];
 export default function Mdt() {
   const [info, setInfo] = useState(null), [ok, setOk] = useState(false), [t, setT] = useState("Ciudadanos");
+  useEffect(() => { try { const g = sessionStorage.getItem("mdt-tab"); if (g) setT(g); } catch {} }, []);
+  const cambiar = (n) => { setT(n); try { sessionStorage.setItem("mdt-tab", n); } catch {} };
   useEffect(() => { (async () => { const j = await get("m=estado"); if (j) { setInfo(j); setOk(j.ok); } })(); }, []);
   if (!info) return null; if (!ok) return <Acceso info={info} onOk={() => setOk(true)} />;
   const tabs = [...TABS, ...(info.ministro ? [["Tesorería", Landmark, Tesoreria]] : [])], V = (tabs.find((x) => x[0] === t) || tabs[0])[2];
   return (<div style={{ maxWidth: 820, margin: "0 auto" }}><div style={{ display: "flex", gap: 12, alignItems: "center" }}><img src="/justicia-paz.png" alt="Justicia y Paz" style={{ height: 54, background: "#fff", borderRadius: 10, padding: 4 }} /><div><b style={{ fontSize: 18 }}>MDT · {info.ag.depto}</b><div className="mut">{info.ag.rango} {info.nombre} · @{info.discord} · Placa {info.ag.placa}</div></div></div>
-    <div style={{ display: "flex", gap: 8, margin: "12px 0", flexWrap: "wrap" }}>{tabs.map(([n, I]) => <button key={n} className={"btn " + (t === n ? "" : "g")} onClick={() => setT(n)}><I size={16} />{n}</button>)}</div><V aprueba={info.aprueba} yo={info.yo} pnb={info.pnb} /></div>);
+    <div style={{ display: "flex", gap: 8, margin: "12px 0", flexWrap: "wrap" }}>{tabs.map(([n, I]) => <button key={n} className={"btn " + (t === n ? "" : "g")} onClick={() => cambiar(n)}><I size={16} />{n}</button>)}</div><V aprueba={info.aprueba} yo={info.yo} pnb={info.pnb} /></div>);
 }
