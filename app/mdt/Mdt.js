@@ -104,9 +104,9 @@ function Casas({ aprueba, yo }) {
 function Sueldo() {
   const [s, setS] = useState(null), cargar = async () => setS(await get("m=sueldo")); useEffect(() => { cargar(); }, []);
   if (!s) return <p className="mut">Cargando...</p>;
-  return (<div className="card"><b>Mi sueldo</b><div className="big" style={{ fontSize: 26 }}>{$(s.sueldo)} <span className="mut" style={{ fontSize: 14 }}>por semana</span></div>
-    {s.ultimoPago && <div className="mut">Último pago: {fec(s.ultimoPago)}</div>}
-    {!s.sueldo && <p className="mut">Todavía no tienes sueldo asignado. Pídeselo a Asuntos Internos o Fundación.</p>}
+  return (<div className="card"><b>Mi sueldo</b>
+    {s.ultimo ? <><div className="mut" style={{ marginTop: 6 }}>Último pago</div><div className="big" style={{ fontSize: 28 }}>{$(s.ultimo.monto)}</div><div className="mut">{fec(s.ultimo.at)}</div></> : <p className="mut">Todavía no has recibido ningún pago. El Ministro del Interior libera los sueldos.</p>}
+    {s.pagos.length > 0 && <><b style={{ display: "block", marginTop: 12 }}>Historial de pagos</b>{s.pagos.map((p, k) => <div key={k} style={{ display: "flex", justifyContent: "space-between", gap: 8, padding: "7px 0", borderTop: "1px solid var(--bd)" }}><div><div>{p.det}</div><div className="mut">{fec(p.at)}</div></div><b style={{ color: "var(--ok)", whiteSpace: "nowrap" }}>+{$(p.monto)}</b></div>)}</>}
     {s.edita && <><label className="mut" style={{ display: "block", marginTop: 10 }}>¿Dónde quieres recibir tu sueldo?</label>
       <select value={s.cuenta} onChange={async (e) => { if (await post({ accion: "sueldoCuenta", cuenta: e.target.value })) cargar(); }}>{s.cuentas.map((c) => <option key={c.k} value={c.k}>{c.label}</option>)}</select>
       <p className="mut">El Ministro del Interior libera los sueldos cada semana y se depositan ahí. Si no tienes esa cuenta, se paga en efectivo.</p></>}</div>);

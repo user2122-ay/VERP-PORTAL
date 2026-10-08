@@ -91,3 +91,7 @@ lib/rol.js, lib/placa.js, components/CedulaCard.js, app/darkweb/*, app/delictivo
 - **Inventario → Casa**: cada casa muestra su foto y lo que guardaste (con foto, placa o color). **Máximo 3 casas por usuario** (se valida al comprar y el Mercado muestra "Límite: 3 casas").
 - **Revender**: en Inventario, cada objeto (herramientas, armas, teléfonos, tecnología) tiene el botón **Revender**: se vende por MENOS de lo que pagaste, sale del inventario y queda publicado; puedes cancelar y recuperarlo. No se revenden autos, casas, licencias, accesos con duración, robados, retenidos ni guardados en casa. Máximo 10 publicaciones abiertas.
 - **Mercado → Segunda mano**: lista los objetos revendidos, con el precio nuevo para comparar. Se aplican las mismas reglas (armas piden licencia, objetos únicos no se repiten). No llevan ITBMS. Colección nueva: `usados`.
+
+## Actualización 9: Mi sueldo y chip del Mercado
+- **MDT → Mi sueldo**: ya no muestra un sueldo fijo; muestra el **último pago** (monto y fecha) y el **historial de pagos** con fecha. Se sigue eligiendo en qué cuenta se recibe.
+- **Mercado → Chip de VE WhatsApp**: la tarjeta ahora tiene el mismo tamaño que las demás.

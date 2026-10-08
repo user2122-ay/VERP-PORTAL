@@ -76,7 +76,8 @@ export async function GET(req) {
   if (m === "sueldo") { // sueldo semanal del agente y la cuenta donde lo recibe
     const cu = Object.keys(u.cuentas || {}).filter((k) => !BANCOS[k]?.comercial).map((k) => ({ k, label: BANCOS[k]?.nombre || k }));
     const sl = u.agente ? (await d.collection("config").findOne({ _id: "sueldos" }))?.[claveSueldo(u.agente.depto, u.agente.rango)] || 0 : 0;
-    return NextResponse.json({ sueldo: sl, cuenta: u.agente?.cuenta || "efectivo", cuentas: [{ k: "efectivo", label: "Efectivo" }, ...cu], ultimoPago: u.agente?.ultimoPago || null, edita: !!u.agente });
+    const pagos = (await d.collection("tx").find({ user: u.id, type: "sueldo" }).sort({ at: -1 }).limit(40).toArray()).map((x) => ({ monto: x.amount, at: x.at, det: x.item }));
+    return NextResponse.json({ pagos, ultimo: pagos[0] || null, sueldo: sl, cuenta: u.agente?.cuenta || "efectivo", cuentas: [{ k: "efectivo", label: "Efectivo" }, ...cu], ultimoPago: u.agente?.ultimoPago || null, edita: !!u.agente });
   }
   if (m === "tesoreria") { // SOLO el Ministro del Interior
     if (!esMinistro(u.ag)) return bad("Solo el Ministro del Interior ve la Tesorería", 403);
