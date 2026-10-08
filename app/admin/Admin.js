@@ -4,7 +4,7 @@ import { Search, Plus, Trash2, Skull, Check } from "lucide-react";
 import { canAdmin, RANK_LABEL } from "@/lib/roles";
 import { RANGOS_POR_DEPTO, DEPTOS } from "@/lib/mdt";
 const CATS = ["Concesionario", "Propiedades", "Licencias", "Objetos", "Armas", "Herramientas", "Telefonía", "Tecnología"], INV = ["Banco", "Telefonía", "Tecnología", "Propiedades", "Concesionario", "Herramientas", "Objetos", "Armas", "Licencias"], CIVIL = ["SOLTERO", "CASADO", "DIVORCIADO", "VIUDO"];
-const BK = { bvc: "BVC", mer: "Mercantil VERP", pro: "Provincial", com: "Comerciante" }, $ = (n) => `$${Number(n || 0).toLocaleString("es")}`;
+const BK = { bvc: "BVC", mer: "Mercantil VERP", pro: "Provincial", ven: "VERNESCO", vca: "VERCARIBE", com: "Comerciante" }, $ = (n) => `$${Number(n || 0).toLocaleString("es")}`;
 const post = async (a, data) => { const r = await fetch("/api/admin", { method: "POST", body: JSON.stringify({ a, ...data }) }), j = await r.json().catch(() => ({})); if (!r.ok) { alert(j.error || "Error"); return false; } return true; };
 const vals = (e) => { e.preventDefault(); return Object.fromEntries(new FormData(e.target, e.nativeEvent?.submitter)); };
 const ask = (t) => { const r = prompt(t); if (r === null) return null; if (r.trim().length < 3) { alert("La razón es obligatoria (mínimo 3 letras)"); return null; } return r.trim(); };

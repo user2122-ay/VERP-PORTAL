@@ -14,7 +14,7 @@ export async function POST(req) {
     const pk = pagoKey(u, b.pago); if (!pk) return bad("Método de pago inválido");
     if (n0.oculto && !tieneVpn(u)) return bad("Necesitas una VPN para entrar a la Dark Web");
     if (!u.cuentas?.com) return bad("Necesitas la Tarjeta de Comerciante ($50 en el Mercado) para comprar un negocio");
-    if (!(await neg.updateOne({ _id: b.key, owner: null }, { $set: { owner: u.id, desde: at } })).modifiedCount) return bad("Este negocio ya tiene dueño");
+    if (!(await neg.updateOne({ _id: b.key, owner: null }, { $set: { owner: u.id, desde: at, inversion: n0.precio, ganado: 0, ventas: 0, perdido: n0.precio, evadido: 0, impuestoPagado: 0 } })).modifiedCount) return bad("Este negocio ya tiene dueño");
     if (!(await d.collection("users").updateOne({ id: u.id, [pk]: { $gte: n0.precio } }, { $inc: { [pk]: -n0.precio } })).modifiedCount) { await neg.updateOne({ _id: b.key }, { $set: { owner: null } }); return bad("Saldo insuficiente"); }
     await d.collection("tx").insertOne({ user: u.id, type: "compra", item: `Negocio: ${n0.nombre}`, amount: -n0.precio, at });
     await d.collection("notifs").insertOne({ uid: u.id, title: "Negocio comprado", body: `Ahora eres dueño de ${n0.nombre}. Las ventas llegan a tu Tarjeta de Comerciante.`, at, read: false });

@@ -10,14 +10,16 @@ import Link from "next/link";
 import { Guardar, Sacar } from "./Guardar";
 import { guardable, esAuto, ESPERA_GUARDAR } from "@/lib/casa";
 import Gestion from "../negocios/Gestion";
-import { NEGOCIOS, ensureNegocios, planesDe } from "@/lib/negocios";
+import { NEGOCIOS, ensureNegocios, planesDe, finanzasDe } from "@/lib/negocios";
+import Finanzas from "../negocios/Finanzas";
 import { casaRef } from "@/lib/mdt";
 export const dynamic = "force-dynamic";
 const G = { display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(300px,1fr))", gap: 14 };
 export default async function P({ searchParams }) {
   const u = await needUser(), cu = u.cuentas || {}, own = Object.keys(BANCOS).filter((k) => cu[k]), items = u.inventory || [], nombres = [...new Set(items.filter((i) => !i.img).map((i) => i.name))];
   const dd = await db(); await ensureNegocios(dd);
-  const misNeg = (await dd.collection("negocios").find({ owner: u.id }).toArray()).filter((n) => NEGOCIOS[n._id]), planes = await planesDe(dd), itemsNeg = {};
+  const misNeg = (await dd.collection("negocios").find({ owner: u.id }).toArray()).filter((n) => NEGOCIOS[n._id]), planes = await planesDe(dd), itemsNeg = {}, recientes = {};
+  for (const n of misNeg) recientes[n._id] = (await dd.collection("tx").find({ user: u.id, type: "venta", neg: n._id }).sort({ at: -1 }).limit(6).toArray()).map((t) => ({ item: t.item, amount: t.amount, at: t.at }));
   for (const n of misNeg) itemsNeg[n._id] = (await dd.collection("items").find({ negocio: n._id }).sort({ name: 1 }).limit(300).toArray()).map((i) => ({ id: String(i._id), name: i.name, price: i.price, impuesto: i.impuesto || 0 }));
   const v = searchParams?.v === "casa" ? "casa" : searchParams?.v === "negocios" && misNeg.length ? "negocios" : "personal", personal = items.filter((i) => i.loc !== "casa"), enCasa = items.filter((i) => i.loc === "casa");
   const casas = items.filter((i) => i.category === "Propiedades"), opcCasas = casas.map((c) => ({ ref: casaRef(c.name, c.at), label: `${c.name}${c.ubicacion ? " · " + c.ubicacion : ""}` })), espera = u.guardarAt ? Math.max(0, ESPERA_GUARDAR - (Date.now() - +new Date(u.guardarAt))) : 0;
@@ -27,7 +29,8 @@ export default async function P({ searchParams }) {
     <div style={{ display: "flex", gap: 8, margin: "8px 0 12px" }}><Link className={"btn " + (v === "personal" ? "" : "g")} href="/inventario">Personal</Link><Link className={"btn " + (v === "casa" ? "" : "g")} href="/inventario?v=casa">Casa{enCasa.length ? ` (${enCasa.length})` : ""}</Link>{misNeg.length > 0 && <Link className={"btn " + (v === "negocios" ? "" : "g")} href="/inventario?v=negocios">Negocios ({misNeg.length})</Link>}</div>
     {v === "negocios" ? (<>
       <p className="mut">Aquí administras tus negocios: cambia los precios de lo que vendes y decide si pagas el ITBMS. Lo que vendes llega a tu Tarjeta de Comerciante.</p>
-      {misNeg.map((n) => { const x = NEGOCIOS[n._id]; return (<div key={n._id} style={{ marginBottom: 14 }}><div className="card"><img src={x.img} alt={x.nombre} style={{ width: "100%", maxWidth: 420, aspectRatio: "16/10", objectFit: "cover", borderRadius: 12 }} /><div style={{ marginTop: 8 }}><b>{x.nombre}</b> <span className="tag">Eres el dueño</span></div><div className="mut">{x.edita}</div></div>
+      {misNeg.map((n) => { const x = NEGOCIOS[n._id]; return (<div key={n._id} style={{ marginBottom: 14 }}><div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(300px,1fr))", gap: 14, alignItems: "start" }}><div className="card" style={{ margin: 0 }}><img src={x.img} alt={x.nombre} style={{ width: "100%", aspectRatio: "16/10", objectFit: "cover", borderRadius: 12 }} /><div style={{ marginTop: 8 }}><b>{x.nombre}</b> <span className="tag">Eres el dueño</span></div><div className="mut">{x.edita}</div></div>
+          <Finanzas f={finanzasDe(n)} recientes={recientes[n._id] || []} nombre={x.nombre} /></div>
         <Gestion k={n._id} items={itemsNeg[n._id] || []} planes={planes} paga={n.pagaImpuesto !== false} /></div>); })}
     </>) : null}
     {v === "negocios" ? null : v === "casa" ? (<>
@@ -45,7 +48,7 @@ export default async function P({ searchParams }) {
     <h3 style={{ marginTop: 18 }}>Lo que llevas encima</h3>
     {otros.length ? <div className="grid">{otros.map((i, k) => { const img = i.img || fotos[i.name]; return (<div className={"card" + (i.robado ? " rob" : "")} key={k}><div className="mi">{img ? <img src={img} alt="" /> : <span className="mut">Sin foto</span>}</div>
       <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}><span className="tag">{i.category}</span>{i.robado && <span className="rob-t">ROBADO</span>}</div><div><b>{i.name}</b></div>
-      {i.placa && <div className="mut">Placa: <b>{i.placa}</b>{i.color ? ` · ${i.color}` : ""}</div>}{i.ubicacion && <div className="mut">Ubicación: {i.ubicacion}</div>}{i.color && !i.placa && <div className="mut">Color: {i.color}</div>}{i.vence && <div className="mut">{new Date(i.vence) > new Date() ? "Vence" : "Expiró"}: {new Date(i.vence).toLocaleDateString("es")}</div>}
+      {i.placa && <div className="mut">Placa: <b>{i.placa}</b>{i.color ? ` · ${i.color}` : ""}</div>}{i.detalles?.length > 0 && <div className="mut">Detalles: {i.detalles.join(", ")}</div>}{i.ubicacion && <div className="mut">Ubicación: {i.ubicacion}</div>}{i.color && !i.placa && <div className="mut">Color: {i.color}</div>}{i.vence && <div className="mut">{new Date(i.vence) > new Date() ? "Vence" : "Expiró"}: {new Date(i.vence).toLocaleDateString("es")}</div>}
       <div className="mut">{i.robado ? "Robado" : "Pagado"}: ${Number(i.price).toLocaleString("es")} · {new Date(i.at).toLocaleDateString("es")}</div>
       {guardable(i) && casas.length > 0 && <Guardar name={i.name} at={new Date(i.at).toISOString()} casas={opcCasas} espera={espera} auto={esAuto(i)} />}</div>); })}</div> : <div className="card mut">No llevas nada encima. Visita el Mercado.</div>}
     </>)}</div></Shell>);

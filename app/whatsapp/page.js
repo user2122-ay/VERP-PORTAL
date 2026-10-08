@@ -13,6 +13,6 @@ export default async function P({ searchParams }) {
   if (searchParams?.app === "wa") return (<Shell user={u}>{!u.chip ? <Falta t="Necesitas una línea telefónica" p={`Compra tu chip en el Mercado por $${CHIP_PRECIO}. Te asignan un número +58 con tu cédula.`} /> : <Chat />}</Shell>);
   return (<Shell user={u}><h2 style={{ textAlign: "center" }}>Teléfono</h2>
     <div style={{ display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap", marginTop: 20 }}>
-      <div className="card" style={T}><span className="neon" style={{ fontSize: 100, fontWeight: 800, lineHeight: 1 }}>?</span><b style={{ fontSize: 20 }}>TikVerp</b></div>
+      <Link href="/tikverp" className="card" style={T}><img src="/tikverp-logo.png" alt="TikVerp" style={{ height: 96, filter: "drop-shadow(0 0 10px #2f8cffaa)" }} /><b style={{ fontSize: 20 }}>TikVerp</b></Link>
       <Link href="/whatsapp?app=wa" className="card" style={T}><Logo /><b style={{ fontSize: 20 }}>{WA}</b></Link></div></Shell>);
 }

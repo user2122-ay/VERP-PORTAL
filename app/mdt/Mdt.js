@@ -15,18 +15,28 @@ function Buscador({ onPick, ph = "Nombre, Roblox o cédula", m = "buscar" }) {
   return (<><form className="row2" onSubmit={async (e) => { e.preventDefault(); setR((await get("m=" + m + "&q=" + encodeURIComponent(q)))?.users || []); }}><input value={q} onChange={(e) => setQ(e.target.value)} placeholder={ph} /><button className="btn g"><Search size={16} />Buscar</button></form>
     {r.map((x) => <div key={x.id} className="card" style={{ cursor: "pointer", padding: 10, marginTop: 6 }} onClick={() => { onPick(x); setR([]); setQ(""); }}>{x.label}</div>)}</>);
 }
+function AutoCard({ r, abrir }) {
+  const esp = [["Marca", r.marca], ["Año", r.anio], ["Clase", r.clase], ["Color", r.color], ["Detalles", r.detalles?.length ? r.detalles.join(", ") : "Ninguno"]].filter(([, v]) => v);
+  return (<div className={"card" + (r.robado ? " rob" : "")} style={{ marginTop: 8 }}>
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(240px,1fr))", gap: 14, alignItems: "start" }}>
+      <div className="mi" style={{ marginBottom: 0 }}>{r.img ? <img src={r.img} alt={r.modelo} /> : <span className="mut">Sin foto</span>}</div>
+      <div><b style={{ fontSize: 22 }}>{r.placa}</b> {r.robado && <span className="rob-t" style={{ fontSize: 11 }}>ROBADO</span>}<div style={{ fontSize: 17 }}>{r.modelo}</div><div className="mut">{r.estado}</div>
+        <div style={{ marginTop: 8 }}><b>Especificaciones</b>{esp.map(([k, v]) => <div key={k} style={{ display: "flex", justifyContent: "space-between", gap: 10, padding: "4px 0", borderTop: "1px solid var(--bd)" }}><span className="mut">{k}</span><span style={{ textAlign: "right" }}>{v}</span></div>)}</div>
+        {r.desc && <div className="mut" style={{ marginTop: 6 }}>{r.desc}</div>}
+        <div style={{ marginTop: 8 }}>Propietario: {r.dueno ? <b>{r.dueno.label}</b> : <span className="mut">sin propietario registrado</span>}</div>{r.dueno && <button className="btn g" style={{ marginTop: 6 }} onClick={() => abrir(r.dueno.id)}>Ver ficha del propietario</button>}</div></div></div>);
+}
 function Matricula({ abrir }) {
-  const [q, setQ] = useState(""), [r, setR] = useState(undefined);
-  return (<><form className="row2" onSubmit={async (e) => { e.preventDefault(); setR((await get("m=placa&q=" + encodeURIComponent(q)))?.p || null); }}><input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Matrícula (ej: VEN-482)" /><button className="btn g"><Search size={16} />Buscar</button></form>
-    {r === null && <p className="mut">No hay ningún auto con esa matrícula.</p>}
-    {r && <div className={"card" + (r.robado ? " rob" : "")} style={{ marginTop: 8 }}><b style={{ fontSize: 20 }}>{r.placa}</b> {r.robado && <span className="rob-t" style={{ fontSize: 11 }}>ROBADO</span>}<div>{r.modelo}{r.color ? ` · ${r.color}` : ""}</div><div className="mut">{r.estado}</div>
-      <div style={{ marginTop: 6 }}>Propietario: {r.dueno ? <b>{r.dueno.label}</b> : <span className="mut">sin propietario registrado</span>}</div>{r.dueno && <button className="btn g" style={{ marginTop: 6 }} onClick={() => abrir(r.dueno.id)}>Ver ficha del propietario</button>}</div>}</>);
+  const [q, setQ] = useState(""), [r, setR] = useState(undefined), [v, setV] = useState([]);
+  return (<><form className="row2" onSubmit={async (e) => { e.preventDefault(); const j = await get("m=placa&q=" + encodeURIComponent(q)); setR(j?.p || null); setV(j?.varios || []); }}><input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Matrícula (ej: VEN-482) o modelo del auto" /><button className="btn g"><Search size={16} />Buscar</button></form>
+    {r === null && !v.length && <p className="mut">No hay ningún auto con esa matrícula o modelo.</p>}
+    {r && <AutoCard r={r} abrir={abrir} />}
+    {!r && v.map((x) => <AutoCard key={x.placa} r={x} abrir={abrir} />)}</>);
 }
 function Ciudadanos() {
   const [f, setF] = useState(null), abrir = async (id) => setF(await get("m=ficha&id=" + id));
   return (<><div className="card"><b>Buscar ciudadano</b><Buscador onPick={(x) => abrir(x.id)} /><b style={{ display: "block", marginTop: 14 }}>Buscar auto por matrícula</b><Matricula abrir={abrir} /></div>
     {f && <div style={{ display: "grid", gap: 12 }}><div style={{ maxWidth: 520 }}><CedulaCard c={f.cedula} /></div>
-      <div className="card"><b>Datos</b><div className="mut">Línea: {f.linea || "sin chip"}</div><b style={{ display: "block", marginTop: 8 }}>Vehículos</b>{f.autos.map((a, k) => <div key={k}>{a.name} {a.placa && <span className="mut">· {a.placa}</span>} {a.robado && <span className="rob-t" style={{ fontSize: 11 }}>ROBADO</span>}</div>)}{!f.autos.length && <div className="mut">Sin vehículos.</div>}</div>
+      <div className="card"><b>Datos</b><div className="mut">Línea: {f.linea || "sin chip"}</div><b style={{ display: "block", marginTop: 8 }}>Vehículos</b>{f.autos.map((a, k) => <div key={k} style={{ display: "flex", gap: 10, alignItems: "center", padding: "6px 0" }}>{a.img && <img src={a.img} alt="" style={{ width: 84, height: 52, objectFit: "cover", borderRadius: 8 }} />}<div>{a.name} {a.placa && <span className="mut">· {a.placa}</span>} {a.robado && <span className="rob-t" style={{ fontSize: 11 }}>ROBADO</span>}<div className="mut">{a.color}{a.detalles?.length ? ` · ${a.detalles.join(", ")}` : ""}</div></div></div>)}{!f.autos.length && <div className="mut">Sin vehículos.</div>}</div>
       <div className="card"><b>Licencias</b>{[["conducir", "Conducir"], ["armas", "Armas"], ["embarcaciones", "Embarcaciones"]].map(([t, n]) => { const l = f.licencias.find((x) => x.tipo === t); return <div key={t} style={{ display: "flex", justifyContent: "space-between", gap: 8, padding: "4px 0" }}><span>{n}</span>{l ? <b style={{ color: "var(--ok)" }}>Tiene · {l.num}</b> : <b style={{ color: "var(--bad)" }}>No tiene</b>}</div>; })}
         {f.licencias.length > 0 && <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))", gap: 12, marginTop: 10 }}>{f.licencias.map((l, k) => <LicenciaCard key={k} tipo={l.tipo} c={f.cedula} num={l.num} emision={l.at} />)}</div>}</div>
       <div className="card"><b>Historial de arrestos ({f.arrestos.length})</b>{f.arrestos.map((a) => <div key={a.id} style={{ padding: "6px 0", borderTop: "1px solid var(--bd)" }}>{a.cargos}<div className="mut">{fec(a.at)} · multa {$(a.multa)} (cobrado {$(a.cobrado)}) · {a.minutos} min · {a.por}</div></div>)}{!f.arrestos.length && <div className="mut">Sin antecedentes.</div>}</div>

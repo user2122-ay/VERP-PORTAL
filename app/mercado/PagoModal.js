@@ -3,7 +3,7 @@ import { useState } from "react";
 import { ShoppingCart } from "lucide-react";
 import PosAnim from "@/components/PosAnim";
 // Botón de compra que pregunta con qué se paga: efectivo o cualquiera de las tarjetas del usuario.
-export default function Comprar({ url, body, metodos, msg = "Compra realizada", disabled, label = "Comprar", off = "Ya la tienes", total }) {
+export default function Comprar({ url, body, metodos, msg = "Compra realizada", disabled, label = "Comprar", off = "Ya lo tienes", total }) {
   const [open, setOpen] = useState(false), [busy, setBusy] = useState(false), [pos, setPos] = useState(false);
   const fin = () => { alert(msg); location.reload(); };
   async function pagar(k) {

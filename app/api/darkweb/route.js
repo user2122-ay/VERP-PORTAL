@@ -53,7 +53,7 @@ export async function POST(req) {
         const mn = await factorHoy(d), cobro = Math.round(precio * mn.factor);
         await traspasarPlaca(d, car.placa); await pagarA(d, u.id, b.pago, cobro); await col.insertOne({ ...base, estado: "vendida", vendido: cobro });
         await d.collection("tx").insertOne({ user: u.id, type: "venta", item: `Auto vendido (Dark Web): ${car.name}`, amount: cobro, at });
-        await avisar(d, u.id, "Auto vendido", `${mn.mood} (x${mn.factor}): +${money(cobro)} por ${car.name}.`);
+        await avisar(d, u.id, "Auto vendido", `Cotización: ${mn.mood} (x${mn.factor}): +${money(cobro)} por ${car.name}.`);
         return NextResponse.json({ ok: true, auto: true, cobro });
       }
       await col.insertOne({ ...base, estado: "abierta", buyer: dueño, propuesta: { by: u.id, monto: precio } });
@@ -77,7 +77,7 @@ export async function POST(req) {
       if (!l) return bad("No hay una propuesta de la otra parte para aceptar"); const m = l.propuesta.monto;
       if (!(await us.updateOne({ id: l.buyer, "cuentas.com.saldo": { $gte: m } }, { $inc: { "cuentas.com.saldo": -m } })).modifiedCount) { await col.updateOne({ _id: id }, { $set: { estado: "abierta" } }); return bad("El taller no tiene saldo suficiente en su Tarjeta de Comerciante"); }
       await traspasarPlaca(d, l.car.placa); await pagarA(d, l.seller, l.pago, m); await us.updateOne({ id: l.buyer }, { $push: { inventory: entrega(l.car, { price: m }) } });
-      await col.updateOne({ _id: id }, { $set: { estado: "vendida", vendido: m }, $push: { chat: { sys: true, txt: `Trato cerrado por ${money(m)}`, at } } });
+      await d.collection("negocios").updateOne({ _id: "taller" }, { $inc: { perdido: m } }); await col.updateOne({ _id: id }, { $set: { estado: "vendida", vendido: m }, $push: { chat: { sys: true, txt: `Trato cerrado por ${money(m)}`, at } } });
       await d.collection("tx").insertMany([{ user: l.seller, type: "venta", item: `Auto vendido (Dark Web): ${l.car.name}`, amount: m, at }, { user: l.buyer, type: "compra", item: `Auto comprado (Taller): ${l.car.name}`, amount: -m, at }]);
       await avisar(d, l.seller, "Trato cerrado", `Vendiste ${l.car.name} por ${money(m)}.`); await avisar(d, l.buyer, "Trato cerrado", `Compraste ${l.car.name} por ${money(m)}. Ya está en tu inventario.`);
       return NextResponse.json({ ok: true });
@@ -92,18 +92,18 @@ export async function POST(req) {
       const car = await sacar(d, u, b); if (!car) return bad("Ese vehículo ya no está en tu inventario");
       await col.insertOne({ tipo: "reventa", seller: u.id, sellerName: yo, car, precio, estado: "abierta", chat: [], at }); return NextResponse.json({ ok: true });
     }
-    case "ventaSistema": { // el dueño del taller vende un auto robado a la página: máximo $15.000 y como mucho $1.000 más de lo que pagó
-      if ((await tallerDe(d)) !== u.id) return bad("Solo el dueño del Taller clandestino puede vender a la página", 403);
+    case "ventaSistema": { // el dueño del taller vende un auto robado a la plataforma: máximo $15.000 y como mucho $1.000 más de lo que pagó
+      if ((await tallerDe(d)) !== u.id) return bad("Solo el dueño del Taller clandestino puede vender a la plataforma", 403);
       const it = (u.inventory || [])[+b.i]; if (!it || it.category !== "Concesionario" || !it.robado || it.loc === "casa") return bad("Elige un auto robado que lleves encima (no en el garaje)");
       const pagado = Math.max(0, Number(it.price) || 0), tope = Math.min(15000, pagado + 1000), precio = Math.floor(Number(b.precio));
       if (!(precio >= 1)) return bad("Precio inválido"); if (precio > tope) return bad(`Máximo ${money(tope)}: lo compraste en ${money(pagado)} y solo puedes ganar $1.000 (tope $15.000)`);
       if (!pagoKey(u, b.pago)) return bad("Cuenta de cobro inválida");
       const car = await sacar(d, u, b); if (!car) return bad("Ese vehículo ya no está en tu inventario");
       const mn = await factorHoy(d), cobro = Math.round(precio * mn.factor);
-      await traspasarPlaca(d, car.placa); await pagarA(d, u.id, b.pago, cobro);
+      await traspasarPlaca(d, car.placa); await pagarA(d, u.id, b.pago, cobro); await d.collection("negocios").updateOne({ _id: "taller" }, { $inc: { ganado: cobro, ventas: 1 } });
       await col.insertOne({ tipo: "sistema", seller: u.id, sellerName: yo, car, precio, estado: "vendida", vendido: cobro, comprado: pagado, chat: [], at });
-      await d.collection("tx").insertOne({ user: u.id, type: "venta", item: `Auto vendido a la página (Dark Web): ${car.name}`, amount: cobro, at });
-      await avisar(d, u.id, "Auto vendido a la página", `Vendiste ${car.name} por ${money(cobro)} (${mn.mood}, x${mn.factor}; lo compraste en ${money(pagado)}).`);
+      await d.collection("tx").insertOne({ user: u.id, type: "venta", item: `Auto vendido a la plataforma (Dark Web): ${car.name}`, amount: cobro, at });
+      await avisar(d, u.id, "Auto vendido a la plataforma", `Vendiste ${car.name} por ${money(cobro)} (cotización ${mn.mood}, x${mn.factor}; lo compraste en ${money(pagado)}).`);
       return NextResponse.json({ ok: true, precio: cobro });
     }
     case "comprar": { // compra de un auto puesto a la venta por el taller

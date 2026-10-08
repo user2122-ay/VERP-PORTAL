@@ -1,5 +1,5 @@
 import Shell from "@/components/Shell";
-import Transfer, { Deposito } from "./Transfer";
+import Transfer, { Deposito, Retiro } from "./Transfer";
 import { CARD } from "./Cards";
 import { needUser } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -17,7 +17,8 @@ export default async function P() {
     {!owned.length ? <div className="card" style={{ marginTop: 14 }}><b>Aún no tienes tarjeta bancaria</b><p className="mut">Cómprala en el Mercado: BVC ${BANCOS.bvc.precio} · Mercantil VERP ${BANCOS.mer.precio}. Cuando te la entreguen aparecerá aquí.</p><a className="btn" href="/mercado">Ir al Mercado</a></div>
       : <><div style={G}>{owned.map((k) => (<div key={k}>{(() => { const C = CARD[k]; return <C c={c} cuenta={cu[k]} />; })()}
         <div className="card"><span className="mut">Saldo en {BANCOS[k].corto}</span><div className="big">${cu[k].saldo.toLocaleString("es")}</div></div></div>))}</div>
-      {bk.length > 0 && <div style={G}><Deposito owned={bk} /><Transfer owned={bk} fee={fee} inflacion={inflacion} /></div>}</>}
+      {bk.length > 0 && <div style={G}><Deposito owned={bk} /><Retiro owned={owned} /><Transfer owned={bk} todas={owned} fee={fee} inflacion={inflacion} /></div>}
+      {bk.length === 0 && owned.length > 0 && <div style={G}><Retiro owned={owned} /></div>}</>}
     <div className="card" style={{ marginTop: 14 }}><b>Movimientos</b>{mov.length ? mov.map((m) => (<div key={String(m._id)} style={{ display: "flex", justifyContent: "space-between", gap: 8, padding: "8px 0", borderTop: "1px solid var(--bd)" }}>
       <div><div>{m.item}</div><div className="mut">{new Date(m.at).toLocaleString("es")}</div></div>
       <b style={{ color: m.amount < 0 ? "var(--bad)" : "var(--ok)", whiteSpace: "nowrap" }}>{m.amount < 0 ? "-" : "+"}${Math.abs(m.amount).toLocaleString("es")}</b></div>)) : <p className="mut">Sin movimientos aún.</p>}</div></div></Shell>);

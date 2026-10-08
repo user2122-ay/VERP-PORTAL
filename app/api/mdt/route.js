@@ -31,7 +31,7 @@ export async function GET(req) {
   if (m === "ficha") {
     const x = await us.findOne({ id: txt(p.get("id"), 30), cedula: { $exists: true } }); if (!x) return bad("No existe", 404);
     const ar = await d.collection("arrestos").find({ sujeto: x.id }).sort({ at: -1 }).limit(30).toArray(), ex = await d.collection("expedientes").find({ sujetos: x.id }).sort({ at: -1 }).limit(20).toArray();
-    return NextResponse.json({ licencias: (x.inventory || []).filter((i) => licTipo(i)).map((i) => ({ tipo: licTipo(i), num: i.licNum || "—", at: i.at })), cedula: x.cedula, linea: x.chip?.num || null, autos: (x.inventory || []).filter((i) => i.category === "Concesionario").map((i) => ({ name: i.name, placa: i.placa || "", robado: !!i.robado })),
+    return NextResponse.json({ licencias: (x.inventory || []).filter((i) => licTipo(i)).map((i) => ({ tipo: licTipo(i), num: i.licNum || "—", at: i.at })), cedula: x.cedula, linea: x.chip?.num || null, autos: (x.inventory || []).filter((i) => i.category === "Concesionario").map((i) => ({ name: i.name, placa: i.placa || "", robado: !!i.robado, color: i.color || "", detalles: i.detalles || [], img: i.img || "" })),
       arrestos: ar.map((a) => ({ id: String(a._id), cargos: a.cargos, multa: a.multa, cobrado: a.cobrado, minutos: a.minutos, por: a.porName, at: a.at })), expedientes: ex.map((e) => ({ id: String(e._id), titulo: e.titulo, estado: e.estado })) });
   }
   if (m === "casas") { // ciudadanos con sus casas (para solicitar allanamiento)
@@ -44,12 +44,20 @@ export async function GET(req) {
     const l = await d.collection("allanamientos").find().sort({ at: -1 }).limit(40).toArray();
     return NextResponse.json({ aprueba: aprobador(u.ag), yo: u.id, l: l.map((x) => ({ id: String(x._id), duenoN: x.duenoN, casa: x.casaName, ubicacion: x.ubicacion, motivo: x.motivo, estado: x.estado, por: x.porName, porId: x.por, resolvio: x.resolvio || null, at: x.at, vence: x.vence || null })) });
   }
-  if (m === "placa") { // buscar un auto por matrícula: muestra el dueño oficial (si el auto se vendió en la Dark Web, ya no figura)
-    const key = normPlaca(p.get("q")); if (key.length < 4) return NextResponse.json({ p: null });
-    let r = await d.collection("placas").findOne({ _id: key }), dueno = null;
-    if (!r) { const h = await us.findOne({ inventory: { $elemMatch: { placa: key } } }); const it = h?.inventory.find((i) => i.placa === key); if (!it) return NextResponse.json({ p: null }); r = { placa: key, modelo: it.name, color: it.color || "", robado: !!it.robado, estado: "Registro antiguo", dueno: it.robado ? null : h.id }; }
-    if (r.dueno) { const o = await us.findOne({ id: r.dueno, cedula: { $exists: true } }); if (o) dueno = pub(o); }
-    return NextResponse.json({ p: { placa: r.placa, modelo: r.modelo, color: r.color, robado: !!r.robado, estado: r.estado, dueno } });
+  if (m === "placa") { // buscar un auto por matrícula o por modelo: foto del concesionario, especificaciones y dueño oficial (si el auto se vendió en la Dark Web, ya no figura)
+    const raw = txt(p.get("q"), 40), key = normPlaca(raw); if (key.length < 3) return NextResponse.json({ p: null });
+    const armar = async (r0) => {
+      let r = r0, dueno = null, it = null;
+      if (!r.modelo || !r.img) { it = await d.collection("items").findOne({ name: r.modelo, category: "Concesionario" }); }
+      if (r.dueno) { const o = await us.findOne({ id: r.dueno, cedula: { $exists: true } }); if (o) { dueno = pub(o); const inv = (o.inventory || []).find((i) => normPlaca(i.placa) === normPlaca(r.placa)); if (inv) r = { ...r, color: r.color || inv.color || "", detalles: r.detalles || inv.detalles || [] }; } }
+      return { placa: r.placa, modelo: r.modelo, color: r.color || "", detalles: r.detalles || [], robado: !!r.robado, estado: r.estado, dueno,
+        img: r.img || it?.img || "", marca: r.brand || it?.brand || "", anio: r.year || it?.year || "", clase: r.clase || it?.clase || "", desc: r.desc || it?.desc || "" };
+    };
+    let r = await d.collection("placas").findOne({ _id: key });
+    if (!r) { const h = await us.findOne({ inventory: { $elemMatch: { placa: key } } }); const it = h?.inventory.find((i) => i.placa === key); if (it) r = { placa: key, modelo: it.name, color: it.color || "", detalles: it.detalles || [], robado: !!it.robado, estado: "Registro antiguo", dueno: it.robado ? null : h.id }; }
+    if (r) return NextResponse.json({ p: await armar(r) });
+    const otros = raw.length >= 3 ? await d.collection("placas").find({ modelo: new RegExp(esc(raw), "i") }).sort({ at: -1 }).limit(6).toArray() : [];
+    return NextResponse.json({ p: null, varios: await Promise.all(otros.map(armar)) });
   }
   if (m === "exp") {
     const l = await d.collection("expedientes").find().sort({ at: -1 }).limit(40).toArray();

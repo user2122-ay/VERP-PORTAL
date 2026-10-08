@@ -11,6 +11,14 @@ const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 export async function POST(req) {
   const u = await apiUser(); if (!u?.cedula) return bad("Sin sesión", 401);
   const b = await req.json(), m = Math.floor(Number(b.monto)), nota = String(b.nota || "").trim().slice(0, 60), de = b.desde, a = b.hacia;
+  if (b.modo === "propio") { // mover dinero entre mis propias tarjetas (cualquiera, incluida la de Comerciante): instantáneo y sin impuesto
+    if (!BANCOS[de] || !BANCOS[a] || !u.cuentas?.[de] || !u.cuentas?.[a]) return bad("Elige dos tarjetas que tengas");
+    if (de === a) return bad("Elige dos tarjetas distintas"); if (!(m > 0) || m > 1e9) return bad("Monto inválido");
+    const d = await db(), r = await d.collection("users").updateOne({ id: u.id, [`cuentas.${de}.saldo`]: { $gte: m } }, { $inc: { [`cuentas.${de}.saldo`]: -m, [`cuentas.${a}.saldo`]: m } });
+    if (!r.modifiedCount) return bad(`Saldo insuficiente en ${BANCOS[de].corto}`);
+    const at = new Date(); await d.collection("tx").insertMany([{ user: u.id, type: "transferencia", item: `Entre mis tarjetas: ${BANCOS[de].corto} → ${BANCOS[a].corto}`, amount: -m, at }, { user: u.id, type: "transferencia", item: `Entre mis tarjetas: recibido en ${BANCOS[a].corto} desde ${BANCOS[de].corto}`, amount: m, at }]);
+    return NextResponse.json({ ok: true });
+  }
   if (!BANCOS[de] || !BANCOS[a] || BANCOS[de].comercial || BANCOS[a].comercial) return bad("Banco inválido");
   if (!u.cuentas?.[de]) return bad("No tienes tarjeta de ese banco");
   if (!(m > 0) || m > 1e9) return bad("Monto inválido");

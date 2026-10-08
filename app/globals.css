@@ -73,3 +73,32 @@ h1,h2{margin:.2em 0}.mut{color:var(--mut);font-size:14px}.big{font-size:34px;fon
 .mdt-ok{color:#34d399;font-size:22px;font-weight:800;letter-spacing:.2em;animation:mdtUp .5s ease both}
 
 @media(min-width:760px){.nav{flex-wrap:wrap;overflow:visible}.top{align-items:flex-start}}
+
+/* TikVerp */
+.tv{max-width:430px;margin:0 auto;height:min(80vh,780px);min-height:480px;display:flex;flex-direction:column;border:1px solid var(--bd);border-radius:18px;overflow:hidden;background:#000;color:#fff;position:relative}
+.tv-main{flex:1;position:relative;overflow:hidden;min-height:0}
+.tv-feed{height:100%;overflow-y:auto;scroll-snap-type:y mandatory;scrollbar-width:none}.tv-feed::-webkit-scrollbar{display:none}
+.tv-it{height:100%;scroll-snap-align:start;scroll-snap-stop:always;position:relative;background:#000;overflow:hidden}
+.tv-med{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000}
+.tv-sh{position:absolute;left:0;right:0;bottom:0;height:46%;background:linear-gradient(transparent,#000c);pointer-events:none}
+.tv-rail{position:absolute;right:8px;bottom:18px;display:flex;flex-direction:column;align-items:center;gap:14px;z-index:3}
+.tv-rail button{background:none;border:0;color:#fff;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:12px;cursor:pointer;text-shadow:0 1px 4px #000}
+.tv-rail .on{color:#ff2d55}.tv-rail svg{filter:drop-shadow(0 1px 4px #000a)}
+.tv-info{position:absolute;left:12px;right:70px;bottom:16px;z-index:3;text-shadow:0 1px 4px #000;font-size:14px}
+.tv-tag{color:#7fc1ff;cursor:pointer;background:none;border:0;padding:0;font:inherit}
+.tv-nav{display:flex;justify-content:space-around;align-items:center;background:#05070d;border-top:1px solid #1b2a4a;padding:6px 0}
+.tv-nav button{background:none;border:0;color:#9fb0d0;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;cursor:pointer;padding:4px 10px}
+.tv-nav button.on{color:#fff}.tv-nav .mas{background:linear-gradient(135deg,#2f8cff,#7fd0ff);color:#fff;border-radius:12px;padding:8px 14px}
+.tv-top{position:absolute;top:0;left:0;right:0;z-index:4;display:flex;justify-content:center;gap:18px;padding:12px;background:linear-gradient(#000a,transparent)}
+.tv-top button{background:none;border:0;color:#ffffffaa;font-weight:700;font-size:16px;cursor:pointer;padding:2px 0;border-bottom:2px solid transparent}.tv-top button.on{color:#fff;border-color:#fff}
+.tv-pg{position:absolute;inset:0;overflow-y:auto;padding:14px;background:#05070d}
+.tv-pg input,.tv-pg textarea,.tv-pg select{background:#0d1526;color:#fff;border-color:#1b2a4a}
+.tv-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:3px}.tv-grid>div{aspect-ratio:3/4;background:#0d1526;position:relative;overflow:hidden;cursor:pointer}.tv-grid img,.tv-grid video{width:100%;height:100%;object-fit:cover}
+.tv-sheet{position:absolute;left:0;right:0;bottom:0;max-height:75%;z-index:10;background:#0d1526;border-radius:18px 18px 0 0;padding:14px;display:flex;flex-direction:column;gap:8px;box-shadow:0 -10px 40px #000a}
+.tv-bk{position:absolute;inset:0;z-index:9;background:#0008}
+.tv-disc{width:34px;height:34px;border-radius:50%;background:conic-gradient(#111,#2f8cff,#111,#7fd0ff,#111);border:6px solid #111;animation:tvspin 4s linear infinite}
+@keyframes tvspin{to{transform:rotate(360deg)}}
+@keyframes tvheart{0%{transform:scale(.3);opacity:0}30%{transform:scale(1.2);opacity:1}100%{transform:scale(1);opacity:0}}
+.tv-heart{position:absolute;left:50%;top:45%;margin:-48px;z-index:5;color:#ff2d55;animation:tvheart .8s ease both;pointer-events:none}
+.tv-mq{white-space:nowrap;overflow:hidden}.tv-mq span{display:inline-block;padding-left:100%;animation:tvmq 9s linear infinite}@keyframes tvmq{to{transform:translateX(-100%)}}
+@media(max-width:560px){.tv{height:calc(100vh - 130px);border-radius:0;border-left:0;border-right:0}}
