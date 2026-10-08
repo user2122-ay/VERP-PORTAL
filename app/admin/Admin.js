@@ -73,7 +73,7 @@ function Agentes({ agentes }) {
 export default function Admin({ rank, items, reps, audit, robos = [], staff = [], agentes = [], canStaff = false }) {
   const full = canAdmin(rank), TABS = full ? ["Usuarios", "Mercado", "Solicitudes", "Agentes MDT", "Auditoría", "Reportes 911", ...(canStaff ? ["Staff"] : [])] : ["Solicitudes"];
   const [tab, setTab] = useState(full ? "Usuarios" : "Solicitudes");
-  return (<div style={{ maxWidth: 900, margin: "0 auto" }}><h2>Administración</h2><span className="tag">{RANK_LABEL[rank] || rank}</span>
+  return (<div style={{ maxWidth: 900, margin: "0 auto" }}><img src="/admin-logo.jpg" alt="VE:RP" style={{ width: "min(380px,100%)", borderRadius: 12, display: "block", marginBottom: 8 }} /><h2>Administración</h2><span className="tag">{RANK_LABEL[rank] || rank}</span>
     <div style={{ display: "flex", gap: 8, margin: "12px 0", flexWrap: "wrap" }}>{TABS.map((t) => <button key={t} className={"btn " + (tab === t ? "" : "g")} onClick={() => setTab(t)}>{t}</button>)}</div>
     {tab === "Solicitudes" && <Solicitudes robos={robos} />}{tab === "Staff" && <Staff staff={staff} />}{tab === "Agentes MDT" && <Agentes agentes={agentes} />}{tab === "Usuarios" && <Usuarios items={items} />}{tab === "Mercado" && <Mercado items={items} />}
     {tab === "Auditoría" && <div className="card"><b>Registro de auditoría (últimas 100 acciones)</b>{audit.map((x) => <div key={x.id} style={{ padding: "8px 0", borderTop: "1px solid var(--bd)" }}><b>{x.act}</b> · {x.obj}<div className="mut">{x.by} ({String(x.rank).replace("_", " ")}) · {new Date(x.at).toLocaleString("es")}</div><div>Razón: {x.razon}</div></div>)}{!audit.length && <p className="mut">Sin registros.</p>}</div>}

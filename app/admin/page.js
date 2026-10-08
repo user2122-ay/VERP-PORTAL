@@ -11,6 +11,9 @@ import { sembrar } from "@/lib/catalogo";
 export const dynamic = "force-dynamic";
 export default async function P() {
   const u = await needUser(), rank = await staffRank(u); if (!canReview(rank)) redirect("/");
+  if (u.dev && !adminFresca(u)) { // el Developer no necesita escribir la placa: se le asigna DEV-001 y entra directo
+    const ahora = new Date(); await (await db()).collection("users").updateOne({ id: u.id }, { $set: { adminSesion: ahora, staffPlaca: u.staffPlaca || "DEV-001" } }); u.adminSesion = ahora;
+  }
   if (!adminFresca(u)) return <Shell user={{ ...u, rank }}><AdminAcceso nombre={nombreDe(u)} rango={RANK_LABEL[rank] || rank} /></Shell>;
   const d = await db(); await sembrar(d);
   const it = (i) => ({ id: String(i._id), name: i.name, category: i.category, price: i.price, impuesto: i.impuesto || 0, ubicacion: i.ubicacion || "", tipo: i.tipo || "" });
