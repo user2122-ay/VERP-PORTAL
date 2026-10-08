@@ -7,6 +7,7 @@ import { creditarCom } from "@/lib/negocios";
 import { esRol, nombreDe } from "@/lib/rol";
 import { nuevaPlaca, traspasarPlaca } from "@/lib/placa";
 import { tieneVpn } from "@/lib/vpn";
+import { factorHoy } from "@/lib/mnegro";
 import { enviarPush } from "@/lib/push";
 const bad = (m, s = 400) => NextResponse.json({ error: m }, { status: s });
 const vpn = tieneVpn;
@@ -49,10 +50,11 @@ export async function POST(req) {
       const car = await sacar(d, u, b); if (!car) return bad("Ese vehículo ya no está en tu inventario");
       const dueño = await tallerDe(d), base = { tipo: "oferta", seller: u.id, sellerName: yo, car, precio, pago: b.pago, chat: [], at };
       if (!dueño || dueño === u.id) { // sin taller con dueño: aceptación automática
-        await traspasarPlaca(d, car.placa); await pagarA(d, u.id, b.pago, precio); await col.insertOne({ ...base, estado: "vendida", vendido: precio });
-        await d.collection("tx").insertOne({ user: u.id, type: "venta", item: `Auto vendido (Dark Web): ${car.name}`, amount: precio, at });
-        await avisar(d, u.id, "Auto vendido", `Nadie tiene el Taller clandestino, así que se aceptó solo: +${money(precio)} por ${car.name}.`);
-        return NextResponse.json({ ok: true, auto: true });
+        const mn = await factorHoy(d), cobro = Math.round(precio * mn.factor);
+        await traspasarPlaca(d, car.placa); await pagarA(d, u.id, b.pago, cobro); await col.insertOne({ ...base, estado: "vendida", vendido: cobro });
+        await d.collection("tx").insertOne({ user: u.id, type: "venta", item: `Auto vendido (Dark Web): ${car.name}`, amount: cobro, at });
+        await avisar(d, u.id, "Auto vendido", `${mn.mood} (x${mn.factor}): +${money(cobro)} por ${car.name}.`);
+        return NextResponse.json({ ok: true, auto: true, cobro });
       }
       await col.insertOne({ ...base, estado: "abierta", buyer: dueño, propuesta: { by: u.id, monto: precio } });
       await avisar(d, dueño, "Nueva oferta en tu taller", `${yo} ofrece ${car.name} por ${money(precio)}. Entra a la Dark Web para negociar.`);
@@ -85,7 +87,7 @@ export async function POST(req) {
       await us.updateOne({ id: u.id }, { $push: { inventory: { ...l.car, at: new Date() } } }); return NextResponse.json({ ok: true });
     }
     case "reventa": { // el dueño del taller pone a la venta un auto de su inventario
-      if ((await tallerDe(d)) !== u.id) return bad("Solo el dueño del Taller clandestino puede revender", 403);
+      return bad("Esta opción ya no está disponible", 403);
       const precio = Math.floor(Number(b.precio)); if (!(precio >= 1 && precio <= 50000000)) return bad("Precio inválido");
       const car = await sacar(d, u, b); if (!car) return bad("Ese vehículo ya no está en tu inventario");
       await col.insertOne({ tipo: "reventa", seller: u.id, sellerName: yo, car, precio, estado: "abierta", chat: [], at }); return NextResponse.json({ ok: true });
@@ -97,11 +99,12 @@ export async function POST(req) {
       if (!(precio >= 1)) return bad("Precio inválido"); if (precio > tope) return bad(`Máximo ${money(tope)}: lo compraste en ${money(pagado)} y solo puedes ganar $1.000 (tope $15.000)`);
       if (!pagoKey(u, b.pago)) return bad("Cuenta de cobro inválida");
       const car = await sacar(d, u, b); if (!car) return bad("Ese vehículo ya no está en tu inventario");
-      await traspasarPlaca(d, car.placa); await pagarA(d, u.id, b.pago, precio);
-      await col.insertOne({ tipo: "sistema", seller: u.id, sellerName: yo, car, precio, estado: "vendida", vendido: precio, comprado: pagado, chat: [], at });
-      await d.collection("tx").insertOne({ user: u.id, type: "venta", item: `Auto vendido a la página (Dark Web): ${car.name}`, amount: precio, at });
-      await avisar(d, u.id, "Auto vendido a la página", `Vendiste ${car.name} por ${money(precio)} (lo compraste en ${money(pagado)}).`);
-      return NextResponse.json({ ok: true, precio });
+      const mn = await factorHoy(d), cobro = Math.round(precio * mn.factor);
+      await traspasarPlaca(d, car.placa); await pagarA(d, u.id, b.pago, cobro);
+      await col.insertOne({ tipo: "sistema", seller: u.id, sellerName: yo, car, precio, estado: "vendida", vendido: cobro, comprado: pagado, chat: [], at });
+      await d.collection("tx").insertOne({ user: u.id, type: "venta", item: `Auto vendido a la página (Dark Web): ${car.name}`, amount: cobro, at });
+      await avisar(d, u.id, "Auto vendido a la página", `Vendiste ${car.name} por ${money(cobro)} (${mn.mood}, x${mn.factor}; lo compraste en ${money(pagado)}).`);
+      return NextResponse.json({ ok: true, precio: cobro });
     }
     case "comprar": { // compra de un auto puesto a la venta por el taller
       const id = oid(b.id), pk = pagoKey(u, b.pago); if (!id) return bad("Publicación inválida"); if (!pk) return bad("Método de pago inválido");

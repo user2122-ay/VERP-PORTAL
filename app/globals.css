@@ -71,3 +71,5 @@ h1,h2{margin:.2em 0}.mut{color:var(--mut);font-size:14px}.big{font-size:34px;fon
 .mdt-scan{position:fixed;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,#4da3ff,transparent);animation:mdtScan 2.6s linear infinite;opacity:.55;pointer-events:none}
 .mdt-t{font-family:ui-monospace,Consolas,monospace;color:#7fc1ff;min-height:1.4em;font-size:14px}.mdt-in{animation:mdtUp .6s ease both}
 .mdt-ok{color:#34d399;font-size:22px;font-weight:800;letter-spacing:.2em;animation:mdtUp .5s ease both}
+
+@media(min-width:760px){.nav{flex-wrap:wrap;overflow:visible}.top{align-items:flex-start}}

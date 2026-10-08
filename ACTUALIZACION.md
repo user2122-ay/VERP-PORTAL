@@ -62,3 +62,14 @@ lib/rol.js, lib/placa.js, components/CedulaCard.js, app/darkweb/*, app/delictivo
 - **WhatsApp**: se quitó subir fotos de la galería. Los estados son un **link** de foto (jpg, png, gif, webp) o video (mp4, webm, mov) de Discord o Imgur. La foto de perfil de cada contacto es su avatar de Roblox (el de la cédula).
 - Colecciones nuevas: `tesoreria` y el documento `config` `{_id:"tesoreria"}`. Sin variables nuevas.
 - **Para pausar**: membresías de booster y beneficios automáticos siguen anotados para después.
+
+## Actualización 5: Tesorería, sueldos por rango, Dark Web y Teléfono
+- **Tesorería** empieza con $3.000.000 (se aplica una sola vez). Los impuestos de transferencias de los bancos ahora entran a la Tesorería.
+- **Impuesto a los objetos (ITBMS)**: el Ministro del Interior lo cambia en MDT → Tesorería (0% a 30%, antes fijo en 7%). Se aplica en el Mercado y en la compra.
+- **Sueldos**: ya no se ponen en Administración. En MDT → Tesorería, el Ministro elige departamento y rango, escribe el sueldo y ve la lista de miembros con ese rango; "Liberar sueldo" les paga (una vez por semana cada uno).
+- **Rangos** (Administración → Agentes MDT, según departamento): PNB, CICPC y SEBIN con las listas oficiales. Los agentes que ya estaban con rangos viejos (Agente, Sargento, Director...) deben reasignarse en Administración.
+- **Dark Web**: se quitó "Revender un auto de mi taller". La venta de autos robados a la página (con o sin dueño del taller) ahora paga según el humor del día (x0.60 a x1.40, aleatorio, cambia cada día).
+- **Menús**: en computadora los botones de arriba (menú y categorías del Mercado) ya se acomodan en varias filas y se ven todos.
+- **Administración**: logo centrado y título "Administración Y Asuntos Internos De Venezuela Community".
+- **Teléfono** (antes WhatsApp): hay que comprar el teléfono. Dentro salen dos opciones grandes: "?" TikVerp (izquierda, próximamente) y VE WhatsApp (derecha). WhatsApp pide solo el chip, ya no el plan de datos.
+- Colecciones/documentos nuevos en Mongo (se crean solos): config `sueldos`, config `mnegro`.

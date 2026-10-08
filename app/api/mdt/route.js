@@ -3,10 +3,10 @@ import { ObjectId } from "mongodb";
 import { db } from "@/lib/db";
 import { apiUser } from "@/lib/auth";
 import { nombreDe } from "@/lib/rol";
-import { agenteDe, aprobador, casaRef, esMinistro, SEMANA } from "@/lib/mdt";
+import { agenteDe, aprobador, casaRef, esMinistro, SEMANA, RANGOS_POR_DEPTO, claveSueldo } from "@/lib/mdt";
 import { BANCOS } from "@/lib/bancos";
 import { NEGOCIOS } from "@/lib/negocios";
-import { saldoTesoreria, egresarTesoreria } from "@/lib/tesoreria";
+import { saldoTesoreria, egresarTesoreria, tasaITBMS, setTasa } from "@/lib/tesoreria";
 import { normPlaca } from "@/lib/placa";
 import { licTipo } from "@/lib/licencia";
 const bad = (m, s = 400) => NextResponse.json({ error: m }, { status: s });
@@ -63,16 +63,17 @@ export async function GET(req) {
   }
   if (m === "sueldo") { // sueldo semanal del agente y la cuenta donde lo recibe
     const cu = Object.keys(u.cuentas || {}).filter((k) => !BANCOS[k]?.comercial).map((k) => ({ k, label: BANCOS[k]?.nombre || k }));
-    return NextResponse.json({ sueldo: u.agente?.sueldo || 0, cuenta: u.agente?.cuenta || "efectivo", cuentas: [{ k: "efectivo", label: "Efectivo" }, ...cu], ultimoPago: u.agente?.ultimoPago || null, edita: !!u.agente });
+    const sl = u.agente ? (await d.collection("config").findOne({ _id: "sueldos" }))?.[claveSueldo(u.agente.depto, u.agente.rango)] || 0 : 0;
+    return NextResponse.json({ sueldo: sl, cuenta: u.agente?.cuenta || "efectivo", cuentas: [{ k: "efectivo", label: "Efectivo" }, ...cu], ultimoPago: u.agente?.ultimoPago || null, edita: !!u.agente });
   }
   if (m === "tesoreria") { // SOLO el Ministro del Interior
     if (!esMinistro(u.ag)) return bad("Solo el Ministro del Interior ve la Tesorería", 403);
-    const mov = await d.collection("tesoreria").find().sort({ at: -1 }).limit(60).toArray(), ags = await us.find({ agente: { $exists: true } }).limit(300).toArray();
+    const sd = (await d.collection("config").findOne({ _id: "sueldos" })) || {}, mov = await d.collection("tesoreria").find().sort({ at: -1 }).limit(60).toArray(), ags = await us.find({ agente: { $exists: true } }).limit(300).toArray();
     const tot = await d.collection("tesoreria").aggregate([{ $group: { _id: "$tipo", t: { $sum: "$monto" } } }]).toArray(), suma = (k) => tot.find((x) => x._id === k)?.t || 0;
     const negs = await d.collection("negocios").find({ owner: { $ne: null }, _id: { $ne: "taller" } }).toArray(), dn = Object.fromEntries((await us.find({ id: { $in: negs.map((n) => n.owner) } }, { projection: { id: 1, name: 1, cedula: 1 } }).toArray()).map((x) => [x.id, x.cedula ? `${x.cedula.nombres.split(" ")[0]} ${x.cedula.apellidos.split(" ")[0]}` : x.name]));
-    return NextResponse.json({ saldo: await saldoTesoreria(d), ingresos: suma("ingreso"), egresos: suma("egreso"),
+    return NextResponse.json({ tasa: await tasaITBMS(d), sueldos: sd, saldo: await saldoTesoreria(d), ingresos: suma("ingreso"), egresos: suma("egreso"),
       mov: mov.map((x) => ({ tipo: x.tipo, monto: x.monto, concepto: x.concepto, at: x.at })),
-      agentes: ags.map((x) => ({ id: x.id, nombre: x.cedula ? `${x.cedula.nombres.split(" ")[0]} ${x.cedula.apellidos.split(" ")[0]}` : x.name, rango: x.agente.rango, depto: x.agente.depto, sueldo: x.agente.sueldo || 0, cuenta: x.agente.cuenta || "efectivo", ultimoPago: x.agente.ultimoPago || null, toca: !x.agente.ultimoPago || Date.now() - +new Date(x.agente.ultimoPago) >= SEMANA })),
+      agentes: ags.map((x) => ({ id: x.id, nombre: x.cedula ? `${x.cedula.nombres.split(" ")[0]} ${x.cedula.apellidos.split(" ")[0]}` : x.name, rango: x.agente.rango, depto: x.agente.depto, sueldo: sd[claveSueldo(x.agente.depto, x.agente.rango)] || 0, cuenta: x.agente.cuenta || "efectivo", ultimoPago: x.agente.ultimoPago || null, toca: !x.agente.ultimoPago || Date.now() - +new Date(x.agente.ultimoPago) >= SEMANA })),
       negocios: negs.map((n) => ({ nombre: NEGOCIOS[n._id]?.nombre || n._id, dueno: dn[n.owner] || "—", paga: n.pagaImpuesto !== false, evadido: n.evadido || 0 })) });
   }
   return bad("Consulta inválida");
@@ -92,23 +93,34 @@ export async function POST(req) {
       if (k !== "efectivo" && (!u.cuentas?.[k] || BANCOS[k]?.comercial)) return bad("No tienes esa cuenta bancaria");
       await us.updateOne({ id: u.id }, { $set: { "agente.cuenta": k } }); return NextResponse.json({ ok: true });
     }
-    case "liberarSueldos": { // SOLO el Ministro del Interior: paga a cada agente su sueldo semanal desde la Tesorería
+    case "liberarRango": { // SOLO el Ministro: elige departamento y rango, pone el sueldo y lo libera a todos los miembros con ese rango
       if (!esMinistro(u.ag)) return bad("Solo el Ministro del Interior libera los sueldos", 403);
-      const ags = await us.find({ "agente.sueldo": { $gt: 0 } }).limit(300).toArray(), pagados = [], sinFondos = []; let total = 0;
+      const depto = String(b.depto || ""), rango = String(b.rango || ""), s = Math.floor(Number(b.sueldo));
+      if (!RANGOS_POR_DEPTO[depto]?.includes(rango)) return bad("Departamento o rango inválido");
+      if (!Number.isFinite(s) || s < 1 || s > 10000000) return bad("Escribe un sueldo entre $1 y $10.000.000");
+      await d.collection("config").updateOne({ _id: "sueldos" }, { $set: { [claveSueldo(depto, rango)]: s } }, { upsert: true });
+      const ags = await us.find({ "agente.depto": depto, "agente.rango": rango }).limit(300).toArray(), pagados = [], sinFondos = []; let total = 0;
       for (const x of ags) {
-        const antes = x.agente.ultimoPago || null, hace = new Date(Date.now() - SEMANA), s = x.agente.sueldo;
+        const antes = x.agente.ultimoPago || null, hace = new Date(Date.now() - SEMANA);
         // reclama el pago de esta semana (evita pagar dos veces si se pulsa dos veces seguidas)
         const c = await us.updateOne({ id: x.id, $or: [{ "agente.ultimoPago": { $exists: false } }, { "agente.ultimoPago": null }, { "agente.ultimoPago": { $lte: hace } }] }, { $set: { "agente.ultimoPago": at } }); if (!c.modifiedCount) continue;
         const nom = x.cedula ? `${x.cedula.nombres.split(" ")[0]} ${x.cedula.apellidos.split(" ")[0]}` : x.name;
-        if (!(await egresarTesoreria(d, s, `Sueldo: ${x.agente.rango} ${nom}`, x.id))) { await us.updateOne({ id: x.id }, antes ? { $set: { "agente.ultimoPago": antes } } : { $unset: { "agente.ultimoPago": "" } }); sinFondos.push(nom); continue; }
+        if (!(await egresarTesoreria(d, s, `Sueldo: ${rango} ${nom}`, x.id))) { await us.updateOne({ id: x.id }, antes ? { $set: { "agente.ultimoPago": antes } } : { $unset: { "agente.ultimoPago": "" } }); sinFondos.push(nom); continue; }
         const k = x.agente.cuenta && x.cuentas?.[x.agente.cuenta] && !BANCOS[x.agente.cuenta]?.comercial ? x.agente.cuenta : "efectivo", campo = k === "efectivo" ? "balance" : `cuentas.${k}.saldo`;
         await us.updateOne({ id: x.id }, { $inc: { [campo]: s } });
-        await d.collection("tx").insertOne({ user: x.id, type: "sueldo", item: `Sueldo semanal (${x.agente.depto})`, amount: s, at });
+        await d.collection("tx").insertOne({ user: x.id, type: "sueldo", item: `Sueldo semanal (${depto} · ${rango})`, amount: s, at });
         await d.collection("notifs").insertOne({ uid: x.id, title: "Sueldo recibido", body: `El Ministerio del Interior te pagó ${money(s)} en ${k === "efectivo" ? "efectivo" : BANCOS[k].nombre}.`, at, read: false });
         pagados.push(nom); total += s;
       }
-      await d.collection("audit").insertOne({ by: u.id, byName: u.name, rank: u.ag.rango, act: "liberarSueldos", objetivo: `${pagados.length} agentes`, razon: "Nómina semanal", detalle: { total, sinFondos }, at });
-      return NextResponse.json({ ok: true, pagados: pagados.length, total, sinFondos });
+      await d.collection("audit").insertOne({ by: u.id, byName: u.name, rank: u.ag.rango, act: "liberarSueldos", objetivo: `${depto} · ${rango}: ${pagados.length} de ${ags.length}`, razon: "Nómina semanal", detalle: { sueldo: s, total, sinFondos }, at });
+      return NextResponse.json({ ok: true, pagados: pagados.length, miembros: ags.length, total, sinFondos });
+    }
+    case "tasaSet": { // SOLO el Ministro: cambia el impuesto (ITBMS) de los objetos del Mercado
+      if (!esMinistro(u.ag)) return bad("Solo el Ministro del Interior cambia los impuestos", 403);
+      const p = Number(b.tasa); if (!(p >= 0 && p <= 30)) return bad("El impuesto debe estar entre 0% y 30%");
+      await setTasa(d, Math.round(p * 10) / 1000);
+      await d.collection("audit").insertOne({ by: u.id, byName: u.name, rank: u.ag.rango, act: "tasaITBMS", objetivo: `ITBMS ${p}%`, razon: "Decisión del Ministro", at });
+      return NextResponse.json({ ok: true });
     }
     case "expNuevo": {
       const titulo = txt(b.titulo, 100); if (titulo.length < 3) return bad("Escribe un título");

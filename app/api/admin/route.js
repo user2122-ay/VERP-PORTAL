@@ -3,7 +3,7 @@ import { ObjectId } from "mongodb";
 import { db } from "@/lib/db";
 import { adminUser, reviewUser } from "@/lib/admin";
 import { canAdmin, canStaff } from "@/lib/roles";
-import { RANGOS_MDT, DEPTOS } from "@/lib/mdt";
+import { RANGOS_POR_DEPTO, DEPTOS } from "@/lib/mdt";
 import { LUGARES } from "@/lib/zonas";
 import { BANCOS } from "@/lib/bancos";
 import { nuevaCuenta } from "@/lib/tarjeta";
@@ -145,10 +145,10 @@ export async function POST(req) {
     case "agenteSet": case "agenteDel": { // asigna o quita agentes de la MDT
       if (b.a === "agenteDel") { if (!t) return err("Falta el usuario"); await users.updateOne({ id: t.id }, { $unset: { agente: "", mdtSesion: "" } }); await log("agenteDel", quien, {}); break; }
       const x = await users.findOne({ name: new RegExp("^" + esc(str(b.username, 40)) + "$", "i") }); if (!x) return err("Esa persona debe iniciar sesión en el portal una vez primero");
-      const rango = RANGOS_MDT.includes(b.rango) ? b.rango : null, placa = up(b.placa, 20), depto = str(b.depto, 40), sueldo = Math.floor(Number(b.sueldo)); if (!rango || !placa || !depto) return err("Completa rango, placa y departamento");
-      if (!DEPTOS.includes(depto)) return err("Departamento inválido"); if (!Number.isFinite(sueldo) || sueldo < 0 || sueldo > 10000000) return err("Escribe el sueldo semanal (0 a $10.000.000)");
+      const depto = str(b.depto, 40), rango = RANGOS_POR_DEPTO[depto]?.includes(b.rango) ? b.rango : null, placa = up(b.placa, 20); if (!rango || !placa || !depto) return err("Completa departamento, rango y placa");
+      if (!DEPTOS.includes(depto)) return err("Departamento inválido");
       if (await users.findOne({ "agente.placa": placa, id: { $ne: x.id } })) return err("Esa placa ya la tiene otro agente");
-      await users.updateOne({ id: x.id }, { $set: { "agente.rango": rango, "agente.placa": placa, "agente.depto": depto, "agente.sueldo": sueldo } }); await d.collection("notifs").insertOne({ uid: x.id, title: "Asignado a la MDT", body: `${rango} · ${depto} · Placa ${placa} · Sueldo ${money(sueldo)} semanal. Entra por el menú MDT y elige en qué banco quieres recibirlo.`, at, read: false }); await log("agenteSet", `${x.name} (${x.id})`, { rango, placa, depto, sueldo }); break;
+      await users.updateOne({ id: x.id }, { $set: { "agente.rango": rango, "agente.placa": placa, "agente.depto": depto } }); await d.collection("notifs").insertOne({ uid: x.id, title: "Asignado a la MDT", body: `${rango} · ${depto} · Placa ${placa}. Entra por el menú MDT y elige en qué banco quieres recibir tu sueldo.`, at, read: false }); await log("agenteSet", `${x.name} (${x.id})`, { rango, placa, depto }); break;
     }
     case "roboOk": case "roboNo": {
       const id = oid(b.id), r = id && (await d.collection("robos").findOne({ _id: id, estado: "pendiente" })); if (!r) return err("Solicitud no encontrada", 404);

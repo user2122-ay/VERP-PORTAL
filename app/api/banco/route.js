@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { apiUser } from "@/lib/auth";
 import { enviarPush } from "@/lib/push";
 import { impuesto } from "@/lib/economia";
+import { ingresarTesoreria } from "@/lib/tesoreria";
 import { BANCOS, ESPERA_MIN, feeInterbancario } from "@/lib/bancos";
 const bad = (m, s = 400) => NextResponse.json({ error: m }, { status: s });
 const nom = (x) => x.cedula.nombres.split(" ")[0] + " " + x.cedula.apellidos.split(" ")[0];
@@ -22,6 +23,7 @@ export async function POST(req) {
   const { fee: f0, inflacion } = await impuesto(d), inter = de !== a, fee = inter ? feeInterbancario(f0) : f0, tot = m + fee, K = `cuentas.${de}.saldo`;
   const r = await d.collection("users").updateOne({ id: u.id, [K]: { $gte: tot } }, { $inc: { [K]: -tot } });
   if (!r.modifiedCount) return bad(`Saldo insuficiente en ${BANCOS[de].corto} (monto + impuesto de $${fee})`);
+  await ingresarTesoreria(d, fee, `Impuesto bancario (${inter ? "interbancario" : "mismo banco"})`, "Bancos");
   const at = new Date(), n = nota ? ` · ${nota}` : "", $ = m.toLocaleString("es"), tipo = inter ? "interbancario" : "mismo banco";
   const txs = [{ user: u.id, type: "transferencia", item: `Enviado a ${nom(to)}${n} (${BANCOS[de].corto} → ${BANCOS[a].corto})`, amount: -m, at }, { user: u.id, type: "impuesto", item: `Impuesto ${tipo} (inflación ${inflacion}%)`, amount: -fee, at }];
   if (!inter) {

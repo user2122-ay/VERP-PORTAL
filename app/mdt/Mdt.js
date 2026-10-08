@@ -4,6 +4,7 @@ import { Search, Shield, FileText, Gavel, Siren, Plus, Home, Wallet, Landmark } 
 import CedulaCard from "@/components/CedulaCard";
 import ZoomMap from "@/components/ZoomMap";
 import Acceso from "./Acceso";
+import { RANGOS_POR_DEPTO, DEPTOS } from "@/lib/mdt";
 import LicenciaCard from "@/components/LicenciaCard";
 const $ = (n) => `$${Number(n || 0).toLocaleString("es")}`, fec = (d) => new Date(d).toLocaleString("es", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
 const get = async (q) => { const r = await fetch("/api/mdt?" + q, { cache: "no-store" }); return r.ok ? r.json() : null; };
@@ -99,23 +100,32 @@ function Sueldo() {
       <p className="mut">El Ministro del Interior libera los sueldos cada semana y se depositan ahí. Si no tienes esa cuenta, se paga en efectivo.</p></>}</div>);
 }
 function Tesoreria() {
-  const [t, setT] = useState(null), [busy, setBusy] = useState(false), cargar = async () => setT(await get("m=tesoreria")); useEffect(() => { cargar(); }, []);
+  const [t, setT] = useState(null), [busy, setBusy] = useState(false), [dep, setDep] = useState("Policía Nacional Bolivariana"), [rg, setRg] = useState(""), [sl, setSl] = useState(""), [tasa, setTasa] = useState(""), cargar = async () => setT(await get("m=tesoreria")); useEffect(() => { cargar(); }, []);
   if (!t) return <p className="mut">Cargando...</p>;
-  const nomina = t.agentes.filter((a) => a.toca).reduce((n, a) => n + a.sueldo, 0);
+  const rangos = RANGOS_POR_DEPTO[dep] || [], rango = rangos.includes(rg) ? rg : rangos[0], miembros = t.agentes.filter((a) => a.depto === dep && a.rango === rango);
+  const sueldo = sl !== "" ? Number(sl) : t.sueldos?.[`${dep}|${rango}`] || 0, pend = miembros.filter((a) => a.toca).length;
   const liberar = async () => {
-    if (!confirm(`Se pagarán ${$(nomina)} en sueldos desde la Tesorería. ¿Liberar los sueldos?`)) return; setBusy(true);
-    const j = await post({ accion: "liberarSueldos" }); setBusy(false);
-    if (j) { alert(`Sueldos liberados: ${j.pagados} agente(s), ${$(j.total)}.${j.sinFondos?.length ? `\nSin fondos para: ${j.sinFondos.join(", ")}` : ""}`); cargar(); }
+    if (!(sueldo > 0)) return alert("Escribe el sueldo");
+    if (!confirm(`Se pagarán ${$(sueldo * pend)} a ${pend} miembro(s) con rango ${rango}. ¿Liberar sueldo?`)) return; setBusy(true);
+    const j = await post({ accion: "liberarRango", depto: dep, rango, sueldo }); setBusy(false);
+    if (j) { alert(`Sueldo liberado: ${j.pagados} de ${j.miembros} miembro(s), ${$(j.total)}.${j.sinFondos?.length ? `
+Sin fondos para: ${j.sinFondos.join(", ")}` : ""}`); setSl(""); cargar(); }
   };
+  const guardarTasa = async () => { if (await post({ accion: "tasaSet", tasa })) { setTasa(""); cargar(); } };
   return (<div style={{ display: "grid", gap: 12 }}>
     <div className="card"><b>Tesorería del Estado</b><div className="big" style={{ fontSize: 30 }}>{$(t.saldo)}</div>
       <div className="mut">Ingresos totales {$(t.ingresos)} · Egresos totales {$(t.egresos)}</div>
-      <p className="mut">Aquí llega el ITBMS (7%) de todo lo que se compra en el Mercado y de los negocios legales. El mercado negro no paga impuestos.</p></div>
-    <div className="card"><b>Sueldos de la semana</b>
-      {t.agentes.map((a) => <div key={a.id} style={{ display: "flex", justifyContent: "space-between", gap: 8, padding: "6px 0", borderTop: "1px solid var(--bd)" }}><span>{a.rango} {a.nombre}<div className="mut">{a.depto} · cobra en {a.cuenta === "efectivo" ? "efectivo" : a.cuenta.toUpperCase()}</div></span><span style={{ textAlign: "right" }}><b>{$(a.sueldo)}</b><div className="mut">{a.sueldo ? (a.toca ? "Pendiente de pago" : `Pagado ${fec(a.ultimoPago)}`) : "Sin sueldo"}</div></span></div>)}
-      {!t.agentes.length && <p className="mut">No hay agentes asignados.</p>}
-      <button className="btn" style={{ width: "100%", marginTop: 10 }} disabled={busy || !nomina} onClick={liberar}><Wallet size={16} />{nomina ? `Liberar sueldos (${$(nomina)})` : "No hay sueldos pendientes"}</button>
-      {nomina > t.saldo && <p style={{ color: "var(--bad)" }}>La Tesorería no alcanza para toda la nómina. Se pagará a quienes alcance.</p>}</div>
+      <p className="mut">Aquí llega el ITBMS de lo que se compra en el Mercado, los impuestos de los bancos y los negocios legales. El mercado negro no paga impuestos.</p></div>
+    <div className="card"><b>Impuesto a los objetos (ITBMS)</b><div className="big" style={{ fontSize: 28 }}>{Math.round(t.tasa * 1000) / 10}%</div><div className="row2"><input type="number" min="0" max="30" step="0.5" value={tasa} onChange={(e) => setTasa(e.target.value)} placeholder="Nuevo impuesto (%)" /><button className="btn" onClick={guardarTasa}>Aplicar</button></div><p className="mut">Sube o baja el impuesto de todo lo que se vende en el Mercado (de 0% a 30%).</p></div>
+    <div className="card"><b>Pagar sueldos</b>
+      <label className="mut">Departamento</label><select value={dep} onChange={(e) => { setDep(e.target.value); setRg(""); setSl(""); }}>{DEPTOS.map((d) => <option key={d}>{d}</option>)}</select>
+      <label className="mut">Rango</label><select value={rango} onChange={(e) => { setRg(e.target.value); setSl(""); }}>{rangos.map((r) => <option key={r}>{r}</option>)}</select>
+      <label className="mut">Sueldo semanal ($)</label><input type="number" min="1" value={sl} onChange={(e) => setSl(e.target.value)} placeholder={sueldo ? `Actual: ${$(sueldo)}` : "Escribe el sueldo"} />
+      <b style={{ display: "block", marginTop: 6 }}>Miembros con este rango ({miembros.length})</b>
+      {miembros.map((a) => <div key={a.id} style={{ display: "flex", justifyContent: "space-between", gap: 8, padding: "6px 0", borderTop: "1px solid var(--bd)" }}><span>{a.nombre}<div className="mut">cobra en {a.cuenta === "efectivo" ? "efectivo" : a.cuenta.toUpperCase()}</div></span><span className="mut" style={{ textAlign: "right" }}>{a.toca ? "Pendiente de pago" : `Pagado ${fec(a.ultimoPago)}`}</span></div>)}
+      {!miembros.length && <p className="mut">No hay nadie con este rango.</p>}
+      <button className="btn" style={{ width: "100%", marginTop: 10 }} disabled={busy || !pend || !(sueldo > 0)} onClick={liberar}><Wallet size={16} />{pend ? `Liberar sueldo (${$(sueldo * pend)})` : "No hay pagos pendientes"}</button>
+      {sueldo * pend > t.saldo && <p style={{ color: "var(--bad)" }}>La Tesorería no alcanza. Se pagará a quienes alcance.</p>}</div>
     <div className="card"><b>Negocios legales e impuesto</b>
       {t.negocios.map((n, k) => <div key={k} style={{ display: "flex", justifyContent: "space-between", gap: 8, padding: "6px 0", borderTop: "1px solid var(--bd)" }}><span>{n.nombre}<div className="mut">Dueño: {n.dueno}</div></span><span style={{ textAlign: "right" }}><b style={{ color: n.paga ? "var(--ok)" : "var(--bad)" }}>{n.paga ? "Paga impuestos" : "No paga impuestos"}</b>{n.evadido > 0 && <div className="mut">Evadido: {$(n.evadido)}</div>}</span></div>)}
       {!t.negocios.length && <p className="mut">Ningún negocio legal tiene dueño todavía.</p>}</div>

@@ -4,8 +4,8 @@ import { usePathname } from "next/navigation";
 import PushAsk from "./PushAsk";
 import { canReview } from "@/lib/roles";
 import { tieneVpn } from "@/lib/vpn";
-import { LayoutDashboard, Contact, Store, Siren, Landmark, Bell, Package, MessageCircle, Briefcase, ShieldCheck, Sun, Moon, LogOut, Globe, Skull, Shield } from "lucide-react";
-const L = [["/", "Panel", LayoutDashboard], ["/cedula", "Cédula", Contact], ["/banco", "Banco", Landmark], ["/mercado", "Mercado", Store], ["/inventario", "Inventario", Package], ["/whatsapp", "WhatsApp", MessageCircle], ["/notificaciones", "Avisos", Bell], ["/emergencias", "911", Siren]];
+import { LayoutDashboard, Contact, Store, Siren, Landmark, Bell, Package, Smartphone, Briefcase, ShieldCheck, Sun, Moon, LogOut, Globe, Skull, Shield } from "lucide-react";
+const L = [["/", "Panel", LayoutDashboard], ["/cedula", "Cédula", Contact], ["/banco", "Banco", Landmark], ["/mercado", "Mercado", Store], ["/inventario", "Inventario", Package], ["/whatsapp", "Teléfono", Smartphone], ["/notificaciones", "Avisos", Bell], ["/emergencias", "911", Siren]];
 export default function Shell({ user, children }) {
   const p = usePathname();
   function toggle(e) {

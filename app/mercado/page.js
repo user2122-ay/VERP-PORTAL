@@ -12,14 +12,15 @@ import { licTipo, tieneLic } from "@/lib/licencia";
 import { MessageCircle, Lock } from "lucide-react";
 import Link from "next/link";
 import Negocios from "./Negocios";
-import { iva } from "@/lib/tesoreria";
+import { iva, tasaITBMS } from "@/lib/tesoreria";
 export const dynamic = "force-dynamic";
 // Botones de arriba: cada categoría tiene su propio lugar. "Todo" muestra todo junto.
 const CHIPS = ["Todo", "Tarjetas", "Licencias", "Concesionario", "Propiedades", "Armas", "Herramientas", "Telefonía", "Tecnología", "Negocios"];
 const G = { display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))", gap: 14 };
 export default async function P({ searchParams }) {
   const u = await needUser(), metodos = metodosDe(u), q = searchParams?.c || (searchParams?.s === "negocios" ? "Negocios" : "Todo"), cat = CHIPS.includes(q) ? q : "Todo";
-  const chips = <div style={{ display: "flex", gap: 8, overflowX: "auto", padding: "4px 0 10px", scrollbarWidth: "none" }}>{CHIPS.map((x) => <Link key={x} href={x === "Todo" ? "/mercado" : `/mercado?c=${encodeURIComponent(x)}`} className={"btn " + (cat === x ? "" : "g")} style={{ whiteSpace: "nowrap", padding: "8px 14px" }}>{x}</Link>)}</div>;
+  const tasa = await tasaITBMS(await db()), pct = Math.round(tasa * 1000) / 10;
+  const chips = <div style={{ display: "flex", gap: 8, flexWrap: "wrap", padding: "4px 0 10px", scrollbarWidth: "none" }}>{CHIPS.map((x) => <Link key={x} href={x === "Todo" ? "/mercado" : `/mercado?c=${encodeURIComponent(x)}`} className={"btn " + (cat === x ? "" : "g")} style={{ whiteSpace: "nowrap", padding: "8px 14px" }}>{x}</Link>)}</div>;
   if (cat === "Negocios") return <Shell user={u}><h2>Mercado</h2>{chips}<Negocios u={u} /></Shell>;
   const d = await db(); await sembrar(d);
   const items = cat === "Tarjetas" ? [] : await d.collection("items").find({ stock: { $ne: 0 }, ...(cat === "Todo" ? {} : { category: cat }) }).sort({ category: 1, _id: -1 }).toArray();
@@ -35,7 +36,7 @@ export default async function P({ searchParams }) {
     {items.length > 0 && <>{cat === "Todo" && <h3 style={{ marginTop: 16 }}>Artículos</h3>}
       <div className="grid" style={{ marginTop: cat === "Todo" ? 0 : 6 }}>{items.map((i) => { const b = bloqueo(i); return (<div className="card" key={String(i._id)} style={b ? { opacity: 0.6 } : undefined}><div className="mi">{i.img ? <img src={i.img} alt="" /> : <span className="mut">Sin foto</span>}</div>
         <span className="tag">{i.category}</span><div><b>{i.name}</b></div><div className="mut">{i.brand} {i.year}{i.clase ? ` · Clase ${i.clase}` : ""}</div>{i.ubicacion && <div className="mut">Ubicación: {i.ubicacion}</div>}{i.impuesto ? <div className="mut">Impuesto mensual: ${Number(i.impuesto).toLocaleString("es")}</div> : null}{i.desc && <div className="mut">{i.desc}</div>}
-        <div className="big" style={{ fontSize: 22 }}>${i.price.toLocaleString("es")}</div><div className="mut" style={{ fontSize: 12 }}>+ ITBMS 7%: ${iva(i.price).toLocaleString("es")} · Total ${(i.price + iva(i.price)).toLocaleString("es")}</div>{b && b !== "Ya la tienes" && <div style={{ color: "var(--bad)", fontSize: 13, display: "flex", gap: 4, alignItems: "center" }}><Lock size={14} />{b}</div>}
-        <Buy total={i.price + iva(i.price)} metodos={metodos} id={String(i._id)} colores={i.category === "Propiedades" ? COLORES_CASA : null} bloqueo={b} /></div>); })}</div></>}
+        <div className="big" style={{ fontSize: 22 }}>${i.price.toLocaleString("es")}</div><div className="mut" style={{ fontSize: 12 }}>+ ITBMS {pct}%: ${iva(i.price, tasa).toLocaleString("es")} · Total ${(i.price + iva(i.price, tasa)).toLocaleString("es")}</div>{b && b !== "Ya la tienes" && <div style={{ color: "var(--bad)", fontSize: 13, display: "flex", gap: 4, alignItems: "center" }}><Lock size={14} />{b}</div>}
+        <Buy total={i.price + iva(i.price, tasa)} metodos={metodos} id={String(i._id)} colores={i.category === "Propiedades" ? COLORES_CASA : null} bloqueo={b} /></div>); })}</div></>}
     {!items.length && cat !== "Tarjetas" && <div className="card mut">No hay artículos en esta categoría todavía.</div>}</Shell>);
 }
