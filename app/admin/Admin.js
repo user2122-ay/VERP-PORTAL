@@ -1,6 +1,8 @@
 "use client";
 import { useState } from "react";
 import { Search, Plus, Trash2, Skull, Check } from "lucide-react";
+import { canAdmin, RANK_LABEL } from "@/lib/roles";
+import { RANGOS_MDT, DEPTOS } from "@/lib/mdt";
 const CATS = ["Concesionario", "Propiedades", "Licencias", "Objetos", "Armas", "Herramientas", "Telefonía", "Tecnología"], INV = ["Banco", "Telefonía", "Tecnología", "Propiedades", "Concesionario", "Herramientas", "Objetos", "Armas", "Licencias"], CIVIL = ["SOLTERO", "CASADO", "DIVORCIADO", "VIUDO"];
 const BK = { bvc: "BVC", mer: "Mercantil VERP", pro: "Provincial", com: "Comerciante" }, $ = (n) => `$${Number(n || 0).toLocaleString("es")}`;
 const post = async (a, data) => { const r = await fetch("/api/admin", { method: "POST", body: JSON.stringify({ a, ...data }) }), j = await r.json().catch(() => ({})); if (!r.ok) { alert(j.error || "Error"); return false; } return true; };
@@ -58,11 +60,22 @@ function Solicitudes({ robos }) {
     <div style={{ display: "flex", gap: 8, marginTop: 8 }}><button className="btn" onClick={async () => { if (await post("roboOk", { id: r.id })) location.reload(); }}><Check size={16} />Aprobar</button>
       <button className="btn r" onClick={async () => { const m = ask("Razón para rechazar:"); if (m && (await post("roboNo", { id: r.id, razon: m }))) location.reload(); }}><Trash2 size={16} />Rechazar</button></div></div>)}{!robos.length && <p className="mut">No hay solicitudes pendientes.</p>}</div>);
 }
-export default function Admin({ rank, items, reps, audit, robos = [] }) {
-  const [tab, setTab] = useState("Usuarios");
-  return (<div style={{ maxWidth: 900, margin: "0 auto" }}><h2>Administración</h2><span className="tag">{rank.replace("_", " ")}</span>
-    <div style={{ display: "flex", gap: 8, margin: "12px 0", flexWrap: "wrap" }}>{["Usuarios", "Mercado", "Solicitudes", "Auditoría", "Reportes 911"].map((t) => <button key={t} className={"btn " + (tab === t ? "" : "g")} onClick={() => setTab(t)}>{t}</button>)}</div>
-    {tab === "Solicitudes" && <Solicitudes robos={robos} />}{tab === "Usuarios" && <Usuarios items={items} />}{tab === "Mercado" && <Mercado items={items} />}
+function Staff({ staff }) {
+  return (<div className="card"><b>Staff de Administración</b><p className="mut">Solo el Developer asigna. La persona debe haber iniciado sesión en el portal al menos una vez. Junta Directiva, Fundación y Asuntos Internos hacen todo; Moderador solo revisa solicitudes.</p>
+    <form className="row2" onSubmit={async (e) => { const v = vals(e); if (await post("staffSet", v)) location.reload(); }}><input name="username" placeholder="Usuario de Discord" required /><select name="rango"><option value="JUNTA_DIRECTIVA">Junta Directiva</option><option value="FUNDACION">Fundación</option><option value="ASUNTOS_INTERNOS">Asuntos Internos</option><option value="MODERACION">Moderador</option></select><input name="placa" placeholder="Placa" /><button className="btn"><Plus size={16} />Asignar</button></form>
+    {staff.map((x) => <div key={x.id} style={{ display: "flex", justifyContent: "space-between", gap: 8, padding: "8px 0", borderTop: "1px solid var(--bd)" }}><span><b>{x.name}</b> <span className="tag">{RANK_LABEL[x.rango] || x.rango}</span>{x.placa && <span className="mut"> · Placa {x.placa}</span>}</span>{x.rango !== "DEVELOPER" && <button className="btn r" onClick={async () => { if (confirm(`¿Quitar a ${x.name} del staff?`) && (await post("staffDel", { uid: x.id }))) location.reload(); }}><Trash2 size={14} /></button>}</div>)}{!staff.length && <p className="mut">Sin staff asignado.</p>}</div>);
+}
+function Agentes({ agentes }) {
+  return (<div className="card"><b>Agentes de la MDT</b><p className="mut">Asigna a un policía con su rango, placa y departamento. Al entrar a la MDT, solo le pedirá su placa. Desde "Comisario" aprueban allanamientos.</p>
+    <form className="row2" onSubmit={async (e) => { const v = vals(e); if (await post("agenteSet", v)) location.reload(); }}><input name="username" placeholder="Usuario de Discord" required /><select name="rango">{RANGOS_MDT.map((r) => <option key={r}>{r}</option>)}</select><input name="placa" placeholder="Placa" required /><input name="depto" list="deptos" placeholder="Departamento" required /><datalist id="deptos">{DEPTOS.map((d) => <option key={d} value={d} />)}</datalist><button className="btn"><Plus size={16} />Asignar</button></form>
+    {agentes.map((x) => <div key={x.id} style={{ display: "flex", justifyContent: "space-between", gap: 8, padding: "8px 0", borderTop: "1px solid var(--bd)" }}><span><b>{x.rango}</b> {x.nombre || x.name}<div className="mut">@{x.name} · Placa {x.placa} · {x.depto}</div></span><button className="btn r" onClick={async () => { if (confirm(`¿Quitar a ${x.name} de la MDT?`) && (await post("agenteDel", { uid: x.id }))) location.reload(); }}><Trash2 size={14} /></button></div>)}{!agentes.length && <p className="mut">Aún no hay agentes asignados.</p>}</div>);
+}
+export default function Admin({ rank, items, reps, audit, robos = [], staff = [], agentes = [] }) {
+  const full = canAdmin(rank), TABS = full ? ["Usuarios", "Mercado", "Solicitudes", "Agentes MDT", "Auditoría", "Reportes 911", ...(rank === "DEVELOPER" ? ["Staff"] : [])] : ["Solicitudes"];
+  const [tab, setTab] = useState(full ? "Usuarios" : "Solicitudes");
+  return (<div style={{ maxWidth: 900, margin: "0 auto" }}><h2>Administración</h2><span className="tag">{RANK_LABEL[rank] || rank}</span>
+    <div style={{ display: "flex", gap: 8, margin: "12px 0", flexWrap: "wrap" }}>{TABS.map((t) => <button key={t} className={"btn " + (tab === t ? "" : "g")} onClick={() => setTab(t)}>{t}</button>)}</div>
+    {tab === "Solicitudes" && <Solicitudes robos={robos} />}{tab === "Staff" && <Staff staff={staff} />}{tab === "Agentes MDT" && <Agentes agentes={agentes} />}{tab === "Usuarios" && <Usuarios items={items} />}{tab === "Mercado" && <Mercado items={items} />}
     {tab === "Auditoría" && <div className="card"><b>Registro de auditoría (últimas 100 acciones)</b>{audit.map((x) => <div key={x.id} style={{ padding: "8px 0", borderTop: "1px solid var(--bd)" }}><b>{x.act}</b> · {x.obj}<div className="mut">{x.by} ({String(x.rank).replace("_", " ")}) · {new Date(x.at).toLocaleString("es")}</div><div>Razón: {x.razon}</div></div>)}{!audit.length && <p className="mut">Sin registros.</p>}</div>}
     {tab === "Reportes 911" && <div className="card"><b>Reportes 911</b>{reps.map((r) => <div key={r.id} style={{ margin: "8px 0" }}>{r.t}<div className="mut">{r.d} · {r.e}</div><button className="btn g" onClick={async () => { if (await post("done", { id: r.id })) location.reload(); }}><Check size={16} className="neon" />Resuelto</button></div>)}{!reps.length && <p className="mut">Sin reportes pendientes.</p>}</div>}</div>);
 }

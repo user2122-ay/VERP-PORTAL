@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
 import { db } from "@/lib/db";
-import { adminUser } from "@/lib/admin";
+import { adminUser, reviewUser } from "@/lib/admin";
+import { canAdmin } from "@/lib/roles";
+import { RANGOS_MDT } from "@/lib/mdt";
 import { LUGARES } from "@/lib/zonas";
 import { BANCOS } from "@/lib/bancos";
 import { nuevaCuenta } from "@/lib/tarjeta";
@@ -27,11 +29,12 @@ export async function GET(req) {
   return NextResponse.json({ users: r.map((x) => ({ id: x.id, name: x.name, cedula: x.cedula ? { num: x.cedula.num, nombres: x.cedula.nombres, apellidos: x.cedula.apellidos, roblox: x.cedula.roblox } : null })) });
 }
 export async function POST(req) {
-  const a = await adminUser(); if (!a) return err("Sin permiso", 403);
+  const a = await reviewUser(); if (!a) return err("Sin permiso", 403);
   const b = await req.json(), d = await db(), users = d.collection("users"), at = new Date();
   const razon = str(b.razon, 300);
+  if (!canAdmin(a.rank) && !["roboOk", "roboNo"].includes(b.a)) return err("Tu rango solo puede revisar solicitudes", 403);
   // Toda acción administrativa (salvo marcar un reporte como resuelto) exige razón y queda en la colección "audit".
-  if (!["done", "roboOk"].includes(b.a) && razon.length < 3) return err("La razón es obligatoria");
+  if (!["done", "roboOk", "staffSet", "staffDel", "agenteSet", "agenteDel"].includes(b.a) && razon.length < 3) return err("La razón es obligatoria");
   const log = (act, objetivo, detalle) => d.collection("audit").insertOne({ by: a.id, byName: a.name, rank: a.rank, act, objetivo, razon, detalle, at });
   const t = b.uid ? await users.findOne({ id: str(b.uid, 30) }) : null, quien = t ? `${t.name} (${t.id})` : null;
   if (b.uid && !t) return err("Usuario no existe", 404);
@@ -128,6 +131,20 @@ export async function POST(req) {
       const id = oid(b.id); if (!id) return err("ID inválido");
       await d.collection("reports").updateOne({ _id: id }, { $set: { estado: "resuelto" } });
       await d.collection("audit").insertOne({ by: a.id, byName: a.name, rank: a.rank, act: "reporte911", objetivo: String(id), razon: "Reporte resuelto", at }); break;
+    }
+    case "staffSet": case "staffDel": { // solo el Developer asigna el staff de Administración
+      if (a.rank !== "DEVELOPER") return err("Solo el Developer asigna staff", 403);
+      if (b.a === "staffDel") { if (!t) return err("Falta el usuario"); await users.updateOne({ id: t.id }, { $unset: { staff: "", staffPlaca: "" } }); await log("staffDel", quien, {}); break; }
+      const x = await users.findOne({ name: new RegExp("^" + esc(str(b.username, 40)) + "$", "i") }); if (!x) return err("Esa persona debe iniciar sesión en el portal una vez primero");
+      const rk = ["JUNTA_DIRECTIVA", "FUNDACION", "ASUNTOS_INTERNOS", "MODERACION"].includes(b.rango) ? b.rango : null; if (!rk) return err("Rango inválido");
+      await users.updateOne({ id: x.id }, { $set: { staff: rk, staffPlaca: up(b.placa, 20) } }); await d.collection("notifs").insertOne({ uid: x.id, title: "Ahora eres staff", body: "Te asignaron un rango en Administración. Vuelve a iniciar sesión si no ves el menú.", at, read: false }); await log("staffSet", `${x.name} (${x.id})`, { rango: rk }); break;
+    }
+    case "agenteSet": case "agenteDel": { // asigna o quita agentes de la MDT
+      if (b.a === "agenteDel") { if (!t) return err("Falta el usuario"); await users.updateOne({ id: t.id }, { $unset: { agente: "", mdtSesion: "" } }); await log("agenteDel", quien, {}); break; }
+      const x = await users.findOne({ name: new RegExp("^" + esc(str(b.username, 40)) + "$", "i") }); if (!x) return err("Esa persona debe iniciar sesión en el portal una vez primero");
+      const rango = RANGOS_MDT.includes(b.rango) ? b.rango : null, placa = up(b.placa, 20), depto = str(b.depto, 40); if (!rango || !placa || !depto) return err("Completa rango, placa y departamento");
+      if (await users.findOne({ "agente.placa": placa, id: { $ne: x.id } })) return err("Esa placa ya la tiene otro agente");
+      await users.updateOne({ id: x.id }, { $set: { agente: { rango, placa, depto } } }); await d.collection("notifs").insertOne({ uid: x.id, title: "Asignado a la MDT", body: `${rango} · ${depto} · Placa ${placa}. Entra por el menú MDT.`, at, read: false }); await log("agenteSet", `${x.name} (${x.id})`, { rango, placa, depto }); break;
     }
     case "roboOk": case "roboNo": {
       const id = oid(b.id), r = id && (await d.collection("robos").findOne({ _id: id, estado: "pendiente" })); if (!r) return err("Solicitud no encontrada", 404);

@@ -38,3 +38,14 @@ lib/rol.js, lib/placa.js, components/CedulaCard.js, app/darkweb/*, app/delictivo
 - **Licencias personalizadas**: cada una es una tarjeta con foto, nombre y cédula del ciudadano y un número inventado (ej. LC-K7QD-3MX9, formato que no se parece a los reales). Se ven en Inventario y en la ficha de la MDT, que además dice si tiene o no licencia de conducir y de armas.
 - **Mercado**: botones arriba (Todo, Tarjetas, Licencias, Concesionario, Propiedades, Armas, Herramientas, Telefonía, Tecnología, Negocios).
 - Las licencias que ya existan en el servidor como artículos creados por staff se reconocen por el nombre.
+
+## Actualización 5: casa, allanamientos, MDT con acceso y staff
+- **Inventario con dos clases**: *Personal* (lo que llevas encima) y *Casa*. Con una casa puedes guardar objetos legales o ilegales y elegir **en qué parte de la casa** los escondes. Guardar tiene un enfriamiento de **10 minutos** entre objeto y objeto. No se guardan vehículos, casas ni licencias.
+- **Asaltos**: solo se puede robar lo que la víctima lleva encima. En el panel delictivo el ladrón ve el efectivo y los objetos que lleva encima y elige; lo guardado en casa no aparece ni se puede robar.
+- **MDT › Casas**: cualquier agente solicita un allanamiento; desde **Comisario** en adelante se aprueba o rechaza (no se puede aprobar la propia solicitud). Si se aprueba, el agente que lo pidió puede entrar durante 1 hora y ver qué escondió el sujeto y dónde. El dueño recibe un aviso.
+- **MDT con acceso**: pantalla con el logo de Justicia y Paz, animación y sonido, bienvenida con rango y nombre, y luego solo pide la **placa** (5 fallos bloquean 5 minutos; la sesión dura 8 horas). Solo entran los agentes asignados desde Administración.
+- **Administración → Agentes MDT**: asigna usuario de Discord, rango (Agente… Ministro del Interior), placa y departamento (incluye "Ministro del Interior"). Hacen todo menos Moderador.
+- **Developer** (`itsanthony_21`): acceso total, incluida la pestaña **Staff** donde asigna a su equipo: Junta Directiva, Fundación y Asuntos Internos (hacen todo en Administración) y Moderador (solo revisa Solicitudes).
+  - El Developer se fija a la primera cuenta que inicie sesión con ese usuario (así nadie puede quedarse con el nombre si lo cambias). Para más seguridad usa `DEVELOPER_IDS` (IDs de Discord). Hay que **cerrar sesión y volver a entrar una vez** para activarlo.
+  - Quien asignes debe haber iniciado sesión en el portal al menos una vez.
+- Colecciones nuevas: `allanamientos`, `config`.

@@ -1,16 +1,17 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { Search, Shield, FileText, Gavel, Siren, Plus } from "lucide-react";
+import { Search, Shield, FileText, Gavel, Siren, Plus, Home } from "lucide-react";
 import CedulaCard from "@/components/CedulaCard";
 import ZoomMap from "@/components/ZoomMap";
+import Acceso from "./Acceso";
 import LicenciaCard from "@/components/LicenciaCard";
 const $ = (n) => `$${Number(n || 0).toLocaleString("es")}`, fec = (d) => new Date(d).toLocaleString("es", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
 const get = async (q) => { const r = await fetch("/api/mdt?" + q, { cache: "no-store" }); return r.ok ? r.json() : null; };
 const post = async (b) => { const r = await fetch("/api/mdt", { method: "POST", body: JSON.stringify(b) }), j = await r.json().catch(() => ({})); if (!r.ok) { alert(j.error || "Error"); return null; } return j; };
 const fd = (e) => { e.preventDefault(); return Object.fromEntries(new FormData(e.target)); };
-function Buscador({ onPick, ph = "Nombre, Roblox o cédula" }) {
+function Buscador({ onPick, ph = "Nombre, Roblox o cédula", m = "buscar" }) {
   const [q, setQ] = useState(""), [r, setR] = useState([]);
-  return (<><form className="row2" onSubmit={async (e) => { e.preventDefault(); setR((await get("m=buscar&q=" + encodeURIComponent(q)))?.users || []); }}><input value={q} onChange={(e) => setQ(e.target.value)} placeholder={ph} /><button className="btn g"><Search size={16} />Buscar</button></form>
+  return (<><form className="row2" onSubmit={async (e) => { e.preventDefault(); setR((await get("m=" + m + "&q=" + encodeURIComponent(q)))?.users || []); }}><input value={q} onChange={(e) => setQ(e.target.value)} placeholder={ph} /><button className="btn g"><Search size={16} />Buscar</button></form>
     {r.map((x) => <div key={x.id} className="card" style={{ cursor: "pointer", padding: 10, marginTop: 6 }} onClick={() => { onPick(x); setR([]); setQ(""); }}>{x.label}</div>)}</>);
 }
 function Matricula({ abrir }) {
@@ -68,9 +69,31 @@ function Reportes() {
     {s && <><div className="mut" style={{ margin: "4px 0" }}>Llamado seleccionado · {s.zona || ""}</div>{card(s)}</>}
     {l.filter((r) => r.src + r.id !== sel).map(card)}{!l.length && <div className="card mut">No hay reportes.</div>}</>);
 }
-const TABS = [["Ciudadanos", Shield, Ciudadanos], ["Expedientes", FileText, Expedientes], ["Arrestos", Gavel, Arrestos], ["Reportes", Siren, Reportes]];
+const fec2 = (d) => new Date(d).toLocaleString("es", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
+const EST = { pendiente: "var(--mut)", aprobada: "var(--ok)", ejecutada: "var(--ok)", rechazada: "var(--bad)" };
+function Casas({ aprueba, yo }) {
+  const [sel, setSel] = useState(null), [motivo, setMotivo] = useState(""), [l, setL] = useState([]), [dentro, setDentro] = useState(null), cargar = async () => setL((await get("m=allan"))?.l || []);
+  useEffect(() => { cargar(); const x = setInterval(cargar, 8000); return () => clearInterval(x); }, []);
+  const grupos = dentro && dentro.items.reduce((g, i) => ((g[i.lugar] = g[i.lugar] || []).push(i), g), {});
+  return (<><div className="card"><b>Solicitar allanamiento</b><p className="mut">Cualquier agente puede solicitarlo. Desde el rango de Comisario se aprueba. Si lo aprueban, el agente que lo pidió puede entrar a revisar durante 1 hora.</p>
+    <Buscador m="casas" ph="Dueño de la casa (nombre, Roblox o cédula)" onPick={setSel} />
+    {sel && <div style={{ marginTop: 8 }}><div>Propietario: <b>{sel.label}</b></div><textarea rows={2} value={motivo} onChange={(e) => setMotivo(e.target.value)} placeholder="Motivo del allanamiento" style={{ margin: "6px 0" }} />
+      {sel.casas.map((c) => <div key={c.name + c.at} className="card" style={{ padding: 10, marginTop: 6, display: "flex", justifyContent: "space-between", gap: 8, alignItems: "center" }}><span>{c.name}<div className="mut">{c.ubicacion}{c.color ? ` · ${c.color}` : ""}</div></span><button className="btn" onClick={async () => { if (await post({ accion: "allanSolicitar", owner: sel.id, casaName: c.name, casaAt: c.at, motivo })) { alert("Solicitud enviada"); setSel(null); setMotivo(""); cargar(); } }}>Solicitar</button></div>)}</div>}</div>
+    {dentro && <div className="card" style={{ borderColor: "var(--ac)" }}><div style={{ display: "flex", justifyContent: "space-between" }}><b>Revisando: {dentro.casa}</b><button className="btn g" onClick={() => setDentro(null)}>Salir</button></div>
+      {Object.entries(grupos).map(([lugar, its]) => <div key={lugar} style={{ marginTop: 8 }}><b>{lugar}</b>{its.map((i, k) => <div key={k} style={{ padding: "4px 0" }}>{i.name} <span className="tag">{i.category}</span>{i.placa && <span className="mut"> · {i.placa}</span>} {i.robado && <span className="rob-t" style={{ fontSize: 11 }}>ROBADO</span>}</div>)}</div>)}{!dentro.items.length && <p className="mut">No encontraron nada escondido en esta casa.</p>}</div>}
+    <h3 style={{ marginTop: 14 }}>Solicitudes</h3>
+    {l.map((x) => (<div key={x.id} className="card"><div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}><b>{x.casa} · {x.duenoN}</b><b style={{ color: EST[x.estado] }}>{x.estado}</b></div><div className="mut">{x.ubicacion} · Pide: {x.por} · {fec2(x.at)}</div><div>{x.motivo}</div>{x.resolvio && <div className="mut">Resolvió: {x.resolvio}</div>}
+      <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
+        {x.estado === "pendiente" && aprueba && x.porId !== yo && <><button className="btn" onClick={async () => { if (await post({ accion: "allanResolver", id: x.id, ok: true })) cargar(); }}>Aprobar</button><button className="btn r" onClick={async () => { if (await post({ accion: "allanResolver", id: x.id, ok: false })) cargar(); }}>Rechazar</button></>}
+        {x.estado === "pendiente" && aprueba && x.porId === yo && <span className="mut">Otro comisario debe aprobar tu solicitud.</span>}
+        {["aprobada", "ejecutada"].includes(x.estado) && x.porId === yo && x.vence && new Date(x.vence) > new Date() && <button className="btn" onClick={async () => { const j = await post({ accion: "allanEntrar", id: x.id }); if (j) { setDentro(j); cargar(); } }}>Entrar a revisar (hasta {fec2(x.vence)})</button>}</div></div>))}{!l.length && <div className="card mut">No hay solicitudes de allanamiento.</div>}</>);
+}
+const TABS = [["Ciudadanos", Shield, Ciudadanos], ["Expedientes", FileText, Expedientes], ["Arrestos", Gavel, Arrestos], ["Reportes", Siren, Reportes], ["Casas", Home, Casas]];
 export default function Mdt() {
-  const [t, setT] = useState("Ciudadanos"), V = TABS.find((x) => x[0] === t)[2];
-  return (<div style={{ maxWidth: 820, margin: "0 auto" }}><h2 style={{ display: "flex", gap: 8, alignItems: "center" }}><Shield className="neon" />MDT · Policía</h2>
-    <div style={{ display: "flex", gap: 8, margin: "10px 0", flexWrap: "wrap" }}>{TABS.map(([n, I]) => <button key={n} className={"btn " + (t === n ? "" : "g")} onClick={() => setT(n)}><I size={16} />{n}</button>)}</div><V /></div>);
+  const [info, setInfo] = useState(null), [ok, setOk] = useState(false), [t, setT] = useState("Ciudadanos");
+  useEffect(() => { (async () => { const j = await get("m=estado"); if (j) { setInfo(j); setOk(j.ok); } })(); }, []);
+  if (!info) return null; if (!ok) return <Acceso info={info} onOk={() => setOk(true)} />;
+  const V = TABS.find((x) => x[0] === t)[2];
+  return (<div style={{ maxWidth: 820, margin: "0 auto" }}><div style={{ display: "flex", gap: 12, alignItems: "center" }}><img src="/justicia-paz.png" alt="Justicia y Paz" style={{ height: 54, background: "#fff", borderRadius: 10, padding: 4 }} /><div><b style={{ fontSize: 18 }}>MDT · {info.ag.depto}</b><div className="mut">{info.ag.rango} {info.nombre} · @{info.discord} · Placa {info.ag.placa}</div></div></div>
+    <div style={{ display: "flex", gap: 8, margin: "12px 0", flexWrap: "wrap" }}>{TABS.map(([n, I]) => <button key={n} className={"btn " + (t === n ? "" : "g")} onClick={() => setT(n)}><I size={16} />{n}</button>)}</div><V aprueba={info.aprueba} yo={info.yo} /></div>);
 }

@@ -2,19 +2,24 @@ import { NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
 import { db } from "@/lib/db";
 import { apiUser } from "@/lib/auth";
-import { esRol, nombreDe } from "@/lib/rol";
+import { nombreDe } from "@/lib/rol";
+import { agenteDe, aprobador, casaRef } from "@/lib/mdt";
 import { normPlaca } from "@/lib/placa";
 import { licTipo } from "@/lib/licencia";
 const bad = (m, s = 400) => NextResponse.json({ error: m }, { status: s });
 const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), money = (n) => "$" + Number(n).toLocaleString("es"), txt = (s, n = 400) => String(s || "").trim().slice(0, n);
 const oid = (s) => { try { return new ObjectId(String(s)); } catch { return null; } };
 const COMISION = 0.05; // cada oficial presente en el arresto recibe el 5% de la multa cobrada
-async function policia() { const u = await apiUser(); return u?.cedula && (await esRol(u, "policia")) ? u : null; }
+const fresca = (u) => !!(u.mdtSesion && Date.now() - +new Date(u.mdtSesion) < 8 * 36e5);
+// Solo entra quien Administración asignó como agente (o el Developer) y ya ingresó su placa en las últimas 8 horas.
+async function policia(libre = false) { const u = await apiUser(); const ag = u && agenteDe(u); if (!ag) return null; if (!libre && !fresca(u)) return null; return { ...u, ag }; }
 const pub = (x) => ({ id: x.id, label: `${x.cedula.nombres} ${x.cedula.apellidos} · ${x.cedula.roblox}`, num: x.cedula.num });
 
 export async function GET(req) {
-  const u = await policia(); if (!u) return bad("Sin permiso", 403);
-  const p = new URL(req.url).searchParams, m = p.get("m"), d = await db(), us = d.collection("users");
+  const p = new URL(req.url).searchParams, m = p.get("m");
+  if (m === "estado") { const u = await policia(true); if (!u) return bad("Sin permiso", 403); return NextResponse.json({ ok: fresca(u), ag: u.ag, nombre: nombreDe(u), discord: u.name, yo: u.id, aprueba: aprobador(u.ag) }); }
+  const u = await policia(); if (!u) return bad("Sin sesión de la MDT", 401);
+  const d = await db(), us = d.collection("users");
   if (m === "buscar") {
     const q = txt(p.get("q"), 40); if (q.length < 2) return NextResponse.json({ users: [] });
     const rx = new RegExp(esc(q), "i"), dg = q.replace(/\D/g, "").replace(/^0+/, "");
@@ -25,6 +30,16 @@ export async function GET(req) {
     const ar = await d.collection("arrestos").find({ sujeto: x.id }).sort({ at: -1 }).limit(30).toArray(), ex = await d.collection("expedientes").find({ sujetos: x.id }).sort({ at: -1 }).limit(20).toArray();
     return NextResponse.json({ licencias: (x.inventory || []).filter((i) => licTipo(i)).map((i) => ({ tipo: licTipo(i), num: i.licNum || "—", at: i.at })), cedula: x.cedula, linea: x.chip?.num || null, autos: (x.inventory || []).filter((i) => i.category === "Concesionario").map((i) => ({ name: i.name, placa: i.placa || "", robado: !!i.robado })),
       arrestos: ar.map((a) => ({ id: String(a._id), cargos: a.cargos, multa: a.multa, cobrado: a.cobrado, minutos: a.minutos, por: a.porName, at: a.at })), expedientes: ex.map((e) => ({ id: String(e._id), titulo: e.titulo, estado: e.estado })) });
+  }
+  if (m === "casas") { // ciudadanos con sus casas (para solicitar allanamiento)
+    const q = txt(p.get("q"), 40); if (q.length < 2) return NextResponse.json({ users: [] });
+    const rx = new RegExp(esc(q), "i"), dg = q.replace(/\D/g, "").replace(/^0+/, "");
+    const r = await us.find({ cedula: { $exists: true }, "inventory.category": "Propiedades", $or: [{ "cedula.roblox": rx }, { "cedula.nombres": rx }, { "cedula.apellidos": rx }, ...(dg ? [{ "cedula.num": dg }] : [])] }).limit(8).toArray();
+    return NextResponse.json({ users: r.map((x) => ({ ...pub(x), casas: (x.inventory || []).filter((i) => i.category === "Propiedades").map((i) => ({ name: i.name, at: new Date(i.at).toISOString(), ubicacion: i.ubicacion || "", color: i.color || "" })) })) });
+  }
+  if (m === "allan") {
+    const l = await d.collection("allanamientos").find().sort({ at: -1 }).limit(40).toArray();
+    return NextResponse.json({ aprueba: aprobador(u.ag), yo: u.id, l: l.map((x) => ({ id: String(x._id), duenoN: x.duenoN, casa: x.casaName, ubicacion: x.ubicacion, motivo: x.motivo, estado: x.estado, por: x.porName, porId: x.por, resolvio: x.resolvio || null, at: x.at, vence: x.vence || null })) });
   }
   if (m === "placa") { // buscar un auto por matrícula: muestra el dueño oficial (si el auto se vendió en la Dark Web, ya no figura)
     const key = normPlaca(p.get("q")); if (key.length < 4) return NextResponse.json({ p: null });
@@ -47,8 +62,13 @@ export async function GET(req) {
 }
 
 export async function POST(req) {
-  const u = await policia(); if (!u) return bad("Sin permiso", 403);
-  const b = await req.json(), d = await db(), us = d.collection("users"), at = new Date(), yo = nombreDe(u);
+  const b = await req.json().catch(() => ({})), u = await policia(b.accion === "entrar"); if (!u) return bad("Sin permiso", 403);
+  const d = await db(), us = d.collection("users"), at = new Date(), yo = nombreDe(u);
+  if (b.accion === "entrar") { // pide la placa del agente; 5 fallos bloquean 5 minutos
+    const f = u.mdtFail; if (f?.n >= 5 && Date.now() - +new Date(f.at) < 3e5) return bad("Demasiados intentos. Espera 5 minutos", 429);
+    if (String(b.placa || "").trim().toUpperCase() !== String(u.ag.placa).toUpperCase()) { await us.updateOne({ id: u.id }, { $set: { mdtFail: { n: f && Date.now() - +new Date(f.at) < 3e5 ? f.n + 1 : 1, at } } }); return bad("Placa incorrecta", 401); }
+    await us.updateOne({ id: u.id }, { $set: { mdtSesion: at }, $unset: { mdtFail: "" } }); return NextResponse.json({ ok: true });
+  }
   switch (b.accion) {
     case "expNuevo": {
       const titulo = txt(b.titulo, 100); if (titulo.length < 3) return bad("Escribe un título");
@@ -77,6 +97,23 @@ export async function POST(req) {
       await d.collection("arrestos").insertOne({ sujeto: s.id, sujetoN: pub(s).label, cargos, multa, cobrado, minutos, oficiales: ids, comision: com, por: u.id, porName: yo, at });
       await d.collection("notifs").insertOne({ uid: s.id, title: "Has sido arrestado", body: `Cargos: ${cargos}.${cobrado ? ` Se cobró una multa de ${money(cobrado)}.` : ""}${rest ? ` Quedó sin pagar ${money(rest)}.` : ""}`, at, read: false });
       return NextResponse.json({ ok: true, cobrado, comision: com, oficiales: ids.length });
+    }
+    case "allanSolicitar": { // cualquier agente solicita; desde Comisario se aprueba
+      const dueno = await us.findOne({ id: txt(b.owner, 30), cedula: { $exists: true } }), casa = dueno?.inventory?.find((i) => i.category === "Propiedades" && i.name === b.casaName && +new Date(i.at) === +new Date(b.casaAt)), motivo = txt(b.motivo, 400);
+      if (!dueno || !casa) return bad("Esa casa no existe"); if (motivo.length < 10) return bad("Explica el motivo del allanamiento (mínimo 10 letras)");
+      const c = d.collection("allanamientos"); if (await c.findOne({ dueno: dueno.id, casaName: casa.name, casaAt: new Date(casa.at), por: u.id, estado: { $in: ["pendiente", "aprobada"] } })) return bad("Ya tienes una solicitud activa para esa casa");
+      await c.insertOne({ dueno: dueno.id, duenoN: pub(dueno).label, casaName: casa.name, casaAt: new Date(casa.at), ubicacion: casa.ubicacion || "", motivo, por: u.id, porName: `${u.ag.rango} ${yo}`, estado: "pendiente", at }); return NextResponse.json({ ok: true });
+    }
+    case "allanResolver": { // Comisario o superior; no puedes aprobar tu propia solicitud
+      if (!aprobador(u.ag)) return bad("Solo desde el rango de Comisario se aprueban allanamientos", 403); const id = oid(b.id); if (!id) return bad("Solicitud inválida");
+      const r = await d.collection("allanamientos").findOneAndUpdate({ _id: id, estado: "pendiente", por: { $ne: u.id } }, { $set: { estado: b.ok ? "aprobada" : "rechazada", resolvio: `${u.ag.rango} ${yo}`, resueltoAt: at, vence: b.ok ? new Date(Date.now() + 36e5) : null } });
+      if (!r) return bad("Ya fue resuelta o es tu propia solicitud", 409); return NextResponse.json({ ok: true });
+    }
+    case "allanEntrar": { // el agente que pidió el allanamiento entra a revisar (1 hora tras la aprobación)
+      const id = oid(b.id), c = d.collection("allanamientos"), r = id && (await c.findOne({ _id: id, por: u.id, estado: { $in: ["aprobada", "ejecutada"] }, vence: { $gt: at } })); if (!r) return bad("El allanamiento no está aprobado o ya venció", 403);
+      const o = await us.findOne({ id: r.dueno }), ref = casaRef(r.casaName, r.casaAt), items = (o?.inventory || []).filter((i) => i.loc === "casa" && i.casa === ref);
+      if (r.estado === "aprobada") { await c.updateOne({ _id: id }, { $set: { estado: "ejecutada", entroAt: at } }); await d.collection("notifs").insertOne({ uid: r.dueno, title: "Allanaron tu casa", body: `La policía allanó "${r.casaName}" (${u.ag.depto}).`, at, read: false }); }
+      return NextResponse.json({ casa: r.casaName, items: items.map((i) => ({ name: i.name, category: i.category, lugar: i.lugar || "Sin especificar", placa: i.placa || "", robado: !!i.robado, img: i.img || "" })) });
     }
     case "repAtender": { // un policía toma el llamado; el ciudadano recibe un aviso
       const id = oid(b.id); if (!id) return bad("Reporte inválido"); const c = d.collection(b.src === "v" ? "reportes" : "reports");

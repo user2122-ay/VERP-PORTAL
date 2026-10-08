@@ -63,3 +63,11 @@ h1,h2{margin:.2em 0}.mut{color:var(--mut);font-size:14px}.big{font-size:34px;fon
 .zm{position:relative;overflow:hidden;border-radius:14px;touch-action:none;user-select:none;cursor:crosshair;aspect-ratio:1049/1024;background:#000}
 .zm>div:first-child{position:absolute;inset:0;transform-origin:0 0}.zm img{width:100%;height:100%;display:block;pointer-events:none}.zm .pin{pointer-events:none}
 .zc{position:absolute;top:8px;right:8px;display:flex;flex-direction:column;gap:6px;z-index:3}.zl2{position:absolute;left:8px;bottom:8px;background:#000a;color:#fff;border-radius:8px;padding:2px 8px;font-size:12px;z-index:3}
+@keyframes mdtLogo{from{opacity:0;transform:scale(.6) translateY(20px);filter:blur(8px)}to{opacity:1;transform:none;filter:none}}
+@keyframes mdtScan{0%{top:-10%}100%{top:110%}}@keyframes mdtGlow{50%{box-shadow:0 0 60px #2d7bffaa}}@keyframes mdtUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.mdt-ov{position:fixed;inset:0;z-index:60;background:radial-gradient(circle at 50% 28%,#0b2147,#02060f 72%);display:grid;place-items:center;overflow:auto;padding:20px}
+.mdt-box{position:relative;width:min(440px,100%);text-align:center;display:grid;gap:14px;justify-items:center}
+.mdt-logo{width:min(250px,62vw);background:#fff;border-radius:22px;padding:14px;animation:mdtLogo .9s ease both,mdtGlow 3s ease-in-out infinite;box-shadow:0 0 30px #2d7bff66}
+.mdt-scan{position:fixed;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,#4da3ff,transparent);animation:mdtScan 2.6s linear infinite;opacity:.55;pointer-events:none}
+.mdt-t{font-family:ui-monospace,Consolas,monospace;color:#7fc1ff;min-height:1.4em;font-size:14px}.mdt-in{animation:mdtUp .6s ease both}
+.mdt-ok{color:#34d399;font-size:22px;font-weight:800;letter-spacing:.2em;animation:mdtUp .5s ease both}
