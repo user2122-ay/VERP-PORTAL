@@ -161,3 +161,4 @@ lib/rol.js, lib/placa.js, components/CedulaCard.js, app/darkweb/*, app/delictivo
 - **TikVerp**: solo el dueño puede borrar su video (el staff aún puede borrar comentarios).
 - **Tarjetas**: la animación de "Pago aprobado" ahora sale con todas las tarjetas.
 - **ER:LC → Administración**: caja para **ejecutar cualquier comando** y panel de **mensajes automáticos**: bienvenida (`:h`) cada 5 min durante los primeros 20 min tras **Abrir servidor**, y después las 15 reglas rotando cada 10 min. Todo editable. Solo se envían con el servidor abierto y jugadores dentro. Se disparan solos desde el contador de miembros (cada minuto) o con el cron `/api/erlc/vigilar?k=CRON_SECRET`.
+- **Apertura**: el ping de votación y de servidor abierto ahora es el rol `1404862578374606910`; el GIF de "Servidor Abierto" es `Server_Abierto_2.gif`.
