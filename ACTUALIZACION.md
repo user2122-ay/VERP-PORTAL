@@ -140,3 +140,8 @@ lib/rol.js, lib/placa.js, components/CedulaCard.js, app/darkweb/*, app/delictivo
 ## Actualización 12: inicio de sesión del Staff
 - Nueva pantalla de acceso a Administración (animada, con sonidos, efectos y confirmación de acceso).
 - El **Developer** entra con `DEV-001` (o `DEV-00`).
+
+## Actualización 13: Apertura del servidor
+- Administración → **Apertura** (Developer, Fundación, Junta Directiva y Asuntos Internos): **Abrir votación**, **Abrir servidor** y **Cerrar servidor**. Se envían por un webhook de Discord (variable `DISCORD_WEBHOOK_APERTURA`).
+- La votación lleva el mensaje en un embed con el GIF, una **encuesta** de Discord (🟢 / 🟡) y el ping a `<@&1472420048197910771>` fuera del embed. Abrir también pinguea; cerrar no.
+- Queda en la auditoría y se muestra el último aviso. Hay una espera de 15 segundos entre envíos.

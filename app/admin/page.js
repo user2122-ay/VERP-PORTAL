@@ -23,5 +23,6 @@ export default async function P() {
   const full = canAdmin(rank), us = d.collection("users");
   const staff = canStaff(rank) ? (await us.find({ $or: [{ staff: { $nin: [null, ""] } }, { dev: true }] }).limit(100).toArray()).map((x) => ({ id: x.id, name: x.name, rango: x.dev ? "DEVELOPER" : x.staff, placa: x.staffPlaca || "" })) : [];
   const agentes = full ? (await us.find({ agente: { $exists: true } }).limit(200).toArray()).map((x) => ({ id: x.id, name: x.name, nombre: x.cedula ? `${x.cedula.nombres} ${x.cedula.apellidos}` : "", ...x.agente })) : [];
-  return <Shell user={{ ...u, rank }}><Admin rank={rank} items={full ? items : []} reps={full ? reps : []} audit={full ? audit : []} robos={robos} apelaciones={apelaciones} staff={staff} canStaff={canStaff(rank)} agentes={agentes} /></Shell>;
+  const ap = await d.collection("config").findOne({ _id: "apertura" }), apertura = ap ? { tipo: ap.tipo, por: ap.por, at: new Date(ap.at).toISOString() } : null;
+  return <Shell user={{ ...u, rank }}><Admin apertura={apertura} rank={rank} items={full ? items : []} reps={full ? reps : []} audit={full ? audit : []} robos={robos} apelaciones={apelaciones} staff={staff} canStaff={canStaff(rank)} agentes={agentes} /></Shell>;
 }

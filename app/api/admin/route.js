@@ -5,6 +5,7 @@ import { adminUser, reviewUser } from "@/lib/admin";
 import { aplicarCK } from "@/lib/ck";
 import { canAdmin, canStaff } from "@/lib/roles";
 import { erlcComando } from "@/lib/erlc";
+import { enviarApertura, aperturaListo } from "@/lib/apertura";
 import { RANGOS_POR_DEPTO, DEPTOS } from "@/lib/mdt";
 import { LUGARES } from "@/lib/zonas";
 import { BANCOS } from "@/lib/bancos";
@@ -37,11 +38,20 @@ export async function POST(req) {
   const razon = str(b.razon, 300);
   if (!canAdmin(a.rank) && !["roboOk", "roboNo", "apelOk", "apelNo"].includes(b.a)) return err("Tu rango solo puede revisar solicitudes", 403);
   // Toda acción administrativa (salvo marcar un reporte como resuelto) exige razón y queda en la colección "audit".
-  if (!["done", "roboOk", "staffSet", "staffDel", "agenteSet", "agenteDel", "erlcTest"].includes(b.a) && razon.length < 3) return err("La razón es obligatoria");
+  if (!["done", "roboOk", "staffSet", "staffDel", "agenteSet", "agenteDel", "erlcTest", "apertura"].includes(b.a) && razon.length < 3) return err("La razón es obligatoria");
   const log = (act, objetivo, detalle) => d.collection("audit").insertOne({ by: a.id, byName: a.name, rank: a.rank, act, objetivo, razon, detalle, at });
   const t = b.uid ? await users.findOne({ id: str(b.uid, 30) }) : null, quien = t ? `${t.name} (${t.id})` : null;
   if (b.uid && !t) return err("Usuario no existe", 404);
   switch (b.a) {
+    case "apertura": { // votación / abrir / cerrar el servidor: se envía por el webhook de Discord (solo Developer, Fundación, Junta Directiva y Asuntos Internos)
+      if (!aperturaListo()) return err("Falta la variable DISCORD_WEBHOOK_APERTURA en Vercel (la URL del webhook del canal de aperturas)");
+      const tipo = ["votacion", "abrir", "cerrar"].includes(b.tipo) ? b.tipo : null; if (!tipo) return err("Acción inválida");
+      const prev = await d.collection("config").findOne({ _id: "apertura" }); if (prev && Date.now() - +new Date(prev.at) < 15000) return err("Espera unos segundos antes de enviar otro mensaje");
+      const n = str(b.nota, 200), quien = nombreDe(a) || a.name, r = await enviarApertura(tipo, n, quien);
+      await log(`apertura:${tipo}`, r.ok ? "Enviado a Discord" : `Falló: ${r.error}`, { nota: n });
+      if (!r.ok) return err(`No se pudo enviar: ${r.error}`);
+      await d.collection("config").updateOne({ _id: "apertura" }, { $set: { tipo, por: quien, nota: n, at } }, { upsert: true }); return NextResponse.json({ ok: true });
+    }
     case "erlcTest": { // prueba de la conexión con ER:LC: envía :h al servidor
       const texto = String(b.msg || "").replace(/[\r\n]+/g, " ").trim().slice(0, 100) || "Prueba de conexión del portal VE-RP, la API funciona.", r = await erlcComando(":h " + texto); await log("erlcTest", r.ok ? "Conexión OK" : `Falló: ${r.error}`, {});
       if (!r.ok) return err(`No se pudo enviar el comando: ${r.error}`); return NextResponse.json({ ok: true });
