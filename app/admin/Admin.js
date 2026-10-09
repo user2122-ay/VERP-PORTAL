@@ -71,8 +71,10 @@ function Staff({ staff }) {
     {staff.map((x) => <div key={x.id} style={{ display: "flex", justifyContent: "space-between", gap: 8, padding: "8px 0", borderTop: "1px solid var(--bd)" }}><span><b>{x.name}</b> <span className="tag">{RANK_LABEL[x.rango] || x.rango}</span>{x.placa && <span className="mut"> · Placa {x.placa}</span>}</span>{x.rango !== "DEVELOPER" && <button className="btn r" onClick={async () => { if (confirm(`¿Quitar a ${x.name} del staff?`) && (await post("staffDel", { uid: x.id }))) location.reload(); }}><Trash2 size={14} /></button>}</div>)}{!staff.length && <p className="mut">Sin staff asignado.</p>}</div>);
 }
 function Erlc() {
-  return (<div className="card"><b>Conexión con ER:LC</b><p className="mut">Envía el comando <b>:h</b> al servidor para comprobar que la API funciona. Necesita la variable ERLC_SERVER_KEY en Vercel. Cuando la MDT arresta a alguien con minutos, el portal le manda :jail a su usuario de Roblox.</p>
-    <button className="btn" onClick={async () => { if (await post("erlcTest", {})) alert("Comando :h enviado. Revisa si el mensaje salió en el servidor de ER:LC."); }}>Probar conexión (enviar :h)</button></div>);
+  const [msg, setMsg] = useState("");
+  return (<div className="card"><b>Conexión con ER:LC</b><p className="mut">Envía el comando <b>:h</b> (mensaje en pantalla) al servidor de ER:LC. Escribe el mensaje que quieres mostrar; si lo dejas vacío manda uno de prueba. Necesita la variable ERLC_SERVER_KEY en Vercel y al menos un jugador dentro del servidor. Cuando la MDT arresta a alguien con minutos, el portal le manda :jail a su usuario de Roblox.</p>
+    <input value={msg} onChange={(e) => setMsg(e.target.value)} maxLength={100} placeholder="Mensaje para :h (opcional)" />
+    <button className="btn" style={{ marginTop: 8 }} onClick={async () => { if (await post("erlcTest", { msg })) alert("Comando :h enviado. Revisa si el mensaje salió en el servidor de ER:LC."); }}>Probar conexión (enviar :h)</button></div>);
 }
 function AgenteForm() {
   const [dep, setDep] = useState(DEPTOS[1] || DEPTOS[0]);

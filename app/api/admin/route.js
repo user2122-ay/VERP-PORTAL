@@ -43,7 +43,7 @@ export async function POST(req) {
   if (b.uid && !t) return err("Usuario no existe", 404);
   switch (b.a) {
     case "erlcTest": { // prueba de la conexión con ER:LC: envía :h al servidor
-      const r = await erlcComando(":h Prueba de conexión del portal VE:RP: la API funciona."); await log("erlcTest", r.ok ? "Conexión OK" : `Falló: ${r.error}`, {});
+      const texto = String(b.msg || "").replace(/[\r\n]+/g, " ").trim().slice(0, 100) || "Prueba de conexión del portal VE-RP, la API funciona.", r = await erlcComando(":h " + texto); await log("erlcTest", r.ok ? "Conexión OK" : `Falló: ${r.error}`, {});
       if (!r.ok) return err(`No se pudo enviar el comando: ${r.error}`); return NextResponse.json({ ok: true });
     }
     case "editCedula": {

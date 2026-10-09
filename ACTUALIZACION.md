@@ -128,3 +128,7 @@ lib/rol.js, lib/placa.js, components/CedulaCard.js, app/darkweb/*, app/delictivo
 - **Sesiones**: la MDT se reinicia a los 35 minutos y hay botón **Apagar MDT**. Administración ya no mantiene la sesión: al salir del panel (o recargar) vuelve a pedir la placa, y dura máximo 35 minutos.
 - **ER:LC**: al arrestar con minutos en la MDT (o por desacato) se manda `:jail <usuario de Roblox>` a ER:LC. Si el sujeto sigue conectado y sale de la cárcel antes de cumplir la condena, se le manda `:jail` otra vez. Variable nueva en Vercel: **`ERLC_SERVER_KEY`** (la Server Key del servidor privado). Para que la revisión sea continua, pon además **`CRON_SECRET`** y programa un cron externo cada minuto a `https://TU-APP.vercel.app/api/erlc/vigilar?k=TU_CRON_SECRET` (por ejemplo cron-job.org, gratis). Sin cron, la revisión corre cuando alguien usa la MDT.
 - **Administración → ER:LC**: botón "Probar conexión (enviar :h)".
+
+## Arreglo ER:LC
+- La API de ER:LC cambió de dominio: api.policeroleplay.community ya no funciona. Ahora se usa api.erlc.gg (lib/erlc.js; se puede cambiar con ERLC_API_URL).
+- Administración › ER:LC ahora deja escribir el mensaje que se manda con :h y traduce los errores de la API (key inválida, servidor vacío, límite de uso).
