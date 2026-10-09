@@ -21,7 +21,7 @@ import { NEGOCIOS, ensureNegocios, planesDe, finanzasDe } from "@/lib/negocios";
 import Finanzas from "../negocios/Finanzas";
 import { casaRef } from "@/lib/mdt";
 import Comida from "./Comida";
-import { Cultivar, Cosechar, Ofertas } from "./Cultivo";
+import { Cultivar, Cosechar } from "./Cultivo";
 import { esSemilla } from "@/lib/cultivo";
 import { esNevera, esComida, neveraDe } from "@/lib/comida";
 import { tasaITBMS } from "@/lib/tesoreria";
@@ -37,10 +37,9 @@ export default async function P({ searchParams }) {
   const cfg = (await dd.collection("config").findOne({ _id: "tesoreria" })) || {}, cambioTasa = cfg.itbmsCambio ? { de: Math.round((cfg.itbmsPrev ?? 0.07) * 1000) / 10, a: Math.round((cfg.itbms ?? 0.07) * 1000) / 10, sube: (cfg.itbms ?? 0.07) > (cfg.itbmsPrev ?? 0.07), at: cfg.itbmsCambio } : null;
   const v = searchParams?.v === "casa" ? "casa" : searchParams?.v === "multas" ? "multas" : searchParams?.v === "comida" ? "comida" : searchParams?.v === "negocios" && misNeg.length ? "negocios" : "personal", personal = items.filter((i) => i.loc !== "casa" && !esComida(i) && !esNevera(i)), enCasa = items.filter((i) => i.loc === "casa");
   const casas = items.filter((i) => i.category === "Propiedades"), opcCasas = casas.map((c) => ({ ref: casaRef(c.name, c.at), label: `${c.name}${c.ubicacion ? " · " + c.ubicacion : ""}` })), espera = u.guardarAt ? Math.max(0, ESPERA_GUARDAR - (Date.now() - +new Date(u.guardarAt))) : 0;
-  const ofertas = (await dd.collection("ventas_sus").find({ para: u.id, estado: "pendiente" }).sort({ at: -1 }).limit(10).toArray()).map((o) => ({ id: String(o._id), deN: o.deN, n: o.n, name: o.name, precio: o.precio }));
   const lics = personal.filter((i) => licTipo(i)), otros = personal.filter((i) => !licTipo(i));
   const fotos = nombres.length ? Object.fromEntries((await (await db()).collection("items").find({ name: { $in: nombres } }, { projection: { name: 1, img: 1 } }).toArray()).map((x) => [x.name, x.img])) : {};
-  return (<Shell user={u}><div style={{ maxWidth: 1100, margin: "0 auto" }}><h2>Inventario</h2><Ofertas l={ofertas} />
+  return (<Shell user={u}><div style={{ maxWidth: 1100, margin: "0 auto" }}><h2>Inventario</h2>
     <div style={{ display: "flex", gap: 8, margin: "8px 0 12px" }}><Link className={"btn " + (v === "personal" ? "" : "g")} href="/inventario">Personal</Link><Link className={"btn " + (v === "casa" ? "" : "g")} href="/inventario?v=casa">Casa{enCasa.length ? ` (${enCasa.length})` : ""}</Link><Link className={"btn " + (v === "comida" ? "" : "g")} href="/inventario?v=comida">Comida{items.filter(esComida).length ? ` (${items.filter(esComida).length})` : ""}</Link><Link className={"btn " + (v === "multas" ? "" : "g")} href="/inventario?v=multas" style={hayVencida ? { borderColor: "var(--bad)", color: v === "multas" ? undefined : "var(--bad)" } : undefined}><Receipt size={16} />Multas{debe.length ? ` (${debe.length})` : ""}</Link>{misNeg.length > 0 && <Link className={"btn " + (v === "negocios" ? "" : "g")} href="/inventario?v=negocios">Negocios ({misNeg.length})</Link>}</div>
     {v === "negocios" ? (<>
       <p className="mut">Aquí administras tus negocios: cambia los precios de lo que vendes y decide si pagas el ITBMS. Lo que vendes llega a tu Tarjeta de Comerciante.</p>
@@ -59,7 +58,7 @@ export default async function P({ searchParams }) {
       {!multas.length && <div className="card mut">No tienes multas. ¡Sigue así!</div>}</>)}
     {v === "comida" && <Comida comida={items.filter(esComida).map((i) => ({ fid: i.fid, name: i.name, img: i.img, sub: i.sub, consumo: i.consumo, calif: i.calif, enNevera: !!i.enNevera, vence: +new Date(i.vence) }))} nevera={(() => { const n = neveraDe(u); return n ? { name: n.name, img: n.img || fotos[n.name] || null, capacidad: n.capacidad || ({ "nevera-normal": 10, refrigerador: 15, "nevera-lujo": 20 })[n.sku] || 10 } : null; })()} />}
     {v === "negocios" || v === "multas" || v === "comida" ? null : v === "casa" ? (<>
-      <p className="mut">Lo que guardas en casa no se puede robar en un asalto: solo te pueden robar lo que llevas encima. Pasar un objeto entre tu inventario y el de la casa (guardar o sacar) tiene una espera de 5 minutos. La policía puede revisar tu casa con una orden judicial.</p>
+      <p className="mut">Lo que guardas en casa no se puede robar en un asalto: solo te pueden robar lo que llevas encima. Pasar un objeto entre tu inventario y el de la casa (guardar o sacar) tiene una espera de 5 minutos. La policía puede revisar tu casa con una orden judicial. Las sustancias solo se pueden llevar encima, guardar en casa o vender en la Dark Web.</p>
       {!casas.length && <div className="card mut">Necesitas una casa para guardar cosas. Compra una en el Mercado → Propiedades.</div>}
       {casas.map((c) => { const ref = casaRef(c.name, c.at), its = enCasa.filter((i) => i.casa === ref), por = its.reduce((g, i) => ((g[i.lugar || "Sin especificar"] = g[i.lugar || "Sin especificar"] || []).push(i), g), {});
         return (<div key={ref} className="card" style={{ marginBottom: 12 }}>{c.img && <img src={c.img} alt={c.name} style={{ width: "100%", maxWidth: 420, aspectRatio: "16/10", objectFit: "cover", borderRadius: 12, marginBottom: 8 }} />}<b>{c.name}</b><div className="mut">{c.ubicacion}{c.color ? ` · Color ${c.color}` : ""} · {its.length} objeto(s) guardado(s)</div><div className="mut" style={{ fontSize: 12 }}>Casa {casas.findIndex((x) => casaRef(x.name, x.at) === ref) + 1} de {MAX_CASAS} permitidas</div>

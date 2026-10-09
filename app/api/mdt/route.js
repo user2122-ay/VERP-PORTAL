@@ -102,7 +102,7 @@ export async function GET(req) {
   }
   if (m === "inv") { // lo que un ciudadano lleva encima y se puede decomisar
     const x = await us.findOne({ id: txt(p.get("id"), 30), cedula: { $exists: true } }); if (!x) return bad("No existe", 404);
-    return NextResponse.json({ items: (x.inventory || []).filter((i) => i.loc !== "casa" && decomisable(i, licTipo(i))).map((i) => ({ name: i.name, at: new Date(i.at).toISOString(), category: i.category, placa: i.placa || "", img: i.img || "", ret: estaRetenido(i) ? { hasta: i.retenido.hasta, por: i.retenido.porName } : null })) });
+    return NextResponse.json({ items: (x.inventory || []).filter((i) => i.loc !== "casa" && decomisable(i, licTipo(i))).map((i) => ({ name: i.name, at: new Date(i.at).toISOString(), category: i.category, placa: i.placa || "", img: i.img || "", cant: i.cant || 0, ret: estaRetenido(i) ? { hasta: i.retenido.hasta, por: i.retenido.porName } : null })) });
   }
   if (m === "decomisos") { // retenciones activas
     const l = await us.find({ "inventory.retenido.hasta": { $gt: new Date() } }).limit(60).toArray();

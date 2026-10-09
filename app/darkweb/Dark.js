@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Send, Car } from "lucide-react";
 import Comprar from "../mercado/PagoModal";
+import Cultivo from "./Cultivo";
 const $ = (n) => `$${Number(n || 0).toLocaleString("es")}`;
 const call = async (b, ok) => { const r = await fetch("/api/darkweb", { method: "POST", body: JSON.stringify(b) }), j = await r.json().catch(() => ({})); if (!r.ok) { alert(j.error || "Error"); return false; } if (ok) alert(ok); return j; };
 const sel = (autos, e) => { const a = autos[+new FormData(e.target).get("k")]; return a ? { i: a.i, name: a.name, at: a.at } : {}; };
@@ -20,10 +21,11 @@ function Chat({ id, yo, cerrar }) {
       <button className="btn" style={{ width: "100%", marginTop: 6 }} disabled={!puede} onClick={async () => { if (confirm(`¿Aceptar ${$(l.precio)}? La venta se cierra al instante.`) && (await call({ accion: "aceptar", id }, "¡Trato cerrado!"))) location.reload(); }}>{puede ? `Aceptar ${$(l.precio)}` : "Aceptar (esperando a la otra parte)"}</button></>}
     <button className="btn g" style={{ width: "100%", marginTop: 8 }} onClick={cerrar}>Cerrar</button></div></div>);
 }
-export default function Dark({ mercado, yo, delictivo, dueño, autos, listas, metodos }) {
+export default function Dark({ mercado, yo, delictivo, dueño, autos, listas, metodos, cultivo }) {
   const [chat, setChat] = useState(null), car = (a, k) => <option key={k} value={k}>{a.name}{a.placa ? ` · ${a.placa}` : ""}{a.robado ? " (robado)" : ""}</option>;
   return (<>{chat && <Chat id={chat} yo={yo} cerrar={() => setChat(null)} />}
     {mercado && <div className="card"><b>Cotización actual del mercado</b><div className="big" style={{ fontSize: 26, color: mercado.factor >= 1 ? "var(--ok)" : "var(--bad)" }}>x{mercado.factor}</div><div className="mut">{mercado.mood}. La plataforma paga los vehículos según esta cotización, que se actualiza cada 2 horas (próxima actualización: {new Date(mercado.proxima).toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" })}).</div></div>}
+    {delictivo && cultivo && <Cultivo metodos={metodos} factor={mercado.factor} mood={mercado.mood} {...cultivo} />}
     {delictivo && <form className="card" onSubmit={async (e) => { e.preventDefault(); const f = new FormData(e.target); if (await call({ accion: "publicar", ...sel(autos, e), precio: f.get("precio"), pago: f.get("pago") }, "Publicado")) location.reload(); }}><b>Vender un auto robado</b><p className="mut">Precio inicial máximo $15.000. Si nadie tiene el Taller clandestino, la plataforma lo compra de inmediato según la cotización vigente. Si hay dueño, negocian por chat.</p>
       <div className="row2"><select name="k">{autos.map(car)}</select><input name="precio" type="number" min="1" max="15000" placeholder="Precio inicial (máx. $15.000)" required /><select name="pago">{metodos.map((m) => <option key={m.k} value={m.k}>Cobrar en {m.label}</option>)}</select></div>
       <button className="btn" disabled={!autos.length}><Car size={16} />Publicar</button>{!autos.length && <span className="mut"> No tienes autos en el inventario.</span>}</form>}

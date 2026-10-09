@@ -1,19 +1,17 @@
 "use client";
 import { useState } from "react";
 import { Skull, Search, Car } from "lucide-react";
-import Cultivo from "./Cultivo";
 const call = async (b) => { const r = await fetch("/api/delictivo", { method: "POST", body: JSON.stringify(b) }), j = await r.json().catch(() => ({})); if (!r.ok) { alert(j.error || "Error"); return false; } return true; };
 const EST = { pendiente: "var(--mut)", aceptado: "var(--ok)", aprobado: "var(--ok)", rechazado: "var(--bad)", cerrando: "var(--mut)" };
 const $ = (n) => `$${Number(n || 0).toLocaleString("es")}`;
 const Hist = ({ l }) => l.map((x) => <div key={x.id} style={{ display: "flex", justifyContent: "space-between", gap: 8, padding: "6px 0", borderTop: "1px solid var(--bd)" }}><span>{x.t}<div className="mut">{new Date(x.at).toLocaleDateString("es")}{x.m ? ` · ${x.m}` : ""}{x.ent?.length ? ` · ${x.ent.join(", ")}` : ""}</div></span><b style={{ color: EST[x.e] }}>{x.e}</b></div>);
-export default function Delictivo({ asaltos, robos, cultivo }) {
+export default function Delictivo({ asaltos, robos }) {
   const [q, setQ] = useState(""), [res, setRes] = useState([]), [t, setT] = useState(null), [info, setInfo] = useState(null), [sel, setSel] = useState({});
   const buscar = async (e) => { e.preventDefault(); const r = await fetch("/api/delictivo?q=" + encodeURIComponent(q)); if (r.ok) setRes((await r.json()).users); };
   const elegir = async (x) => { setT(x); setSel({}); setInfo(null); const r = await fetch("/api/delictivo?ver=" + x.id); if (r.ok) setInfo(await r.json()); };
   const marcados = info ? info.items.filter((i) => sel[i.name + i.at]) : [], veh = marcados.some((i) => i.category === "Concesionario");
   const v = (e) => { e.preventDefault(); return Object.fromEntries(new FormData(e.target)); };
   return (<><h2 style={{ color: "var(--ac)", display: "flex", gap: 8, alignItems: "center" }}><Skull />Panel delictivo</h2><p className="mut">Solo para quienes tienen el rol delictivo. Todo queda registrado.</p>
-    <Cultivo {...cultivo} />
     <div className="card"><b>Asaltar a un ciudadano</b><p className="mut">Solo puedes robar lo que la persona lleva encima. Lo que guarda en su casa no se ve ni se puede robar. La víctima recibe un aviso y decide si acepta.</p>
       <form className="row2" onSubmit={buscar}><input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Nombre, Roblox o cédula" /><button className="btn g"><Search size={16} />Buscar</button></form>
       {res.map((x) => <div key={x.id} className="card" style={{ cursor: "pointer", padding: 10, marginTop: 6, borderColor: t?.id === x.id ? "var(--ac)" : "var(--bd)" }} onClick={() => elegir(x)}>{x.label}</div>)}
