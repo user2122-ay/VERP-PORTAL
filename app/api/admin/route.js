@@ -47,7 +47,7 @@ export async function POST(req) {
       if (!aperturaListo()) return err("Falta la variable DISCORD_WEBHOOK_APERTURA en Vercel (la URL del webhook del canal de aperturas)");
       const tipo = ["votacion", "abrir", "cerrar"].includes(b.tipo) ? b.tipo : null; if (!tipo) return err("Acción inválida");
       const prev = await d.collection("config").findOne({ _id: "apertura" }); if (prev && Date.now() - +new Date(prev.at) < 15000) return err("Espera unos segundos antes de enviar otro mensaje");
-      const n = str(b.nota, 200), quien = nombreDe(a) || a.name, r = await enviarApertura(tipo, n, quien);
+      const n = str(b.nota, 200), quien = nombreDe(a) || a.name, r = await enviarApertura(tipo, n);
       await log(`apertura:${tipo}`, r.ok ? "Enviado a Discord" : `Falló: ${r.error}`, { nota: n });
       if (!r.ok) return err(`No se pudo enviar: ${r.error}`);
       await d.collection("config").updateOne({ _id: "apertura" }, { $set: { tipo, por: quien, nota: n, at } }, { upsert: true }); return NextResponse.json({ ok: true });
