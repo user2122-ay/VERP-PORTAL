@@ -9,9 +9,10 @@ export async function POST(req) {
   const b = await req.json().catch(() => ({})), us = (await db()).collection("users"), inv = u.inventory || [];
   const it = inv.find((i) => i.name === b.name && +new Date(i.at) === +new Date(b.at)); if (!it) return bad("Ese objeto no está en tu inventario");
   if (b.accion === "sacar") {
-    if (it.loc !== "casa") return bad("Ese objeto no está guardado en casa");
-    await us.updateOne({ id: u.id, inventory: { $elemMatch: { name: it.name, at: it.at, loc: "casa" } } }, { $set: { "inventory.$.loc": "personal" }, $unset: { "inventory.$.casa": "", "inventory.$.lugar": "" } });
-    return NextResponse.json({ ok: true });
+    if (it.loc !== "casa") return bad("Ese objeto no está guardado en casa"); if (it.plantada) return bad("Una planta sembrada no se puede sacar: espera a cosecharla");
+    const falta = u.guardarAt ? ESPERA_GUARDAR - (Date.now() - +new Date(u.guardarAt)) : 0; if (falta > 0) return bad(`Espera ${Math.ceil(falta / 60000)} min para pasar otro objeto entre tu inventario y el de la casa`);
+    const r = await us.updateOne({ id: u.id, inventory: { $elemMatch: { name: it.name, at: it.at, loc: "casa", plantada: { $ne: true } } } }, { $set: { "inventory.$.loc": "personal", guardarAt: new Date() }, $unset: { "inventory.$.casa": "", "inventory.$.lugar": "" } });
+    if (!r.modifiedCount) return bad("No se pudo sacar. Intenta de nuevo"); return NextResponse.json({ ok: true });
   }
   if (b.accion === "guardar") {
     if (it.loc === "casa") return bad("Ya está guardado en casa"); if (!guardable(it)) return bad("Ese objeto no se puede guardar en una casa");

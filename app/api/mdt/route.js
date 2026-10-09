@@ -159,10 +159,18 @@ export async function POST(req) {
     }
     case "decomisar": { // cualquier agente: arma, licencia de armas, licencia de conducir o auto; el oficial elige los días
       const s = await us.findOne({ id: txt(b.sujeto, 30), cedula: { $exists: true } }); if (!s) return bad("Elige al ciudadano"); if (s.id === u.id) return bad("No puedes decomisarte a ti mismo");
-      const dias = Math.floor(Number(b.dias)); if (!(dias >= 1 && dias <= MAX_DIAS_RETENCION)) return bad(`Elige entre 1 y ${MAX_DIAS_RETENCION} días`);
+      const sus = (s.inventory || []).find((i) => i.name === b.name && +new Date(i.at) === +new Date(b.at) && i.loc !== "casa")?.category === "Sustancias"; // las sustancias se incautan del todo (sin días)
+      const dias = sus ? 0 : Math.floor(Number(b.dias)); if (!sus && !(dias >= 1 && dias <= MAX_DIAS_RETENCION)) return bad(`Elige entre 1 y ${MAX_DIAS_RETENCION} días`);
       const motivo = txt(b.motivo, 300); if (motivo.length < 5) return bad("Escribe el motivo del decomiso");
       const it = (s.inventory || []).find((i) => i.name === b.name && +new Date(i.at) === +new Date(b.at) && i.loc !== "casa"); if (!it || !decomisable(it, licTipo(it))) return bad("Ese objeto no se puede decomisar (solo armas, licencias de armas y conducir, y autos que lleve encima)");
       if (estaRetenido(it)) return bad("Ese objeto ya está retenido", 409);
+      if (it.category === "Sustancias") { // incautación definitiva
+        if (!(await us.updateOne({ id: s.id }, { $pull: { inventory: { name: it.name, at: it.at, loc: { $ne: "casa" } } } })).modifiedCount) return bad("No se pudo incautar", 409);
+        await d.collection("decomisos").insertOne({ sujeto: s.id, sujetoN: pub(s).label, objeto: `${it.name}${it.cant ? ` (${it.cant} bolsitas)` : ""}`, placa: "", incautado: true, por: u.id, porName: `${u.ag.rango} ${yo}`, motivo, depto: u.ag.depto, at });
+        const bd = `${u.ag.rango} ${yo} te incautó "${it.name}"${it.cant ? ` (${it.cant} bolsitas)` : ""}. Motivo: ${motivo}.`;
+        await d.collection("notifs").insertOne({ uid: s.id, title: "Sustancias incautadas", body: bd, at, read: false }); await enviarPush(s.id, { title: "Sustancias incautadas", body: bd.slice(0, 120), url: "/inventario" });
+        return NextResponse.json({ ok: true });
+      }
       const ret = { hasta: new Date(+at + dias * 864e5), por: u.id, porName: `${u.ag.rango} ${yo}`, motivo, depto: u.ag.depto, at };
       if (!(await us.updateOne({ id: s.id, inventory: { $elemMatch: { name: it.name, at: it.at, loc: { $ne: "casa" } } } }, { $set: { "inventory.$.retenido": ret } })).modifiedCount) return bad("No se pudo decomisar", 409);
       await d.collection("decomisos").insertOne({ sujeto: s.id, sujetoN: pub(s).label, objeto: it.name, placa: it.placa || "", ...ret });
@@ -276,7 +284,7 @@ export async function POST(req) {
       const id = oid(b.id), c = d.collection("allanamientos"), r = id && (await c.findOne({ _id: id, por: u.id, estado: { $in: ["aprobada", "ejecutada"] }, vence: { $gt: at } })); if (!r) return bad("El allanamiento no está aprobado o ya venció", 403);
       const o = await us.findOne({ id: r.dueno }), ref = casaRef(r.casaName, r.casaAt), items = (o?.inventory || []).filter((i) => i.loc === "casa" && i.casa === ref);
       if (r.estado === "aprobada") { await c.updateOne({ _id: id }, { $set: { estado: "ejecutada", entroAt: at } }); await d.collection("notifs").insertOne({ uid: r.dueno, title: "Allanaron tu casa", body: `La policía allanó "${r.casaName}" (${u.ag.depto}).`, at, read: false }); }
-      return NextResponse.json({ casa: r.casaName, items: items.map((i) => ({ name: i.name, category: i.category, lugar: i.lugar || "Sin especificar", placa: i.placa || "", robado: !!i.robado, img: i.img || "" })) });
+      return NextResponse.json({ casa: r.casaName, items: items.map((i) => ({ name: i.name, category: i.category, lugar: i.lugar || "Sin especificar", placa: i.placa || "", robado: !!i.robado, img: i.img || "", cant: i.cant || 0, plantada: !!i.plantada, listoAt: i.listoAt || null })) });
     }
     case "repAtender": { // un policía toma el llamado; el ciudadano recibe un aviso
       const id = oid(b.id); if (!id) return bad("Reporte inválido"); const c = d.collection(b.src === "v" ? "reportes" : "reports");

@@ -162,3 +162,11 @@ lib/rol.js, lib/placa.js, components/CedulaCard.js, app/darkweb/*, app/delictivo
 - **Tarjetas**: la animación de "Pago aprobado" ahora sale con todas las tarjetas.
 - **ER:LC → Administración**: caja para **ejecutar cualquier comando** y panel de **mensajes automáticos**: bienvenida (`:h`) cada 5 min durante los primeros 20 min tras **Abrir servidor**, y después las 15 reglas rotando cada 10 min. Todo editable. Solo se envían con el servidor abierto y jugadores dentro. Se disparan solos desde el contador de miembros (cada minuto) o con el cron `/api/erlc/vigilar?k=CRON_SECRET`.
 - **Apertura**: el ping de votación y de servidor abierto ahora es el rol `1404862578374606910`; el GIF de "Servidor Abierto" es `Server_Abierto_2.gif`.
+
+## Actualización 16: Mercado negro (cultivo) y limpieza de ER:LC
+- **Delictivo → Mercado negro · Cultivo** (rol delictivo + VPN): se compran **Semilla de Cocatia** ($1,950) y **Semilla de Matijuana** ($1,500), máximo **3 de cada una cada 24 h** por usuario. Las fotos están en `public/items/semilla-*.jpg`.
+- **Inventario → Personal**: la semilla tiene el botón **Cultivar** (elige casa; hace falta tener casa). Se planta en el **Patio** y tarda **48 h reales** (máx. 4 plantas por casa; `lib/cultivo.js`). En **Inventario → Casa** sale el temporizador y, al terminar, **Cosechar**: da **150 bolsitas** guardadas en el patio (100 bolsitas = 1 kilo).
+- **Casa**: el traspaso entre inventario personal y casa (guardar **y** sacar) ahora tiene espera de **5 minutos**. Una planta sembrada no se puede sacar.
+- **Venta**: lo que está en casa no se puede vender; hay que sacarlo primero. **Al traficante** (bolsita $30 / kilo $1,800 base): pide una oferta que fluctúa (35 % a 185 % del base), dura 3 min y el jugador acepta o rechaza; se paga en efectivo. **A un jugador**: precio acordado; el comprador ve la oferta arriba en su Inventario y acepta (paga en efectivo) o rechaza.
+- **Policía**: en la MDT el inventario de la casa (allanamiento aprobado) muestra bolsitas y plantas con su temporizador; las sustancias que el sospechoso lleva encima se pueden **incautar** desde Decomisos (se quitan del todo, sin días). También se pueden asaltar como cualquier objeto.
+- **ER:LC → Administración**: se quitó la caja "Probar conexión (enviar :h)".
