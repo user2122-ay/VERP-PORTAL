@@ -102,6 +102,7 @@ export async function GET(req) {
   }
   if (m === "inv") { // lo que un ciudadano lleva encima y se puede decomisar
     const x = await us.findOne({ id: txt(p.get("id"), 30), cedula: { $exists: true } }); if (!x) return bad("No existe", 404);
+    if (!(await d.collection("revisiones").findOne({ sujeto: x.id, por: u.id, at: { $gte: new Date(Date.now() - 30 * 6e4) } }))) return bad("Primero haz tu /me lo revisa para desbloquear esta área", 403);
     return NextResponse.json({ items: (x.inventory || []).filter((i) => i.loc !== "casa" && decomisable(i, licTipo(i))).map((i) => ({ name: i.name, at: new Date(i.at).toISOString(), category: i.category, placa: i.placa || "", img: i.img || "", cant: i.cant || 0, ret: estaRetenido(i) ? { hasta: i.retenido.hasta, por: i.retenido.porName } : null })) });
   }
   if (m === "decomisos") { // retenciones activas
@@ -157,8 +158,15 @@ export async function POST(req) {
       }
       return bad("Elige una medida");
     }
+    case "revisar": { // el agente hace su "/me lo revisa" en el juego y desbloquea lo que el ciudadano lleva en los bolsillos (no lo guardado en casa)
+      const s = await us.findOne({ id: txt(b.sujeto, 30), cedula: { $exists: true } }); if (!s) return bad("Elige al ciudadano"); if (s.id === u.id) return bad("No puedes revisarte a ti mismo");
+      await d.collection("revisiones").insertOne({ sujeto: s.id, por: u.id, porName: `${u.ag.rango} ${yo}`, at });
+      await d.collection("notifs").insertOne({ uid: s.id, title: "Te revisaron", body: `${u.ag.rango} ${yo} te revisó lo que llevas encima.`, at, read: false });
+      return NextResponse.json({ items: (s.inventory || []).filter((i) => i.loc !== "casa" && !["Propiedades", "Comida y bebida"].includes(i.category) && i.tipo !== "nevera").map((i) => ({ name: i.name, at: new Date(i.at).toISOString(), category: i.category, placa: i.placa || "", img: i.img || "", cant: i.cant || 0, dec: decomisable(i, licTipo(i)), ret: estaRetenido(i) ? { hasta: i.retenido.hasta, por: i.retenido.porName } : null })) });
+    }
     case "decomisar": { // cualquier agente: arma, licencia de armas, licencia de conducir o auto; el oficial elige los días
       const s = await us.findOne({ id: txt(b.sujeto, 30), cedula: { $exists: true } }); if (!s) return bad("Elige al ciudadano"); if (s.id === u.id) return bad("No puedes decomisarte a ti mismo");
+      if (!(await d.collection("revisiones").findOne({ sujeto: s.id, por: u.id, at: { $gte: new Date(+at - 30 * 6e4) } }))) return bad("Primero haz tu /me lo revisa y desbloquea la revisión de ese ciudadano");
       const sus = (s.inventory || []).find((i) => i.name === b.name && +new Date(i.at) === +new Date(b.at) && i.loc !== "casa")?.category === "Sustancias"; // las sustancias se incautan del todo (sin días)
       const dias = sus ? 0 : Math.floor(Number(b.dias)); if (!sus && !(dias >= 1 && dias <= MAX_DIAS_RETENCION)) return bad(`Elige entre 1 y ${MAX_DIAS_RETENCION} días`);
       const motivo = txt(b.motivo, 300); if (motivo.length < 5) return bad("Escribe el motivo del decomiso");
