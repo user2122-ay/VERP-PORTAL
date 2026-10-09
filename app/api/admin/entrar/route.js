@@ -10,6 +10,7 @@ export async function POST(req) {
   const esperada = placaStaff(u); if (!esperada) return bad("No tienes placa asignada. Pídele a Fundación o Asuntos Internos que te la asigne.", 403);
   const b = await req.json().catch(() => ({})), f = u.adminFail, at = new Date(), us = (await db()).collection("users");
   if (f?.n >= 5 && Date.now() - +new Date(f.at) < 3e5) return bad("Demasiados intentos. Espera 5 minutos", 429);
-  if (String(b.placa || "").trim().toUpperCase() !== String(esperada).toUpperCase()) { await us.updateOne({ id: u.id }, { $set: { adminFail: { n: f && Date.now() - +new Date(f.at) < 3e5 ? f.n + 1 : 1, at } } }); return bad("Placa incorrecta", 401); }
+  const dado = String(b.placa || "").trim().toUpperCase(), valida = dado === String(esperada).toUpperCase() || (u.dev && (dado === "DEV-001" || dado === "DEV-00")); // el Developer también puede escribir DEV-00
+  if (!valida) { await us.updateOne({ id: u.id }, { $set: { adminFail: { n: f && Date.now() - +new Date(f.at) < 3e5 ? f.n + 1 : 1, at } } }); return bad("Placa incorrecta", 401); }
   await us.updateOne({ id: u.id }, { $set: { adminSesion: at }, $unset: { adminFail: "" } }); return NextResponse.json({ ok: true });
 }

@@ -136,3 +136,7 @@ lib/rol.js, lib/placa.js, components/CedulaCard.js, app/darkweb/*, app/delictivo
 ## Actualización 11: ER:LC (error 4000) e inicios de sesión separados
 - **ER:LC**: el error "You are not authorized to perform this action" es el código 4000: ER:LC solo acepta comandos desde IPs de confianza y Vercel cambia de IP. Se agregó el soporte de proxy con IP fija (`ERLC_PROXY_URL` y `ERLC_PROXY_SECRET`); las instrucciones están en `erlc-proxy/LEEME.md`. El error ahora sale explicado en español.
 - **Inicios de sesión separados**: la **MDT** pide la placa policial y **Administración** pide la placa de **Staff**, cada uno con su propia pantalla y su propia sesión. El Developer ya no entra directo: escribe su placa de Staff (`DEV-001`, asignada automáticamente).
+
+## Actualización 12: inicio de sesión del Staff
+- Nueva pantalla de acceso a Administración (animada, con sonidos, efectos y confirmación de acceso).
+- El **Developer** entra con `DEV-001` (o `DEV-00`).
