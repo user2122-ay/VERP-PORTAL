@@ -1,36 +1,48 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { apiUser } from "@/lib/auth";
-import { esComida, needsDe, FRIO } from "@/lib/comida";
+import { nivelDe, HORAS } from "@/lib/cuerpo";
+import { estaRetenido } from "@/lib/decomiso";
+import { esComida, neveraDe, enNevera, vencido, venceMs, FACTOR_NEVERA, HORAS_ENFERMO, PROB_ENFERMAR } from "@/lib/comida";
 const bad = (m, s = 400) => NextResponse.json({ error: m }, { status: s });
+const al = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+// Comer, botar, guardar en la nevera y sacar de la nevera. Cada comida del inventario tiene un id (fid).
 export async function POST(req) {
   const u = await apiUser(); if (!u?.cedula) return bad("Sin sesión", 401);
-  const b = await req.json().catch(() => ({})), fid = String(b.fid || ""), us = (await db()).collection("users"), ahora = Date.now();
-  const inv = (u.inventory || []).find((i) => i.fid === fid && esComida(i)), nev = u.nevera, ennev = nev?.items?.find((i) => i.fid === fid);
-  const ok = (msg) => NextResponse.json({ ok: true, msg });
-  switch (b.accion) {
-    case "comer": {
-      if (!inv) return bad("No tienes eso en tu inventario (si está en la nevera, sácalo primero)");
-      const n = needsDe(u, ahora), bebida = inv.tipo === "bebida", venc = +new Date(inv.caduca) <= ahora; let h = n.h, s = n.s, msg;
-      if (venc) { const q = 5 + Math.floor(Math.random() * 11); if (Math.random() < 0.8) { h = Math.max(0, h - q); s = Math.max(0, s - q); msg = `Estaba vencido y te cayó mal: bajaste ${q}% de hambre y de sed.`; } else msg = "Estaba vencido, pero esta vez no te pasó nada (no te alimentó)."; }
-      else if (bebida) { s = Math.min(100, s + inv.sube); msg = `Bebiste ${inv.name}: +${inv.sube}% de sed.`; } else { h = Math.min(100, h + inv.sube); msg = `Comiste ${inv.name}: +${inv.sube}% de hambre.`; }
-      const r = await us.updateOne({ id: u.id, "inventory.fid": fid }, { $pull: { inventory: { fid } }, $set: { needs: { h, s, t: ahora } } }); if (!r.modifiedCount) return bad("No se pudo");
-      return ok(msg);
+  if (u.muerte) return bad("Tu personaje murió", 403);
+  const b = await req.json().catch(() => ({})), fid = String(b.fid || ""), it = (u.inventory || []).find((i) => esComida(i) && i.fid === fid);
+  if (!it) return bad("Esa comida ya no está en tu inventario", 404);
+  if (estaRetenido(it)) return bad("Está retenida por la policía", 403);
+  const d = await db(), us = d.collection("users"), ahora = new Date(), venc = vencido(it);
+  if (b.accion === "botar") { const r = await us.updateOne({ id: u.id }, { $pull: { inventory: { fid } } }); return r.modifiedCount ? NextResponse.json({ ok: true, msg: `Botaste: ${it.name}` }) : bad("No se pudo botar"); }
+  if (b.accion === "guardar") {
+    const n = neveraDe(u); if (!n) return bad("No tienes nevera. Compra una en la Tool Store (Mercado → Herramientas)");
+    if (it.enNevera) return bad("Ya está en la nevera");
+    if (venc) return bad("Eso ya está vencido: no lo guardes, bótalo o cómelo bajo tu riesgo");
+    if (enNevera(u).length >= (n.capacidad || 10)) return bad("No hay espacio en tu nevera");
+    const resto = venceMs(it) - +ahora, vence = new Date(+ahora + resto * FACTOR_NEVERA);
+    const r = await us.updateOne({ id: u.id, inventory: { $elemMatch: { fid, enNevera: { $ne: true } } } }, { $set: { "inventory.$.enNevera": true, "inventory.$.vence": vence } });
+    return r.modifiedCount ? NextResponse.json({ ok: true, msg: `${it.name} guardado en la nevera: dura más` }) : bad("No se pudo guardar");
+  }
+  if (b.accion === "sacar") {
+    if (!it.enNevera) return bad("No está en la nevera");
+    const resto = Math.max(0, venceMs(it) - +ahora) / FACTOR_NEVERA, vence = new Date(+ahora + resto);
+    const r = await us.updateOne({ id: u.id, inventory: { $elemMatch: { fid, enNevera: true } } }, { $set: { "inventory.$.enNevera": false, "inventory.$.vence": vence } });
+    return r.modifiedCount ? NextResponse.json({ ok: true, msg: `${it.name} fuera de la nevera` }) : bad("No se pudo sacar");
+  }
+  if (b.accion === "comer") {
+    const { tipo, pct } = it.consumo || {}; if (!tipo) return bad("No se puede consumir");
+    const actual = nivelDe(u.cuerpo?.[tipo], HORAS[tipo]); if (actual >= 95) return bad(tipo === "agua" ? "Todavía no tienes sed" : "Todavía no tienes hambre");
+    const set = { [`cuerpo.${tipo}`]: { n: Math.min(100, actual + pct), t: ahora } }; let enfermo = false, perdida = null;
+    if (venc && Math.random() < PROB_ENFERMAR) { // comida vencida: te enfermas y pierdes un pequeño % de comida y agua
+      enfermo = true; const c = nivelDe(u.cuerpo?.comida, HORAS.comida), a = nivelDe(u.cuerpo?.agua, HORAS.agua), pc = al(4, 12), pa = al(4, 12);
+      const baseC = tipo === "comida" ? Math.min(100, c + pct) : c, baseA = tipo === "agua" ? Math.min(100, a + pct) : a;
+      set["cuerpo.comida"] = { n: Math.max(1, baseC - pc), t: ahora }; set["cuerpo.agua"] = { n: Math.max(1, baseA - pa), t: ahora }; perdida = { comida: pc, agua: pa };
+      set["cuerpo.enfermo"] = { hasta: new Date(+ahora + HORAS_ENFERMO * 36e5), causa: it.name };
     }
-    case "guardar": {
-      if (!inv) return bad("No tienes eso en tu inventario"); if (!nev) return bad("No tienes nevera"); if ((nev.items || []).length >= nev.cap) return bad("No hay espacio en tu nevera");
-      const rest = Math.max(0, +new Date(inv.caduca) - ahora), item = { ...inv, caduca: new Date(ahora + rest * FRIO), guardado: new Date(ahora) };
-      const r = await us.updateOne({ id: u.id, "inventory.fid": fid, [`nevera.items.${nev.cap - 1}`]: { $exists: false } }, { $pull: { inventory: { fid } }, $push: { "nevera.items": item } }); if (!r.modifiedCount) return bad("No hay espacio en tu nevera");
-      return ok(`${inv.name} guardado en la nevera: ahora dura más.`);
-    }
-    case "sacar": {
-      if (!ennev) return bad("Eso no está en tu nevera"); const rest = Math.max(0, +new Date(ennev.caduca) - ahora), item = { ...ennev, caduca: new Date(ahora + rest / FRIO) }; delete item.guardado;
-      const r = await us.updateOne({ id: u.id, "nevera.items.fid": fid }, { $pull: { "nevera.items": { fid } } }); if (!r.modifiedCount) return bad("No se pudo");
-      await us.updateOne({ id: u.id }, { $push: { inventory: item } }); return ok(`${ennev.name} sacado de la nevera.`);
-    }
-    case "botar": {
-      if (!inv && !ennev) return bad("No tienes eso"); await us.updateOne({ id: u.id }, inv ? { $pull: { inventory: { fid } } } : { $pull: { "nevera.items": { fid } } }); return ok("Lo botaste.");
-    }
+    const r = await us.updateOne({ id: u.id, inventory: { $elemMatch: { fid } } }, { $set: set, $pull: { inventory: { fid } } });
+    if (!r.modifiedCount) return bad("No se pudo consumir");
+    return NextResponse.json({ ok: true, enfermo, msg: enfermo ? `Estaba vencido y te enfermaste: -${perdida.comida}% comida, -${perdida.agua}% agua` : `${tipo === "agua" ? "Bebiste" : "Comiste"} ${it.name}: +${pct}% de ${tipo}${venc ? " (estaba vencido, tuviste suerte)" : ""}` });
   }
   return bad("Acción inválida");
 }

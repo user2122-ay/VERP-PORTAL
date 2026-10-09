@@ -96,14 +96,27 @@ lib/rol.js, lib/placa.js, components/CedulaCard.js, app/darkweb/*, app/delictivo
 - **MDT → Mi sueldo**: ya no muestra un sueldo fijo; muestra el **último pago** (monto y fecha) y el **historial de pagos** con fecha. Se sigue eligiendo en qué cuenta se recibe.
 - **Mercado → Chip de VE WhatsApp**: la tarjeta ahora tiene el mismo tamaño que las demás.
 
-## Actualización 10: ajuste final de Mi sueldo y chip
-- **MDT → Mi sueldo**: el último pago y el historial ahora muestran la fecha con el año.
-- **Mercado → Chip de VE WhatsApp**: ahora es una tarjeta chica, en la misma cuadrícula y con el mismo tamaño que los demás artículos.
+## Corrección: buscador de la MDT
+- **MDT → Multas**: al pulsar "Buscar" ciudadano ya no se recarga la página ni te manda a Ciudadanos. El buscador estaba dentro del formulario de multar (dos formularios anidados) y enviaba el de afuera. Ahora es un buscador sin formulario, con Enter o el botón.
 
-## Actualización 11: comida, bebida y neveras
-- **Mercado**: nuevas categorías **Comida**, **Bebidas** y **Hogar** (32 artículos con sus fotos). La comida y la bebida **no pagan ITBMS**. Precio = 8 × el % que sube (máximo $500; si un dueño de negocio edita precios, tampoco pasa de $500). Datos en `lib/comida.js`.
-- **Hambre y sed**: cada persona tiene 2 barras (saciedad e hidratación) que bajan con el tiempo (hambre ~24 h, sed ~14 h). Comer sube la barra de hambre y beber la de sed, según el % de cada artículo. Se ven en el Panel y en Inventario → Comida.
-- **Vencimiento**: toda comida y bebida tiene fecha de vencimiento. Si se consume vencida, el 80% de las veces cae mal y baja entre 5% y 15% de hambre y sed. Se puede **Botar**.
-- **Neveras** (Mercado → Hogar): Nevera Normal $5.000 (10 espacios), Refrigerador $7.890 (15) y Nevera de Lujo $10.000 (20). Requieren tener una casa y solo se puede tener **una nevera** en total. Dentro, la comida dura 4 veces más. Si no hay espacio sale "No hay espacio en tu nevera".
-- **Inventario → Comida**: botones **Comer / Beber**, **Guardar en la nevera**, **Botar**; la nevera tiene **Ver nevera** y en cada artículo **Sacar de la nevera**.
-- Las tiendas/negocios de comida se asignan después (por ahora los vende el Mercado).
+## Actualización 10: búsqueda en Multas
+- **MDT → Multas → Buscar**: Enter y el botón Buscar solo buscan; ya no pueden enviar el formulario de la multa ni reiniciar la página (también en teclados de celular). Enter dentro de un campo de una línea del formulario ya no lo envía por accidente.
+- La **pestaña de la MDT se recuerda**: si la página se recarga, vuelves a la misma pestaña y no a Ciudadanos.
+
+## Actualización 11: comida y agua, muerte por CK, panel nuevo y miembros
+- **Panel**: se quitó el acceso "VE WhatsApp" (queda el de Emergencias 911) y los cuadros de "Movimientos recientes" y "Avisos". En su lugar va el **sistema del cuerpo**: tu avatar de Roblox (cuerpo completo) con anillos de **Comida** y **Agua** (`app/Cuerpo.js`). El avatar se ve cada vez peor (gris, oscuro, tembloroso) mientras no comes ni bebes.
+- **Comida y agua** bajan solas hasta 0% en 24 horas desde la última vez que comiste o bebiste (`lib/cuerpo.js`, `HORAS`). Se compran en **Mercado → Comida y bebida** (agua, jugo, refresco, empanada, arepa, hamburguesa, pabellón); se consumen al instante, llevan ITBMS y se cobran con efectivo o tarjeta. Para agregar más: añade una línea `F(...)` en `lib/catalogo.js`.
+- **Moriste de sed o hambre = CK**: si comida o agua llega a 0% se bloquea toda la página (`/moriste`). Desde ahí puedes **Apelar CK** (escribes la razón, por ejemplo corte de luz; llega a Administración → **Apelaciones** y el Staff aprueba o deniega con razón) o **Crear otro usuario** (borra todo el personaje, `lib/ck.js`). Al enviar la apelación se le dice que abra un ticket en el Discord (pon `NEXT_PUBLIC_DISCORD_INVITE` para mostrar el botón). Si el Staff aprueba, vuelve con comida y agua al 100%. El Developer no se muere.
+- **Dinero inicial**: ahora **$15.000** al registrarse (y al crear otro usuario o tras un CK).
+- **Cabecera**: junto al logo se muestra cuántos **miembros** se han registrado (con cédula), abreviado (1.2k, 12.5k, 1.2M) y se actualiza cada minuto (`/api/miembros`, `lib/abrev.js`).
+- Colecciones nuevas en Mongo (se crean solas): `apelaciones`.
+
+## Actualización 12: comida con nevera, 4 negocios de comida, impuestos con clausura y WhatsApp desechable
+- **Comida y bebida** (`lib/comida.js`): ahora se compra y va a **Inventario → Comida** (ya no se consume al instante). Cada una tiene su % (sube comida o agua), calificación ★, categoría (Comida rápida, Helados, Frutas, Bebidas) y **fecha de vencimiento**. Botones: **Comer / Beber**, **Botar**, **Guardar en la nevera** y **Sacar de la nevera**. **No lleva impuestos** y el precio máximo es **$500**. Para agregar productos: línea en `PRODUCTOS` y ponerla en el `MENUS` de la tienda que la vende (sube `CATALOGO_V`). Los productos sin tienda todavía (pollo, harina P.A.N., helados, Cocosette, Pepito, Maltín 1 L) ya tienen foto y % y esperan su negocio.
+- **Vencidos**: comer o beber algo vencido tiene 70% de probabilidad de enfermarte: quita un pequeño % de comida y agua (4–12%) y te deja "enfermo" 2 horas (el panel lo avisa y el avatar se pone verdoso).
+- **Neveras** (Tool Store, Mercado → Herramientas): Nevera Normal $5.000 (10 objetos), Refrigerador $7.890 (15) y Nevera de Lujo $10.000 (20). **Una por usuario** (de cualquier tipo) y **hay que tener casa**. La comida guardada dura 3 veces más. Si se llena sale "No hay espacio en tu nevera". En Inventario → Comida está **Ver nevera**.
+- **4 negocios de comida** (máx. **2 negocios por persona**, todos los negocios): Frutería $160.000, Taco Bout $160.000, Three Guys $170.000, Cafetería $165.000. Mismas funciones que los demás (el dueño edita precios, las ventas llegan a su Tarjeta de Comerciante, finanzas). Mercado → Comida y bebida los muestra por tienda con filtros.
+- **Impuestos de negocios**: si el dueño deja de pagar el ITBMS el negocio queda **MOROSO** y ya no puede volver solo a "pagar". Debe ir a la **Policía (PNB)**: en MDT → Multas, al elegir al ciudadano sale "Multa de negocio" y se le pone una multa que paga en Inventario → Multas. Después el **Ministro del Interior** (MDT → Tesorería → Negocios) elige **Dejar limpio** (pago normal) o **Clausurar** (con razón). Un negocio clausurado no vende; el dueño puede **Reabrir** (después de pagar una multa que le ponga la Policía) o **Dejar el negocio** (queda a la venta). Las comidas no pagan impuestos, así que sus dueños no tienen ese interruptor.
+- **Aviso de ITBMS**: cuando el Ministro cambia la tasa, cada dueño recibe una notificación y bajo su local en Inventario → Negocios sale "SUBIÓ / BAJÓ el ITBMS de X% a Y%" con la fecha.
+- **Celular Desechable**: en VE WhatsApp aparece **Cambiar de cuenta** (mi cuenta real o **cuenta anónima**). La anónima usa un número falso (no sale tu nombre), cada sesión dura **15 minutos** y tiene **5 usos** (mensajes). Al terminar abres una nueva. No guarda contactos ni estados. (`lib/redes.js`, `app/api/wa/route.js`).
+- El buscador de Multas de la MDT ya venía corregido en tu zip.

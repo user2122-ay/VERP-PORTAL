@@ -2,7 +2,7 @@
 import { useState } from "react";
 import Comprar from "./PagoModal";
 // Casas: pregunta el color antes de pagar. Autos: color (cambia cada cierto tiempo) y detalles opcionales.
-export default function Buy({ id, metodos, colores, bloqueo, total, auto, label }) {
+export default function Buy({ id, metodos, colores, bloqueo, total, auto, label, totalLabel }) {
   const [color, setColor] = useState(auto?.colores?.[0]?.n || colores?.[0] || ""), [det, setDet] = useState([]);
   const alt = (d) => setDet((l) => (l.includes(d) ? l.filter((x) => x !== d) : [...l, d]));
   return (<>{colores && <label className="mut" style={{ display: "block", marginTop: 8 }}>Color de la casa<select value={color} onChange={(e) => setColor(e.target.value)}>{colores.map((c) => <option key={c}>{c}</option>)}</select></label>}
@@ -12,5 +12,5 @@ export default function Buy({ id, metodos, colores, bloqueo, total, auto, label 
       <div className="mut" style={{ fontSize: 12 }}>Llegan colores nuevos a las {new Date(auto.hasta).toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" })}.</div>
       <div className="mut" style={{ marginTop: 8 }}>Detalles (opcional)</div>
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap", margin: "4px 0" }}>{auto.detalles.map((d) => <button key={d} type="button" className={"btn " + (det.includes(d) ? "" : "g")} style={{ padding: "5px 10px", fontSize: 12, boxShadow: "none" }} onClick={() => alt(d)}>{d}</button>)}</div></div>}
-    <Comprar url="/api/comprar" body={{ id, color, detalles: det }} metodos={metodos} disabled={!!bloqueo} off={bloqueo} total={total} label={label} /></>);
+    <Comprar url="/api/comprar" body={{ id, color, detalles: det }} metodos={metodos} disabled={!!bloqueo} off={bloqueo} total={total} label={label} totalLabel={totalLabel} /></>);
 }

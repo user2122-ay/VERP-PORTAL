@@ -87,7 +87,11 @@ export async function GET(req) {
     return NextResponse.json({ tasa: await tasaITBMS(d), sueldos: sd, saldo: await saldoTesoreria(d), ingresos: suma("ingreso"), egresos: suma("egreso"),
       mov: mov.map((x) => ({ tipo: x.tipo, monto: x.monto, concepto: x.concepto, at: x.at })),
       agentes: ags.map((x) => ({ id: x.id, nombre: x.cedula ? `${x.cedula.nombres.split(" ")[0]} ${x.cedula.apellidos.split(" ")[0]}` : x.name, rango: x.agente.rango, depto: x.agente.depto, sueldo: sd[claveSueldo(x.agente.depto, x.agente.rango)] || 0, cuenta: x.agente.cuenta || "efectivo", ultimoPago: x.agente.ultimoPago || null, toca: !x.agente.ultimoPago || Date.now() - +new Date(x.agente.ultimoPago) >= SEMANA })),
-      negocios: negs.map((n) => ({ nombre: NEGOCIOS[n._id]?.nombre || n._id, dueno: dn[n.owner] || "—", paga: n.pagaImpuesto !== false, evadido: n.evadido || 0 })) });
+      negocios: negs.map((n) => ({ key: n._id, nombre: NEGOCIOS[n._id]?.nombre || n._id, dueno: dn[n.owner] || "—", paga: n.pagaImpuesto !== false, evadido: n.evadido || 0, comida: !!NEGOCIOS[n._id]?.comida, estado: n.estado || "normal", clausuradoAt: n.clausuradoAt || null, clausuraRazon: n.clausuraRazon || "", multaPagada: !!n.multaPagadaAt, morosoDesde: n.morosoDesde || null })) });
+  }
+  if (m === "negociosDe") { // negocios de un ciudadano (para multas relacionadas con impuestos)
+    const sid = String(p.get("id") || ""), l = await d.collection("negocios").find({ owner: sid }).toArray();
+    return NextResponse.json({ negocios: l.filter((n) => NEGOCIOS[n._id] && n._id !== "taller").map((n) => ({ key: n._id, nombre: NEGOCIOS[n._id].nombre, estado: n.estado || "normal" })) });
   }
   if (m === "multas") { // listado de multas
     const f = p.get("f"), l = (await d.collection("multas").find({}).sort({ at: -1 }).limit(120).toArray()).map(mu).filter((x) => !f || f === "todas" || x.estado === f);
@@ -120,8 +124,9 @@ export async function POST(req) {
       if (!(monto >= 1 && monto <= MONTO_MAX)) return bad(`El monto debe estar entre $1 y ${money(MONTO_MAX)}`); if (!articulos.length) return bad("Escribe al menos un artículo infringido");
       if (dias < PLAZO_MIN_DIAS) return bad(`El plazo mínimo para pagar es de ${PLAZO_MIN_DIAS} días`); if (dias > PLAZO_MAX_DIAS) return bad(`El plazo máximo es de ${PLAZO_MAX_DIAS} días`);
       if (s.id === u.id) return bad("No puedes multarte a ti mismo");
-      const vence = new Date(+at + dias * 864e5);
-      await d.collection("multas").insertOne({ sujeto: s.id, sujetoN: pub(s).label, monto, articulos, motivo: txt(b.motivo, 300), por: u.id, porName: `${u.ag.rango} ${yo}`, depto: u.ag.depto, estado: "pendiente", dias, at, vence });
+      const vence = new Date(+at + dias * 864e5), negK = b.negocio ? String(b.negocio) : null;
+      if (negK && !(await d.collection("negocios").findOne({ _id: negK, owner: s.id }))) return bad("Ese negocio no es del ciudadano");
+      await d.collection("multas").insertOne({ negocio: negK, sujeto: s.id, sujetoN: pub(s).label, monto, articulos, motivo: txt(b.motivo, 300), por: u.id, porName: `${u.ag.rango} ${yo}`, depto: u.ag.depto, estado: "pendiente", dias, at, vence });
       const body = `${u.ag.rango} ${yo} te multó con ${money(monto)}. Artículos: ${articulos.join("; ")}. Tienes hasta el ${vence.toLocaleDateString("es")} (${dias} días) para pagarla en Inventario → Multas; si no, será desacato.`;
       await d.collection("notifs").insertOne({ uid: s.id, title: "Recibiste una multa", body, at, read: false }); await enviarPush(s.id, { title: "Recibiste una multa", body: body.slice(0, 120), url: "/inventario?v=multas" });
       return NextResponse.json({ ok: true });
@@ -192,10 +197,32 @@ export async function POST(req) {
       await d.collection("audit").insertOne({ by: u.id, byName: u.name, rank: u.ag.rango, act: "liberarSueldos", objetivo: `${depto} · ${rango}: ${pagados.length} de ${ags.length}`, razon: "Nómina semanal", detalle: { sueldo: s, total, sinFondos }, at });
       return NextResponse.json({ ok: true, pagados: pagados.length, miembros: ags.length, total, sinFondos });
     }
+    case "negocioEstado": { // SOLO el Ministro: deja el negocio limpio (pago normal) o lo clausura
+      if (!esMinistro(u.ag)) return bad("Solo el Ministro del Interior decide sobre los negocios", 403);
+      const k = String(b.key || ""), nc = d.collection("negocios"), n = NEGOCIOS[k] && (await nc.findOne({ _id: k, owner: { $ne: null } })); if (!n) return bad("Negocio inválido", 404);
+      const razon = txt(b.razon, 300);
+      if (b.estado === "limpio") {
+        if (n.estado !== "moroso") return bad("Ese negocio no está moroso", 409);
+        await nc.updateOne({ _id: k }, { $set: { estado: "normal", pagaImpuesto: true, limpioAt: at }, $unset: { morosoDesde: "" } });
+        await d.collection("notifs").insertOne({ uid: n.owner, title: "Negocio al día", body: `El Ministro del Interior dejó ${n.nombre || NEGOCIOS[k].nombre} limpio: vuelve al pago normal de impuestos.`, at, read: false });
+      } else if (b.estado === "clausurar") {
+        if (n.estado === "clausurado") return bad("Ya está clausurado", 409); if (razon.length < 3) return bad("Escribe la razón de la clausura");
+        await nc.updateOne({ _id: k }, { $set: { estado: "clausurado", clausuradoAt: at, clausuraRazon: razon }, $unset: { multaPagadaAt: "" } });
+        await d.collection("notifs").insertOne({ uid: n.owner, title: "Negocio CLAUSURADO", body: `El Ministro del Interior clausuró ${NEGOCIOS[k].nombre}. Razón: ${razon}. Ve a la Policía para pagar la multa de reapertura o deja el negocio.`, at, read: false });
+        await enviarPush(n.owner, { title: "Negocio clausurado", body: NEGOCIOS[k].nombre, url: "/inventario?v=negocios" });
+      } else return bad("Acción inválida");
+      await d.collection("audit").insertOne({ by: u.id, byName: u.name, rank: u.ag.rango, act: "negocio_" + b.estado, objetivo: NEGOCIOS[k].nombre, razon: razon || "Decisión del Ministro", at });
+      return NextResponse.json({ ok: true });
+    }
     case "tasaSet": { // SOLO el Ministro: cambia el impuesto (ITBMS) de los objetos del Mercado
       if (!esMinistro(u.ag)) return bad("Solo el Ministro del Interior cambia los impuestos", 403);
       const p = Number(b.tasa); if (!(p >= 0 && p <= 30)) return bad("El impuesto debe estar entre 0% y 30%");
-      await setTasa(d, Math.round(p * 10) / 1000);
+      const antes = await tasaITBMS(d), nueva = Math.round(p * 10) / 1000; await setTasa(d, nueva);
+      if (nueva !== antes) { // aviso a los dueños de negocios: se ve debajo de su local en Inventario → Negocios
+        await d.collection("config").updateOne({ _id: "tesoreria" }, { $set: { itbmsPrev: antes, itbmsCambio: at } });
+        const dueños = (await d.collection("negocios").find({ owner: { $ne: null } }).toArray()).map((n) => n.owner), t = nueva > antes ? "subió" : "bajó";
+        if (dueños.length) await d.collection("notifs").insertMany([...new Set(dueños)].map((uid) => ({ uid, title: "Cambió el ITBMS", body: `El Ministro del Interior ${t} el ITBMS de ${Math.round(antes * 1000) / 10}% a ${p}% (${at.toLocaleDateString("es")}).`, at, read: false })));
+      }
       await d.collection("audit").insertOne({ by: u.id, byName: u.name, rank: u.ag.rango, act: "tasaITBMS", objetivo: `ITBMS ${p}%`, razon: "Decisión del Ministro", at });
       return NextResponse.json({ ok: true });
     }

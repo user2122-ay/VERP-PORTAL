@@ -16,6 +16,7 @@ export async function POST(req) {
   if (!(await d.collection("users").updateOne({ id: u.id, [pk]: { $gte: m.monto } }, { $inc: { [pk]: -m.monto } })).modifiedCount) { await c.updateOne({ _id }, { $set: { estado: "pendiente" } }); return bad("Saldo insuficiente"); }
   const at = new Date(), tarde = estadoMulta(m) === "vencida";
   await c.updateOne({ _id }, { $set: { estado: "pagada", pagadaAt: at, tarde } });
+  if (m.negocio) { await d.collection("negocios").updateOne({ _id: m.negocio, owner: u.id }, { $set: { multaPagadaAt: at } }); } // multa de impuestos / reapertura del negocio
   await ingresarTesoreria(d, m.monto, `Multa pagada por ${m.sujetoN}`, "Multas PNB");
   await d.collection("tx").insertOne({ user: u.id, type: "multa", item: `Multa pagada (${(m.articulos || []).join("; ").slice(0, 80)})`, amount: -m.monto, at });
   await d.collection("notifs").insertMany([{ uid: u.id, title: "Multa pagada", body: `Pagaste la multa de $${m.monto.toLocaleString("es")}.`, at, read: false }, { uid: m.por, title: "Multa pagada", body: `${m.sujetoN} pagó la multa de $${m.monto.toLocaleString("es")}${tarde ? " (fuera de plazo)" : ""}.`, at, read: false }]);
