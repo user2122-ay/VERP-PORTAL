@@ -1,5 +1,4 @@
 import Comprar from "./PagoModal";
-import Gestion from "../negocios/Gestion";
 import { db } from "@/lib/db";
 import { metodosDe } from "@/lib/pago";
 import { NEGOCIOS, ensureNegocios, planesDe, MAX_NEGOCIOS } from "@/lib/negocios";
@@ -14,6 +13,6 @@ export default async function Negocios({ u }) {
   return (<><p className="mut">Para comprar un negocio necesitas la Tarjeta de Comerciante ($50 en la Tienda, membresía de $5 semanales). Lo que se venda en tu negocio llega a esa tarjeta. Máximo {MAX_NEGOCIOS} negocios por persona.</p>
     <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(320px,1fr))" }}>{lista.map(([k, n]) => { const o = docs[k]?.owner; return (<div key={k}><div className="card"><img src={n.img} alt={n.nombre} style={{ width: "100%", aspectRatio: "16/10", objectFit: "cover", borderRadius: 12 }} />
       <div style={{ marginTop: 8 }}><b>{n.nombre}</b></div><div className="mut">{n.edita}</div><div className="big" style={{ fontSize: 22 }}>${n.precio.toLocaleString("es")}</div>
-      {o ? <><span className="tag">{o === u.id ? "Eres el dueño" : `Dueño: ${dueños[o] || "—"}`}</span>{docs[k]?.estado === "clausurado" && <span className="tag" style={{ color: "var(--bad)", marginLeft: 6 }}>CLAUSURADO</span>}{docs[k]?.estado === "moroso" && <span className="tag" style={{ color: "#ff9f1a", marginLeft: 6 }}>MOROSO</span>}</> : <Comprar url="/api/negocios" body={{ accion: "comprar", key: k }} metodos={metodos} msg="¡Negocio comprado! Ya puedes administrarlo." label="Comprar negocio" />}</div>
-      {o === u.id && <Gestion k={k} items={items[k] || []} planes={planes} paga={docs[k]?.pagaImpuesto !== false} estado={docs[k]?.estado || "normal"} comida={!!n.comida} multaOk={!!docs[k]?.multaPagadaAt && +new Date(docs[k].multaPagadaAt) >= +new Date(docs[k]?.clausuradoAt || 0)} />}</div>); })}</div></>);
+      {o ? <><span className="tag">{o === u.id ? "Eres el dueño" : `Dueño: ${dueños[o] || "—"}`}</span>{docs[k]?.estado === "clausurado" && <span className="tag" style={{ color: "var(--bad)", marginLeft: 6 }}>CLAUSURADO</span>}{docs[k]?.estado === "moroso" && <span className="tag" style={{ color: "#ff9f1a", marginLeft: 6 }}>MOROSO</span>}</> : docs[k]?.vetado?.uid === u.id && +new Date(docs[k].vetado.hasta) > Date.now() ? <span className="tag" style={{ color: "#ff9f1a" }}>Podrás comprarlo de nuevo el {new Date(docs[k].vetado.hasta).toLocaleDateString("es")}</span> : <Comprar url="/api/negocios" body={{ accion: "comprar", key: k }} metodos={metodos} msg="¡Negocio comprado! Ya puedes administrarlo." label="Comprar negocio" />}</div>
+      </div>); })}</div></>);
 }

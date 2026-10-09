@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { adminUser, reviewUser } from "@/lib/admin";
 import { aplicarCK } from "@/lib/ck";
 import { canAdmin, canStaff } from "@/lib/roles";
+import { erlcComando } from "@/lib/erlc";
 import { RANGOS_POR_DEPTO, DEPTOS } from "@/lib/mdt";
 import { LUGARES } from "@/lib/zonas";
 import { BANCOS } from "@/lib/bancos";
@@ -36,11 +37,15 @@ export async function POST(req) {
   const razon = str(b.razon, 300);
   if (!canAdmin(a.rank) && !["roboOk", "roboNo", "apelOk", "apelNo"].includes(b.a)) return err("Tu rango solo puede revisar solicitudes", 403);
   // Toda acción administrativa (salvo marcar un reporte como resuelto) exige razón y queda en la colección "audit".
-  if (!["done", "roboOk", "staffSet", "staffDel", "agenteSet", "agenteDel"].includes(b.a) && razon.length < 3) return err("La razón es obligatoria");
+  if (!["done", "roboOk", "staffSet", "staffDel", "agenteSet", "agenteDel", "erlcTest"].includes(b.a) && razon.length < 3) return err("La razón es obligatoria");
   const log = (act, objetivo, detalle) => d.collection("audit").insertOne({ by: a.id, byName: a.name, rank: a.rank, act, objetivo, razon, detalle, at });
   const t = b.uid ? await users.findOne({ id: str(b.uid, 30) }) : null, quien = t ? `${t.name} (${t.id})` : null;
   if (b.uid && !t) return err("Usuario no existe", 404);
   switch (b.a) {
+    case "erlcTest": { // prueba de la conexión con ER:LC: envía :h al servidor
+      const r = await erlcComando(":h Prueba de conexión del portal VE:RP: la API funciona."); await log("erlcTest", r.ok ? "Conexión OK" : `Falló: ${r.error}`, {});
+      if (!r.ok) return err(`No se pudo enviar el comando: ${r.error}`); return NextResponse.json({ ok: true });
+    }
     case "editCedula": {
       if (!t.cedula) return err("Ese usuario no tiene cédula");
       const c = b.cedula || {}, set = {}, antes = {};

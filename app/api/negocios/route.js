@@ -1,3 +1,4 @@
+import { comprarPendientes } from "@/lib/dwauto";
 import { NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
 import { db } from "@/lib/db";
@@ -15,6 +16,7 @@ export async function POST(req) {
     const pk = pagoKey(u, b.pago); if (!pk) return bad("Método de pago inválido");
     if (n0.oculto && !tieneVpn(u)) return bad("Necesitas una VPN para entrar a la Dark Web");
     if ((await neg.countDocuments({ owner: u.id })) >= MAX_NEGOCIOS) return bad(`Solo puedes tener ${MAX_NEGOCIOS} negocios por persona`);
+    const v0 = await neg.findOne({ _id: b.key }); if (v0?.vetado?.uid === u.id && +new Date(v0.vetado.hasta) > Date.now()) return bad(`Devolviste este negocio: no puedes volver a comprarlo hasta el ${new Date(v0.vetado.hasta).toLocaleDateString("es")}`);
     if (!u.cuentas?.com) return bad("Necesitas la Tarjeta de Comerciante ($50 en el Mercado) para comprar un negocio");
     if (!(await neg.updateOne({ _id: b.key, owner: null }, { $set: { owner: u.id, desde: at, inversion: n0.precio, ganado: 0, ventas: 0, perdido: n0.precio, evadido: 0, impuestoPagado: 0, estado: "normal", pagaImpuesto: true }, $unset: { morosoDesde: "", clausuradoAt: "", clausuraRazon: "", multaPagadaAt: "" } })).modifiedCount) return bad("Este negocio ya tiene dueño");
     if (!(await d.collection("users").updateOne({ id: u.id, [pk]: { $gte: n0.precio } }, { $inc: { [pk]: -n0.precio } })).modifiedCount) { await neg.updateOne({ _id: b.key }, { $set: { owner: null } }); return bad("Saldo insuficiente"); }
@@ -33,6 +35,17 @@ export async function POST(req) {
     if (nd.estado !== "clausurado") return bad("Solo puedes dejar un negocio que esté clausurado");
     await neg.updateOne({ _id: b.key }, { $set: { owner: null, estado: "normal", pagaImpuesto: true }, $unset: { morosoDesde: "", clausuradoAt: "", clausuraRazon: "", multaPagadaAt: "", desde: "" } });
     await d.collection("notifs").insertOne({ uid: u.id, title: "Dejaste el negocio", body: `Ya no eres dueño de ${n0.nombre}.`, at, read: false }); return NextResponse.json({ ok: true });
+  }
+  if (b.accion === "devolver") { // el dueño devuelve el negocio al sistema: se le reembolsa el precio inicial y no puede recomprarlo en 15 días
+    if ((nd.estado || "normal") !== "normal") return bad("Un negocio moroso o clausurado no se puede devolver: regularízalo primero");
+    const monto = Math.max(0, Math.floor(nd.inversion ?? n0.precio)), hasta = new Date(Date.now() + 15 * 864e5);
+    if (!(await neg.updateOne({ _id: b.key, owner: u.id }, { $set: { owner: null, estado: "normal", pagaImpuesto: true, vetado: { uid: u.id, hasta } }, $unset: { desde: "", morosoDesde: "", clausuradoAt: "", clausuraRazon: "", multaPagadaAt: "" } })).modifiedCount) return bad("No se pudo devolver");
+    const conCom = (await d.collection("users").updateOne({ id: u.id, "cuentas.com": { $exists: true } }, { $inc: { "cuentas.com.saldo": monto } })).modifiedCount;
+    if (!conCom) await d.collection("users").updateOne({ id: u.id }, { $inc: { balance: monto } });
+    await d.collection("tx").insertOne({ user: u.id, type: "venta", item: `Negocio devuelto al sistema: ${n0.nombre}`, amount: monto, at });
+    await d.collection("notifs").insertOne({ uid: u.id, title: "Negocio devuelto", body: `Devolviste ${n0.nombre}: recibiste $${monto.toLocaleString("es")} en ${conCom ? "tu Tarjeta de Comerciante" : "efectivo"}. No podrás volver a comprarlo hasta el ${hasta.toLocaleDateString("es")}. Queda a la venta en el Mercado.`, at, read: false });
+    if (b.key === "taller") await comprarPendientes(d);
+    return NextResponse.json({ ok: true });
   }
   if (nd.estado === "clausurado") return bad("Tu negocio está clausurado: no puedes administrarlo hasta reabrirlo", 403);
   if (b.accion === "editar") {

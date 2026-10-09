@@ -10,6 +10,7 @@ import { tieneVpn } from "@/lib/vpn";
 import { factorHoy } from "@/lib/mnegro";
 import { enviarPush } from "@/lib/push";
 import { estaRetenido } from "@/lib/decomiso";
+import { comprarPendientes } from "@/lib/dwauto";
 const bad = (m, s = 400) => NextResponse.json({ error: m }, { status: s });
 const vpn = tieneVpn;
 const oid = (s) => { try { return new ObjectId(String(s)); } catch { return null; } };
@@ -42,6 +43,7 @@ export async function GET(req) {
 export async function POST(req) {
   const u = await apiUser(); if (!u?.cedula) return bad("Sin sesión", 401); if (!vpn(u)) return bad("Necesitas una VPN", 403);
   const b = await req.json(), d = await db(), col = d.collection("dw"), us = d.collection("users"), at = new Date(), yo = nombreDe(u);
+  await comprarPendientes(d);
   const mine = (id) => ({ _id: id, $or: [{ seller: u.id }, { buyer: u.id }] });
   switch (b.accion) {
     case "publicar": {

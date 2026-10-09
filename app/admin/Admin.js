@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Search, Plus, Trash2, Skull, Check } from "lucide-react";
 import { canAdmin, RANK_LABEL } from "@/lib/roles";
 import { RANGOS_POR_DEPTO, DEPTOS } from "@/lib/mdt";
@@ -70,6 +70,10 @@ function Staff({ staff }) {
     <form className="row2" onSubmit={async (e) => { const v = vals(e); if (await post("staffSet", v)) location.reload(); }}><input name="username" placeholder="Usuario de Discord" required /><select name="rango"><option value="JUNTA_DIRECTIVA">Junta Directiva</option><option value="FUNDACION">Fundación</option><option value="ASUNTOS_INTERNOS">Asuntos Internos</option><option value="MODERACION">Moderador</option></select><input name="placa" placeholder="Placa (obligatoria)" required /><button className="btn"><Plus size={16} />Asignar</button></form>
     {staff.map((x) => <div key={x.id} style={{ display: "flex", justifyContent: "space-between", gap: 8, padding: "8px 0", borderTop: "1px solid var(--bd)" }}><span><b>{x.name}</b> <span className="tag">{RANK_LABEL[x.rango] || x.rango}</span>{x.placa && <span className="mut"> · Placa {x.placa}</span>}</span>{x.rango !== "DEVELOPER" && <button className="btn r" onClick={async () => { if (confirm(`¿Quitar a ${x.name} del staff?`) && (await post("staffDel", { uid: x.id }))) location.reload(); }}><Trash2 size={14} /></button>}</div>)}{!staff.length && <p className="mut">Sin staff asignado.</p>}</div>);
 }
+function Erlc() {
+  return (<div className="card"><b>Conexión con ER:LC</b><p className="mut">Envía el comando <b>:h</b> al servidor para comprobar que la API funciona. Necesita la variable ERLC_SERVER_KEY en Vercel. Cuando la MDT arresta a alguien con minutos, el portal le manda :jail a su usuario de Roblox.</p>
+    <button className="btn" onClick={async () => { if (await post("erlcTest", {})) alert("Comando :h enviado. Revisa si el mensaje salió en el servidor de ER:LC."); }}>Probar conexión (enviar :h)</button></div>);
+}
 function AgenteForm() {
   const [dep, setDep] = useState(DEPTOS[1] || DEPTOS[0]);
   return (<form className="row2" onSubmit={async (e) => { const v = vals(e); if (await post("agenteSet", v)) location.reload(); }}><input name="username" placeholder="Usuario de Discord" required />
@@ -82,11 +86,13 @@ function Agentes({ agentes }) {
     {agentes.map((x) => <div key={x.id} style={{ display: "flex", justifyContent: "space-between", gap: 8, padding: "8px 0", borderTop: "1px solid var(--bd)" }}><span><b>{x.rango}</b> {x.nombre || x.name}<div className="mut">@{x.name} · Placa {x.placa} · {x.depto}</div></span><button className="btn r" onClick={async () => { if (confirm(`¿Quitar a ${x.name} de la MDT?`) && (await post("agenteDel", { uid: x.id }))) location.reload(); }}><Trash2 size={14} /></button></div>)}{!agentes.length && <p className="mut">Aún no hay agentes asignados.</p>}</div>);
 }
 export default function Admin({ rank, items, reps, audit, robos = [], staff = [], agentes = [], canStaff = false, apelaciones = [] }) {
-  const full = canAdmin(rank), TABS = full ? ["Usuarios", "Mercado", "Solicitudes", "Apelaciones", "Agentes MDT", "Auditoría", "Reportes 911", ...(canStaff ? ["Staff"] : [])] : ["Solicitudes", "Apelaciones"];
+  const full = canAdmin(rank), TABS = full ? ["Usuarios", "Mercado", "Solicitudes", "Apelaciones", "Agentes MDT", "Auditoría", "Reportes 911", "ER:LC", ...(canStaff ? ["Staff"] : [])] : ["Solicitudes", "Apelaciones"];
   const [tab, setTab] = useState(full ? "Usuarios" : "Solicitudes");
+  useEffect(() => { clearTimeout(window.__admOut); const out = () => navigator.sendBeacon("/api/admin/salir"); addEventListener("pagehide", out); return () => { removeEventListener("pagehide", out); window.__admOut = setTimeout(out, 400); }; }, []); // la sesión de Administración no se mantiene: al salir del panel hay que volver a poner la placa
   return (<div style={{ maxWidth: 900, margin: "0 auto" }}><img src="/admin-logo.jpg" alt="VE:RP" style={{ width: "min(380px,100%)", borderRadius: 12, display: "block", margin: "0 auto 8px" }} /><h2 style={{ textAlign: "center" }}>Administración Y Asuntos Internos De Venezuela Community</h2><span className="tag">{RANK_LABEL[rank] || rank}</span>
     <div style={{ display: "flex", gap: 8, margin: "12px 0", flexWrap: "wrap" }}>{TABS.map((t) => <button key={t} className={"btn " + (tab === t ? "" : "g")} onClick={() => setTab(t)}>{t}</button>)}</div>
     {tab === "Solicitudes" && <Solicitudes robos={robos} />}{tab === "Apelaciones" && <Apelaciones apelaciones={apelaciones} />}{tab === "Staff" && <Staff staff={staff} />}{tab === "Agentes MDT" && <Agentes agentes={agentes} />}{tab === "Usuarios" && <Usuarios items={items} />}{tab === "Mercado" && <Mercado items={items} />}
+    {tab === "ER:LC" && <Erlc />}
     {tab === "Auditoría" && <div className="card"><b>Registro de auditoría (últimas 100 acciones)</b>{audit.map((x) => <div key={x.id} style={{ padding: "8px 0", borderTop: "1px solid var(--bd)" }}><b>{x.act}</b> · {x.obj}<div className="mut">{x.by} ({String(x.rank).replace("_", " ")}) · {new Date(x.at).toLocaleString("es")}</div><div>Razón: {x.razon}</div></div>)}{!audit.length && <p className="mut">Sin registros.</p>}</div>}
     {tab === "Reportes 911" && <div className="card"><b>Reportes 911</b>{reps.map((r) => <div key={r.id} style={{ margin: "8px 0" }}>{r.t}<div className="mut">{r.d} · {r.e}</div><button className="btn g" onClick={async () => { if (await post("done", { id: r.id })) location.reload(); }}><Check size={16} className="neon" />Resuelto</button></div>)}{!reps.length && <p className="mut">Sin reportes pendientes.</p>}</div>}</div>);
 }

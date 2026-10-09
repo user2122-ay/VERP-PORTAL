@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { Search, Shield, FileText, Gavel, Siren, Plus, Home, Wallet, Landmark, Receipt, Lock } from "lucide-react";
+import { Search, Shield, FileText, Gavel, Siren, Plus, Home, Wallet, Landmark, Receipt, Lock, Power } from "lucide-react";
 import CedulaCard from "@/components/CedulaCard";
 import ZoomMap from "@/components/ZoomMap";
 import Acceso from "./Acceso";
@@ -60,7 +60,7 @@ function Expedientes() {
 }
 function Arrestos() {
   const [s, setS] = useState(null);
-  return (<form className="card" onSubmit={async (e) => { const b = fd(e); if (!s) return alert("Elige al sujeto"); const r = await post({ accion: "arresto", ...b, sujeto: s.id }); if (r) { alert(`Arresto registrado. Multa cobrada: ${$(r.cobrado)}. Comisión de ${$(r.comision)} para cada uno de los ${r.oficiales} oficiales.`); e.target.reset(); setS(null); } }}>
+  return (<form className="card" onSubmit={async (e) => { const b = fd(e); if (!s) return alert("Elige al sujeto"); const r = await post({ accion: "arresto", ...b, sujeto: s.id }); if (r) { alert((r.jail === "ok" ? "Jail enviado en ER:LC. " : r.jail ? `ER:LC no respondió (${r.jail}). ` : "") + `Arresto registrado. Multa cobrada: ${$(r.cobrado)}. Comisión de ${$(r.comision)} para cada uno de los ${r.oficiales} oficiales.`); e.target.reset(); setS(null); } }}>
     <b>Registrar arresto</b><div className="mut">Sujeto: {s ? <b>{s.label}</b> : "sin elegir"}</div><Buscador onPick={setS} />
     <textarea name="cargos" rows={2} placeholder="Cargos" required style={{ marginTop: 8 }} /><div className="row2"><input name="multa" type="number" min="0" placeholder="Multa ($)" /><input name="minutos" type="number" min="0" placeholder="Condena (minutos)" /></div>
     <input name="oficiales" placeholder="Otros oficiales presentes (usuarios de Roblox separados por coma)" /><p className="mut">Tú y cada oficial presente reciben el 5% de la multa cobrada, en efectivo.</p><button className="btn"><Gavel size={16} />Arrestar</button></form>);
@@ -186,12 +186,14 @@ function Decomisos() {
 const PLAZO_MIN = 10;
 const TABS = [["Ciudadanos", Shield, Ciudadanos], ["Expedientes", FileText, Expedientes], ["Arrestos", Gavel, Arrestos], ["Multas", Receipt, Multas], ["Decomisos", Lock, Decomisos], ["Reportes", Siren, Reportes], ["Casas", Home, Casas], ["Mi sueldo", Wallet, Sueldo]];
 export default function Mdt() {
-  const [info, setInfo] = useState(null), [ok, setOk] = useState(false), [t, setT] = useState("Ciudadanos");
+  const [info, setInfo] = useState(null), [ok, setOk] = useState(false), [exp, setExp] = useState(0), [t, setT] = useState("Ciudadanos");
   useEffect(() => { try { const g = sessionStorage.getItem("mdt-tab"); if (g) setT(g); } catch {} }, []);
   const cambiar = (n) => { setT(n); try { sessionStorage.setItem("mdt-tab", n); } catch {} };
-  useEffect(() => { (async () => { const j = await get("m=estado"); if (j) { setInfo(j); setOk(j.ok); } })(); }, []);
-  if (!info) return null; if (!ok) return <Acceso info={info} onOk={() => setOk(true)} />;
+  useEffect(() => { (async () => { const j = await get("m=estado"); if (j) { setInfo(j); setOk(j.ok); setExp(j.exp || 0); } })(); }, []);
+  useEffect(() => { if (!ok || !exp) return; const tm = setTimeout(() => location.reload(), Math.max(1000, exp - Date.now())); return () => clearTimeout(tm); }, [ok, exp]); // a los 35 min la MDT se reinicia y pide la placa
+  const apagar = async () => { await fetch("/api/mdt", { method: "POST", body: JSON.stringify({ accion: "salir" }) }); location.reload(); };
+  if (!info) return null; if (!ok) return <Acceso info={info} onOk={() => { setOk(true); setExp(Date.now() + 35 * 6e4); }} />;
   const tabs = [...TABS, ...(info.ministro ? [["Tesorería", Landmark, Tesoreria]] : [])], V = (tabs.find((x) => x[0] === t) || tabs[0])[2];
-  return (<div style={{ maxWidth: 820, margin: "0 auto" }}><div style={{ display: "flex", gap: 12, alignItems: "center" }}><img src="/justicia-paz.png" alt="Justicia y Paz" style={{ height: 54, background: "#fff", borderRadius: 10, padding: 4 }} /><div><b style={{ fontSize: 18 }}>MDT · {info.ag.depto}</b><div className="mut">{info.ag.rango} {info.nombre} · @{info.discord} · Placa {info.ag.placa}</div></div></div>
+  return (<div style={{ maxWidth: 820, margin: "0 auto" }}><div style={{ display: "flex", gap: 12, alignItems: "center" }}><img src="/justicia-paz.png" alt="Justicia y Paz" style={{ height: 54, background: "#fff", borderRadius: 10, padding: 4 }} /><div><b style={{ fontSize: 18 }}>MDT · {info.ag.depto}</b><div className="mut">{info.ag.rango} {info.nombre} · @{info.discord} · Placa {info.ag.placa}</div></div><button className="btn g" style={{ marginLeft: "auto" }} onClick={apagar}><Power size={16} />Apagar MDT</button></div>
     <div style={{ display: "flex", gap: 8, margin: "12px 0", flexWrap: "wrap" }}>{tabs.map(([n, I]) => <button key={n} className={"btn " + (t === n ? "" : "g")} onClick={() => cambiar(n)}><I size={16} />{n}</button>)}</div><V aprueba={info.aprueba} yo={info.yo} pnb={info.pnb} /></div>);
 }

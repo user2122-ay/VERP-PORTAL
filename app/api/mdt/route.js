@@ -1,3 +1,4 @@
+import { encarcelar, vigilarCondenas } from "@/lib/jail";
 import { NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
 import { db } from "@/lib/db";
@@ -16,15 +17,16 @@ const bad = (m, s = 400) => NextResponse.json({ error: m }, { status: s });
 const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), money = (n) => "$" + Number(n).toLocaleString("es"), txt = (s, n = 400) => String(s || "").trim().slice(0, n);
 const oid = (s) => { try { return new ObjectId(String(s)); } catch { return null; } };
 const COMISION = 0.05; // cada oficial presente en el arresto recibe el 5% de la multa cobrada
-const fresca = (u) => !!(u.mdtSesion && Date.now() - +new Date(u.mdtSesion) < 8 * 36e5);
+const fresca = (u) => !!(u.mdtSesion && Date.now() - +new Date(u.mdtSesion) < 35 * 6e4);
 // Solo entra quien Administración asignó como agente (o el Developer) y ya ingresó su placa en las últimas 8 horas.
 async function policia(libre = false) { const u = await apiUser(); const ag = u && agenteDe(u); if (!ag) return null; if (!libre && !fresca(u)) return null; return { ...u, ag }; }
 const mu = (m) => ({ id: String(m._id), monto: m.monto, articulos: m.articulos || [], motivo: m.motivo || "", por: m.porName, sujetoN: m.sujetoN, at: m.at, vence: m.vence, estado: estadoMulta(m), pagadaAt: m.pagadaAt || null, desacato: m.desacato || null });
 const pub = (x) => ({ id: x.id, label: `${x.cedula.nombres} ${x.cedula.apellidos} · ${x.cedula.roblox}`, num: x.cedula.num });
 
 export async function GET(req) {
+  try { await vigilarCondenas(await db()); } catch {}
   const p = new URL(req.url).searchParams, m = p.get("m");
-  if (m === "estado") { const u = await policia(true); if (!u) return bad("Sin permiso", 403); return NextResponse.json({ ok: fresca(u), ag: u.ag, nombre: nombreDe(u), discord: u.name, yo: u.id, aprueba: aprobador(u.ag), ministro: esMinistro(u.ag), pnb: esPNB(u.ag) }); }
+  if (m === "estado") { const u = await policia(true); if (!u) return bad("Sin permiso", 403); return NextResponse.json({ ok: fresca(u), exp: fresca(u) ? +new Date(u.mdtSesion) + 35 * 6e4 : 0, ag: u.ag, nombre: nombreDe(u), discord: u.name, yo: u.id, aprueba: aprobador(u.ag), ministro: esMinistro(u.ag), pnb: esPNB(u.ag) }); }
   const u = await policia(); if (!u) return bad("Sin sesión de la MDT", 401);
   const d = await db(), us = d.collection("users");
   if (m === "buscar") {
@@ -116,6 +118,7 @@ export async function POST(req) {
     if (String(b.placa || "").trim().toUpperCase() !== String(u.ag.placa).toUpperCase()) { await us.updateOne({ id: u.id }, { $set: { mdtFail: { n: f && Date.now() - +new Date(f.at) < 3e5 ? f.n + 1 : 1, at } } }); return bad("Placa incorrecta", 401); }
     await us.updateOne({ id: u.id }, { $set: { mdtSesion: at }, $unset: { mdtFail: "" } }); return NextResponse.json({ ok: true });
   }
+  if (b.accion === "salir") { await us.updateOne({ id: u.id }, { $unset: { mdtSesion: "" } }); return NextResponse.json({ ok: true }); }
   switch (b.accion) {
     case "multar": { // SOLO la PNB: la multa llega al Inventario del ciudadano; no se cobra sola
       if (!esPNB(u.ag)) return bad("Solo la Policía Nacional Bolivariana puede poner multas", 403);
@@ -138,6 +141,7 @@ export async function POST(req) {
       if (b.tipo === "detencion") {
         const minutos = Math.floor(Number(b.minutos)); if (!(minutos >= 1 && minutos <= 600)) return bad("Escribe cuántos minutos queda detenido (1 a 600)");
         await d.collection("arrestos").insertOne({ sujeto: s.id, sujetoN: pub(s).label, cargos: `Desacato: no pagó la multa de ${money(m.monto)} (${(m.articulos || []).join("; ")})`, multa: 0, cobrado: 0, minutos, oficiales: [u.id], comision: 0, por: u.id, porName: yo, at });
+        await encarcelar(d, s, minutos, "Desacato por multa impaga");
         await c.updateOne({ _id: id }, { $set: { desacato: { tipo: "Detenido", por: yo, detalle: `${minutos} min`, at } } });
         await d.collection("notifs").insertOne({ uid: s.id, title: "Detenido por desacato", body: `No pagaste a tiempo la multa de ${money(m.monto)}. Quedas detenido ${minutos} minutos.`, at, read: false }); return NextResponse.json({ ok: true });
       }
@@ -252,7 +256,8 @@ export async function POST(req) {
       if (com > 0) for (const o of ids) { await us.updateOne({ id: o }, { $inc: { balance: com } }); await d.collection("tx").insertOne({ user: o, type: "comision", item: `Comisión por arresto de ${pub(s).label}`, amount: com, at }); await d.collection("notifs").insertOne({ uid: o, title: "Comisión por arresto", body: `Recibiste ${money(com)} (5% de ${money(cobrado)}) en efectivo.`, at, read: false }); }
       await d.collection("arrestos").insertOne({ sujeto: s.id, sujetoN: pub(s).label, cargos, multa, cobrado, minutos, oficiales: ids, comision: com, por: u.id, porName: yo, at });
       await d.collection("notifs").insertOne({ uid: s.id, title: "Has sido arrestado", body: `Cargos: ${cargos}.${cobrado ? ` Se cobró una multa de ${money(cobrado)}.` : ""}${rest ? ` Quedó sin pagar ${money(rest)}.` : ""}`, at, read: false });
-      return NextResponse.json({ ok: true, cobrado, comision: com, oficiales: ids.length });
+      const jail = minutos > 0 ? await encarcelar(d, s, minutos, cargos) : null;
+      return NextResponse.json({ ok: true, cobrado, comision: com, oficiales: ids.length, jail: jail ? (jail.ok ? "ok" : jail.error) : null });
     }
     case "allanSolicitar": { // cualquier agente solicita; desde Comisario se aprueba
       const dueno = await us.findOne({ id: txt(b.owner, 30), cedula: { $exists: true } }), casa = dueno?.inventory?.find((i) => i.category === "Propiedades" && i.name === b.casaName && +new Date(i.at) === +new Date(b.casaAt)), motivo = txt(b.motivo, 400);
