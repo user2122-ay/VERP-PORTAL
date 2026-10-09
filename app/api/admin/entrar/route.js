@@ -4,7 +4,7 @@ import { apiUser } from "@/lib/auth";
 import { placaStaff } from "@/lib/admin";
 import { canReview } from "@/lib/roles";
 const bad = (m, s = 400) => NextResponse.json({ error: m }, { status: s });
-// Pide la placa del staff. 5 fallos bloquean 5 minutos; la sesión dura 8 horas.
+// Inicio de sesión de ADMINISTRACIÓN: pide la placa de STAFF (independiente de la MDT). 5 fallos bloquean 5 minutos.
 export async function POST(req) {
   const u = await apiUser(); if (!u || !canReview(u.rank)) return bad("Sin permiso", 403);
   const esperada = placaStaff(u); if (!esperada) return bad("No tienes placa asignada. Pídele a Fundación o Asuntos Internos que te la asigne.", 403);

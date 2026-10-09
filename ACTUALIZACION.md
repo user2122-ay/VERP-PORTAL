@@ -132,3 +132,7 @@ lib/rol.js, lib/placa.js, components/CedulaCard.js, app/darkweb/*, app/delictivo
 ## Arreglo ER:LC
 - La API de ER:LC cambió de dominio: api.policeroleplay.community ya no funciona. Ahora se usa api.erlc.gg (lib/erlc.js; se puede cambiar con ERLC_API_URL).
 - Administración › ER:LC ahora deja escribir el mensaje que se manda con :h y traduce los errores de la API (key inválida, servidor vacío, límite de uso).
+
+## Actualización 11: ER:LC (error 4000) e inicios de sesión separados
+- **ER:LC**: el error "You are not authorized to perform this action" es el código 4000: ER:LC solo acepta comandos desde IPs de confianza y Vercel cambia de IP. Se agregó el soporte de proxy con IP fija (`ERLC_PROXY_URL` y `ERLC_PROXY_SECRET`); las instrucciones están en `erlc-proxy/LEEME.md`. El error ahora sale explicado en español.
+- **Inicios de sesión separados**: la **MDT** pide la placa policial y **Administración** pide la placa de **Staff**, cada uno con su propia pantalla y su propia sesión. El Developer ya no entra directo: escribe su placa de Staff (`DEV-001`, asignada automáticamente).
