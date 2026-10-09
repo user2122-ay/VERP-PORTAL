@@ -145,3 +145,19 @@ lib/rol.js, lib/placa.js, components/CedulaCard.js, app/darkweb/*, app/delictivo
 - Administración → **Apertura** (Developer, Fundación, Junta Directiva y Asuntos Internos): **Abrir votación**, **Abrir servidor** y **Cerrar servidor**. Se envían por un webhook de Discord (variable `DISCORD_WEBHOOK_APERTURA`).
 - Tres mensajes en embed con su GIF: **votación**, **Apertura** (con "Servidor en Listado" y código VNZRP) y **Servidor Cerrado**. Sin encuesta (las reacciones las pone otro bot). La votación y la apertura pinguean a `<@&1472420048197910771>` fuera del embed; cerrar no.
 - Queda en la auditoría y se muestra el último aviso. Hay una espera de 15 segundos entre envíos.
+
+## Actualización 14: cambios del concesionario, clausura, inventario, catálogo, cuerpo y delictivo
+- **Concesionario**: la tarjeta ya no muestra colores ni detalles. Al pulsar **Comprar** pide un solo campo, el color (en las casas también), y luego el pago.
+- **Clausura con multa**: al clausurar, el Ministro escribe la razón y el **monto de la multa**. El dueño la paga en **Inventario → Negocios** (efectivo o tarjeta), el dinero va a la Tesorería y el negocio **reabre al instante**.
+- **Inventario → Negocios**: sin huecos bajo la foto. Debajo de la foto van el ITBMS actual con flecha (▲ rojo si subió, ▼ verde si bajó, lo cambia el Ministro) y el interruptor de pagar impuesto. El editor de precios es compacto: buscador, lista con scroll y filas pequeñas (sirve para más de 100 artículos).
+- **Administración → Mercado**: se quitó "Editar casas por tipo". El catálogo va arriba, con **buscador** (nombre, número de casa, marca) y **filtros por categoría** (Propiedades, Negocio, etc.). Cada casa se edita sola (precio e impuesto) con el botón Editar; los formularios para crear casas y artículos quedaron plegados abajo.
+- **Hambre y sed**: solo corren con el servidor **abierto** (lo marca el panel de Apertura con Abrir/Cerrar; la votación no cambia el estado). Con el servidor cerrado las barras no bajan, nadie muere y no se puede comer ni beber. Al abrir, el tiempo cerrado no cuenta. El Developer puede comer siempre.
+- **Delictivo**: además del rol delictivo, ahora hace falta la **VPN** (la misma de la Dark Web), tanto en la página como en las acciones.
+
+## Actualización 15: barras, casas, WhatsApp anónimo, TikVerp, tarjetas y ER:LC
+- **Barras del personaje**: los anillos ahora se animan siempre (aro girando, brillo, pulso e ícono), aunque estén al 100% y el servidor esté cerrado.
+- **Casas**: se quitó "Editar por tipo" y se agregó **Casa tipo 4** (el alta por lote con números separados por coma sigue igual).
+- **WhatsApp anónimo**: solo con **Celular Desechable**. Número fijo **+58 412 0000000** (no se puede responder). Cada celular aguanta **5 sesiones** anónimas (15 min y 5 usos cada una); al terminar la 5.ª el celular se destruye y hay que comprar otro.
+- **TikVerp**: solo el dueño puede borrar su video (el staff aún puede borrar comentarios).
+- **Tarjetas**: la animación de "Pago aprobado" ahora sale con todas las tarjetas.
+- **ER:LC → Administración**: caja para **ejecutar cualquier comando** y panel de **mensajes automáticos**: bienvenida (`:h`) cada 5 min durante los primeros 20 min tras **Abrir servidor**, y después las 15 reglas rotando cada 10 min. Todo editable. Solo se envían con el servidor abierto y jugadores dentro. Se disparan solos desde el contador de miembros (cada minuto) o con el cron `/api/erlc/vigilar?k=CRON_SECRET`.

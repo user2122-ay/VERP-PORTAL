@@ -5,7 +5,9 @@ import { adminUser, reviewUser } from "@/lib/admin";
 import { aplicarCK } from "@/lib/ck";
 import { canAdmin, canStaff } from "@/lib/roles";
 import { erlcComando } from "@/lib/erlc";
+import { configAuto, REGLAS } from "@/lib/erlcauto";
 import { enviarApertura, aperturaListo } from "@/lib/apertura";
+import { descongelarCuerpo } from "@/lib/cuerpo";
 import { RANGOS_POR_DEPTO, DEPTOS } from "@/lib/mdt";
 import { LUGARES } from "@/lib/zonas";
 import { BANCOS } from "@/lib/bancos";
@@ -38,7 +40,7 @@ export async function POST(req) {
   const razon = str(b.razon, 300);
   if (!canAdmin(a.rank) && !["roboOk", "roboNo", "apelOk", "apelNo"].includes(b.a)) return err("Tu rango solo puede revisar solicitudes", 403);
   // Toda acción administrativa (salvo marcar un reporte como resuelto) exige razón y queda en la colección "audit".
-  if (!["done", "roboOk", "staffSet", "staffDel", "agenteSet", "agenteDel", "erlcTest", "apertura"].includes(b.a) && razon.length < 3) return err("La razón es obligatoria");
+  if (!["done", "roboOk", "staffSet", "staffDel", "agenteSet", "agenteDel", "erlcTest", "erlcCmd", "erlcAuto", "apertura"].includes(b.a) && razon.length < 3) return err("La razón es obligatoria");
   const log = (act, objetivo, detalle) => d.collection("audit").insertOne({ by: a.id, byName: a.name, rank: a.rank, act, objetivo, razon, detalle, at });
   const t = b.uid ? await users.findOne({ id: str(b.uid, 30) }) : null, quien = t ? `${t.name} (${t.id})` : null;
   if (b.uid && !t) return err("Usuario no existe", 404);
@@ -50,11 +52,25 @@ export async function POST(req) {
       const n = str(b.nota, 200), quien = nombreDe(a) || a.name, r = await enviarApertura(tipo, n);
       await log(`apertura:${tipo}`, r.ok ? "Enviado a Discord" : `Falló: ${r.error}`, { nota: n });
       if (!r.ok) return err(`No se pudo enviar: ${r.error}`);
-      await d.collection("config").updateOne({ _id: "apertura" }, { $set: { tipo, por: quien, nota: n, at } }, { upsert: true }); return NextResponse.json({ ok: true });
+      // Solo "abrir" y "cerrar" cambian el estado del servidor (la votación no): con el servidor cerrado el hambre y la sed no bajan
+      const est = { tipo, por: quien, nota: n, at }, extra = {};
+      if (tipo === "cerrar" && prev?.servidor !== "cerrado") { est.servidor = "cerrado"; est.cerradoDesde = at; }
+      if (tipo === "abrir") { est.servidor = "abierto"; est.abiertoAt = at; if (prev?.servidor === "cerrado" && prev.cerradoDesde) await descongelarCuerpo(d, +at - +new Date(prev.cerradoDesde)); extra.$unset = { cerradoDesde: "" }; }
+      await d.collection("config").updateOne({ _id: "apertura" }, { $set: est, ...extra }, { upsert: true }); return NextResponse.json({ ok: true });
     }
     case "erlcTest": { // prueba de la conexión con ER:LC: envía :h al servidor
       const texto = String(b.msg || "").replace(/[\r\n]+/g, " ").trim().slice(0, 100) || "Prueba de conexión del portal VE-RP, la API funciona.", r = await erlcComando(":h " + texto); await log("erlcTest", r.ok ? "Conexión OK" : `Falló: ${r.error}`, {});
       if (!r.ok) return err(`No se pudo enviar el comando: ${r.error}`); return NextResponse.json({ ok: true });
+    }
+    case "erlcCmd": { // ejecutar CUALQUIER comando de ER:LC desde Administración (ej: :h hola, :announce ..., :kick usuario)
+      const cmd = String(b.cmd || "").replace(/[\r\n]+/g, " ").trim().slice(0, 300); if (!cmd) return err("Escribe el comando");
+      const co = cmd.startsWith(":") ? cmd : ":" + cmd, r = await erlcComando(co); await log("erlcCmd", co.slice(0, 80), { ok: r.ok, error: r.error || null });
+      if (!r.ok) return err(`No se pudo enviar el comando: ${r.error}`); return NextResponse.json({ ok: true });
+    }
+    case "erlcAuto": { // guardar los mensajes automáticos (bienvenida y reglas)
+      const n = (v, mn, mx, df) => { const x = Math.floor(Number(v)); return Number.isFinite(x) ? Math.min(mx, Math.max(mn, x)) : df; }, lista = (Array.isArray(b.lista) ? b.lista : String(b.lista || "").split("\n")).map((x) => str(x, 200)).filter(Boolean).slice(0, 60);
+      const set = { "bienv.on": !!b.bienvOn, "bienv.texto": str(b.bienvTexto, 200) || "🌴 ¡Bienvenido a VE:RP!", "bienv.cadaMin": n(b.bienvCada, 1, 60, 5), "bienv.durMin": n(b.bienvDur, 1, 180, 20), "reglas.on": !!b.reglasOn, "reglas.cadaMin": n(b.reglasCada, 1, 240, 10), "reglas.lista": lista.length ? lista : REGLAS };
+      await d.collection("config").updateOne({ _id: "erlcAuto" }, { $set: set }, { upsert: true }); await log("erlcAuto", "Mensajes automáticos", { bienv: set["bienv.on"], reglas: set["reglas.on"] }); return NextResponse.json({ ok: true });
     }
     case "editCedula": {
       if (!t.cedula) return err("Ese usuario no tiene cédula");
@@ -117,7 +133,7 @@ export async function POST(req) {
     }
     case "planQuitar": { if (!t.plan) return err("No tiene plan"); await users.updateOne({ id: t.id }, { $unset: { plan: "" } }); await log("planQuitar", quien, { monto: t.plan.monto }); break; }
     case "addCasas": {
-      const tipo = String(b.tipo); if (!["0", "1", "2", "3"].includes(tipo)) return err("Tipo de casa inválido");
+      const tipo = String(b.tipo); if (!["0", "1", "2", "3", "4"].includes(tipo)) return err("Tipo de casa inválido");
       let h; try { h = new URL(b.img); } catch { return err("Link de imagen inválido"); } if (h.protocol !== "https:") return err("La imagen debe ser un link https (Discord)");
       const region = str(b.region, 40), price = Number(b.price), imp = Number(b.impuesto || 0); if (!region || !Number.isFinite(price) || price < 0) return err("Región o precio inválido");
       const nums = []; for (const p of String(b.numeros || "").split(/[\s,;]+/).filter(Boolean)) { const m = /^(\d+)-(\d+)$/.exec(p); if (m) { for (let i = +m[1]; i <= +m[2] && nums.length <= 500; i++) nums.push(String(i)); } else if (/^\d+$/.test(p)) nums.push(p); else return err(`Número inválido: ${p}`); }
@@ -125,12 +141,6 @@ export async function POST(req) {
       const col = d.collection("items"), ya = new Set((await col.find({ category: "Propiedades", tipo, region, numero: { $in: nums } }, { projection: { numero: 1 } }).toArray()).map((x) => x.numero)), nuevos = [...new Set(nums)].filter((n) => !ya.has(n));
       if (nuevos.length) await col.insertMany(nuevos.map((n) => ({ name: `Casa tipo ${tipo}`, category: "Propiedades", tipo, region, numero: n, ubicacion: `${region} ${n}`, price, impuesto: imp > 0 ? imp : 0, img: h.href, desc: `Casa tipo ${tipo} en ${region}`, brand: "", year: "", clase: "", stock: 1 })));
       await log("addCasas", `Tipo ${tipo} · ${region}`, { creadas: nuevos.length, repetidas: nums.length - nuevos.length, price }); break;
-    }
-    case "editTipo": {
-      const tipo = String(b.tipo); if (!["0", "1", "2", "3"].includes(tipo)) return err("Tipo inválido"); const f = { category: "Propiedades", tipo }, set = {}; if (str(b.region)) f.region = str(b.region, 40);
-      if (str(b.img, 500)) { let h; try { h = new URL(b.img); } catch { return err("Link inválido"); } if (h.protocol !== "https:") return err("La imagen debe ser https"); set.img = h.href; }
-      for (const k of ["price", "impuesto"]) if (b[k] !== "" && b[k] != null) { const n = Number(b[k]); if (!Number.isFinite(n) || n < 0) return err(`${k} inválido`); set[k] = n; }
-      if (!Object.keys(set).length) return err("No hay cambios"); const r = await d.collection("items").updateMany(f, { $set: set }); await log("editTipo", `Tipo ${tipo}${f.region ? " · " + f.region : ""}`, { casas: r.modifiedCount, ...set }); break;
     }
     case "setPrice": {
       const id = oid(b.id); if (!id) return err("Datos inválidos"); const set = {};

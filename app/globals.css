@@ -111,3 +111,10 @@ h1,h2{margin:.2em 0}.mut{color:var(--mut);font-size:14px}.big{font-size:34px;fon
 .cu-av{position:relative;z-index:1;height:min(340px,62vw);width:auto;margin-top:110px;object-fit:contain}.cu-pie{position:relative;z-index:2;text-align:center;margin-top:6px}
 @keyframes cu-flota{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
 @keyframes cu-tiembla{0%,100%{transform:translateX(0) rotate(0)}25%{transform:translateX(-3px) rotate(-1.5deg)}75%{transform:translateX(3px) rotate(1.5deg)}}
+
+/* Anillos del cuerpo con movimiento: aro punteado que gira, brillo que recorre el arco y latido suave (aunque estén al 100%) */
+.cu-ring svg{overflow:visible}.cu-gira{transform-origin:50px 50px;animation:cu-gira 9s linear infinite}
+.cu-arco{filter:drop-shadow(0 0 4px currentColor);animation:cu-late 2.6s ease-in-out infinite}
+.cu-brillo{transform-origin:50px 50px;animation:cu-brillo 3.2s linear infinite}.cu-ic{animation:cu-bota 2.6s ease-in-out infinite}
+@keyframes cu-gira{to{transform:rotate(360deg)}}@keyframes cu-brillo{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+@keyframes cu-late{0%,100%{opacity:.85}50%{opacity:1}}@keyframes cu-bota{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}

@@ -53,7 +53,7 @@ function Item({ p, mudo, setMudo, acc }) {
       <div style={{ fontWeight: 800, fontSize: 16, display: "flex", gap: 4, alignItems: "center", cursor: "pointer" }} onClick={() => acc.perfil(p.handle)}>@{p.handle}{p.badge && <span title={p.badge}><BadgeCheck size={16} color="#4da3ff" /></span>}</div>
       <div style={{ margin: "4px 0", wordBreak: "break-word" }}>{p.desc.split(/(#[\p{L}\p{N}_]+)/u).map((x, k) => x.startsWith("#") ? <button key={k} className="tv-tag" onClick={() => acc.tag(x)}>{x}</button> : x)}</div>
       <div className="tv-mq" style={{ fontSize: 13, display: "flex", gap: 6, alignItems: "center" }}><Music size={14} style={{ flex: "none" }} /><div className="tv-mq" style={{ flex: 1 }}><span>{p.sonido ? `${p.sonido.titulo} · ${p.sonido.artista}` : `Sonido original · ${p.handle}`}</span></div></div></div>
-    {p.mio || acc.staff ? <button onClick={() => acc.borrar(p)} aria-label="Borrar" style={{ position: "absolute", top: 46, right: 10, zIndex: 3, background: "#0008", border: 0, color: "#fff", borderRadius: 99, padding: 8, cursor: "pointer" }}><Trash2 size={16} /></button> : null}
+    {p.mio ? <button onClick={() => acc.borrar(p)} aria-label="Borrar" style={{ position: "absolute", top: 46, right: 10, zIndex: 3, background: "#0008", border: 0, color: "#fff", borderRadius: 99, padding: 8, cursor: "pointer" }}><Trash2 size={16} /></button> : null}
   </div>);
 }
 

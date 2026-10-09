@@ -6,6 +6,7 @@ import { esRol, nombreDe } from "@/lib/rol";
 import { nuevaPlaca, registrarPlaca } from "@/lib/placa";
 import { enviarPush } from "@/lib/push";
 import { estaRetenido } from "@/lib/decomiso";
+import { tieneVpn } from "@/lib/vpn";
 const bad = (m, s = 400) => NextResponse.json({ error: m }, { status: s });
 const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), money = (n) => "$" + Number(n).toLocaleString("es");
 const oid = (s) => { try { return new ObjectId(String(s)); } catch { return null; } };
@@ -17,6 +18,7 @@ const llevaEncima = (t) => (t.inventory || []).filter((i) => i.loc !== "casa" &&
 
 export async function GET(req) { // buscador de ciudadanos para asaltar
   const u = await apiUser(); if (!u?.cedula || !(await esRol(u, "delictivo"))) return bad("Sin permiso", 403);
+  if (!tieneVpn(u)) return bad("Necesitas una VPN para entrar a la parte delictiva", 403);
   const sp = new URL(req.url).searchParams, ver = sp.get("ver");
   if (ver) { const t = await (await db()).collection("users").findOne({ id: ver, cedula: { $exists: true } }); if (!t || t.id === u.id) return bad("Ciudadano inválido"); return NextResponse.json({ efectivo: t.balance || 0, items: llevaEncima(t) }); }
   const q = String(sp.get("q") || "").trim().slice(0, 40); if (q.length < 2) return NextResponse.json({ users: [] });
@@ -30,6 +32,7 @@ export async function POST(req) {
   const b = await req.json(), d = await db(), us = d.collection("users"), at = new Date(), yo = nombreDe(u);
   if (b.accion === "asaltar") {
     if (!(await esRol(u, "delictivo"))) return bad("Necesitas el rol delictivo", 403);
+    if (!tieneVpn(u)) return bad("Necesitas una VPN para entrar a la parte delictiva", 403);
     const t = await us.findOne({ id: String(b.to), cedula: { $exists: true } }); if (!t || t.id === u.id) return bad("Ciudadano inválido");
     const e = Math.max(0, Math.floor(+b.efectivo || 0)), tj = Math.max(0, Math.floor(+b.tarjeta || 0)), disp = llevaEncima(t), pedidos = (Array.isArray(b.items) ? b.items : []).slice(0, 10).map((s) => disp.find((x) => x.name === s.name && x.at === s.at)).filter(Boolean), objetos = pedidos.length > 0, vehiculos = pedidos.some((x) => x.category === "Concesionario");
     if (e > LIM || tj > LIM) return bad(`El monto máximo por asalto es ${money(LIM)}`); if (e > (t.balance || 0)) return bad("No lleva tanto efectivo encima"); if (!e && !tj && !pedidos.length) return bad("Elige qué quieres robar");
@@ -61,6 +64,7 @@ export async function POST(req) {
   }
   if (b.accion === "robo") { // solicitud al staff para robar un auto de la calle
     if (!(await esRol(u, "delictivo"))) return bad("Necesitas el rol delictivo", 403);
+    if (!tieneVpn(u)) return bad("Necesitas una VPN para entrar a la parte delictiva", 403);
     const img = https(b.img), modelo = String(b.modelo || "").trim().slice(0, 60), color = String(b.color || "").trim().slice(0, 30), pl = String(b.placa || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8), specs = String(b.specs || "").trim().slice(0, 400);
     if (!img) return bad("Sube la foto del robo (link https de Discord)"); if (!modelo || !color || pl.length < 5 || !specs) return bad("Completa modelo, color, matrícula y especificaciones");
     if ((await d.collection("robos").countDocuments({ user: u.id, estado: "pendiente" })) >= 3) return bad("Ya tienes 3 solicitudes pendientes");

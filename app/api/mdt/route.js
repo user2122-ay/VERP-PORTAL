@@ -1,4 +1,5 @@
 import { encarcelar, vigilarCondenas } from "@/lib/jail";
+import { tickAutomatico } from "@/lib/erlcauto";
 import { NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
 import { db } from "@/lib/db";
@@ -89,7 +90,7 @@ export async function GET(req) {
     return NextResponse.json({ tasa: await tasaITBMS(d), sueldos: sd, saldo: await saldoTesoreria(d), ingresos: suma("ingreso"), egresos: suma("egreso"),
       mov: mov.map((x) => ({ tipo: x.tipo, monto: x.monto, concepto: x.concepto, at: x.at })),
       agentes: ags.map((x) => ({ id: x.id, nombre: x.cedula ? `${x.cedula.nombres.split(" ")[0]} ${x.cedula.apellidos.split(" ")[0]}` : x.name, rango: x.agente.rango, depto: x.agente.depto, sueldo: sd[claveSueldo(x.agente.depto, x.agente.rango)] || 0, cuenta: x.agente.cuenta || "efectivo", ultimoPago: x.agente.ultimoPago || null, toca: !x.agente.ultimoPago || Date.now() - +new Date(x.agente.ultimoPago) >= SEMANA })),
-      negocios: negs.map((n) => ({ key: n._id, nombre: NEGOCIOS[n._id]?.nombre || n._id, dueno: dn[n.owner] || "—", paga: n.pagaImpuesto !== false, evadido: n.evadido || 0, comida: !!NEGOCIOS[n._id]?.comida, estado: n.estado || "normal", clausuradoAt: n.clausuradoAt || null, clausuraRazon: n.clausuraRazon || "", multaPagada: !!n.multaPagadaAt, morosoDesde: n.morosoDesde || null })) });
+      negocios: negs.map((n) => ({ key: n._id, nombre: NEGOCIOS[n._id]?.nombre || n._id, dueno: dn[n.owner] || "—", paga: n.pagaImpuesto !== false, evadido: n.evadido || 0, comida: !!NEGOCIOS[n._id]?.comida, estado: n.estado || "normal", clausuradoAt: n.clausuradoAt || null, clausuraRazon: n.clausuraRazon || "", clausuraMulta: n.clausuraMulta || 0, multaPagada: !!n.multaPagadaAt, morosoDesde: n.morosoDesde || null })) });
   }
   if (m === "negociosDe") { // negocios de un ciudadano (para multas relacionadas con impuestos)
     const sid = String(p.get("id") || ""), l = await d.collection("negocios").find({ owner: sid }).toArray();
@@ -204,18 +205,19 @@ export async function POST(req) {
     case "negocioEstado": { // SOLO el Ministro: deja el negocio limpio (pago normal) o lo clausura
       if (!esMinistro(u.ag)) return bad("Solo el Ministro del Interior decide sobre los negocios", 403);
       const k = String(b.key || ""), nc = d.collection("negocios"), n = NEGOCIOS[k] && (await nc.findOne({ _id: k, owner: { $ne: null } })); if (!n) return bad("Negocio inválido", 404);
-      const razon = txt(b.razon, 300);
+      const razon = txt(b.razon, 300), multa = Math.floor(Number(b.multa));
       if (b.estado === "limpio") {
         if (n.estado !== "moroso") return bad("Ese negocio no está moroso", 409);
         await nc.updateOne({ _id: k }, { $set: { estado: "normal", pagaImpuesto: true, limpioAt: at }, $unset: { morosoDesde: "" } });
         await d.collection("notifs").insertOne({ uid: n.owner, title: "Negocio al día", body: `El Ministro del Interior dejó ${n.nombre || NEGOCIOS[k].nombre} limpio: vuelve al pago normal de impuestos.`, at, read: false });
       } else if (b.estado === "clausurar") {
         if (n.estado === "clausurado") return bad("Ya está clausurado", 409); if (razon.length < 3) return bad("Escribe la razón de la clausura");
-        await nc.updateOne({ _id: k }, { $set: { estado: "clausurado", clausuradoAt: at, clausuraRazon: razon }, $unset: { multaPagadaAt: "" } });
-        await d.collection("notifs").insertOne({ uid: n.owner, title: "Negocio CLAUSURADO", body: `El Ministro del Interior clausuró ${NEGOCIOS[k].nombre}. Razón: ${razon}. Ve a la Policía para pagar la multa de reapertura o deja el negocio.`, at, read: false });
+        if (!(multa >= 1 && multa <= 10000000)) return bad("Escribe el monto de la multa de reapertura ($1 a $10.000.000)");
+        await nc.updateOne({ _id: k }, { $set: { estado: "clausurado", clausuradoAt: at, clausuraRazon: razon, clausuraMulta: multa }, $unset: { multaPagadaAt: "" } });
+        await d.collection("notifs").insertOne({ uid: n.owner, title: "Negocio CLAUSURADO", body: `El Ministro del Interior clausuró ${NEGOCIOS[k].nombre}. Razón: ${razon}. Multa de reapertura: $${multa.toLocaleString("es")}. Págala desde Inventario → Negocios para reabrir, o deja el negocio.`, at, read: false });
         await enviarPush(n.owner, { title: "Negocio clausurado", body: NEGOCIOS[k].nombre, url: "/inventario?v=negocios" });
       } else return bad("Acción inválida");
-      await d.collection("audit").insertOne({ by: u.id, byName: u.name, rank: u.ag.rango, act: "negocio_" + b.estado, objetivo: NEGOCIOS[k].nombre, razon: razon || "Decisión del Ministro", at });
+      await d.collection("audit").insertOne({ by: u.id, byName: u.name, rank: u.ag.rango, act: "negocio_" + b.estado, objetivo: NEGOCIOS[k].nombre, razon: razon || "Decisión del Ministro", detalle: b.estado === "clausurar" ? { multa } : undefined, at });
       return NextResponse.json({ ok: true });
     }
     case "tasaSet": { // SOLO el Ministro: cambia el impuesto (ITBMS) de los objetos del Mercado

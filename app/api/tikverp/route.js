@@ -105,7 +105,7 @@ export async function POST(req) {
     await c.co.deleteOne({ _id: cid }); await c.po.updateOne({ _id: id }, { $inc: { comentarios: -1 } }); return NextResponse.json({ ok: true });
   }
   if (b.accion === "borrar") {
-    if (post.uid !== me && !canReview(u.rank)) return bad("No puedes borrar esta publicación", 403);
+    if (post.uid !== me) return bad("Solo el dueño del video puede borrarlo", 403);
     const nl = await c.li.countDocuments({ post: String(id) }); await c.po.deleteOne({ _id: id }); await c.li.deleteMany({ post: String(id) }); await c.co.deleteMany({ post: String(id) }); await c.per.updateOne({ _id: post.uid }, { $inc: { likes: -nl } });
     return NextResponse.json({ ok: true });
   }

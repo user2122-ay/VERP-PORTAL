@@ -7,6 +7,7 @@ import { pagoKey } from "@/lib/pago";
 import { tieneVpn } from "@/lib/vpn";
 import { NEGOCIOS, MIN_HERRAMIENTA, MAX_NEGOCIOS, esComidaNeg, ensureNegocios } from "@/lib/negocios";
 import { PRECIO_MAX } from "@/lib/comida";
+import { ingresarTesoreria } from "@/lib/tesoreria";
 const bad = (m, s = 400) => NextResponse.json({ error: m }, { status: s });
 export async function POST(req) {
   const u = await apiUser(); if (!u?.cedula) return bad("Sin sesión", 401);
@@ -25,8 +26,18 @@ export async function POST(req) {
     return NextResponse.json({ ok: true });
   }
   const nd = await neg.findOne({ _id: b.key }); if (nd?.owner !== u.id) return bad("No eres el dueño de este negocio", 403);
+  if (b.accion === "pagarClausura") { // paga la multa que puso el Ministro desde aquí mismo y el negocio se reabre
+    if (nd.estado !== "clausurado") return bad("Tu negocio no está clausurado"); const m = Math.floor(Number(nd.clausuraMulta)); if (!(m >= 1)) return bad("Esta clausura no tiene multa: usa el botón de reabrir o ve a la Policía");
+    const pk = pagoKey(u, b.pago); if (!pk) return bad("Método de pago inválido");
+    if (!(await d.collection("users").updateOne({ id: u.id, [pk]: { $gte: m } }, { $inc: { [pk]: -m } })).modifiedCount) return bad("No te alcanza el saldo para pagar la multa");
+    if (!(await neg.updateOne({ _id: b.key, owner: u.id, estado: "clausurado" }, { $set: { estado: "normal", pagaImpuesto: true, reabiertoAt: at }, $unset: { morosoDesde: "", clausuradoAt: "", clausuraRazon: "", clausuraMulta: "", multaPagadaAt: "" } })).modifiedCount) { await d.collection("users").updateOne({ id: u.id }, { $inc: { [pk]: m } }); return bad("No se pudo reabrir, no se cobró nada"); }
+    await ingresarTesoreria(d, m, `Multa de clausura: ${n0.nombre}`, "Clausura");
+    await d.collection("tx").insertOne({ user: u.id, type: "multa", item: `Multa de clausura: ${n0.nombre}`, amount: -m, at });
+    await d.collection("notifs").insertOne({ uid: u.id, title: "Negocio reabierto", body: `Pagaste la multa de $${m.toLocaleString("es")} y ${n0.nombre} volvió a abrir. Ya puedes vender.`, at, read: false }); return NextResponse.json({ ok: true });
+  }
   if (b.accion === "reabrir") { // negocio clausurado: se reabre si pagaste la multa que te puso la Policía después de la clausura
     if (nd.estado !== "clausurado") return bad("Tu negocio no está clausurado");
+    if (nd.clausuraMulta) return bad("Paga la multa de reapertura desde este panel");
     if (!nd.multaPagadaAt || +new Date(nd.multaPagadaAt) < +new Date(nd.clausuradoAt || 0)) return bad("Primero ve a la Policía: debes pagar la multa de reapertura (Inventario → Multas)");
     await neg.updateOne({ _id: b.key }, { $set: { estado: "normal", pagaImpuesto: true, reabiertoAt: at }, $unset: { morosoDesde: "", clausuradoAt: "", clausuraRazon: "" } });
     await d.collection("notifs").insertOne({ uid: u.id, title: "Negocio reabierto", body: `${n0.nombre} volvió a abrir. Ya puedes vender.`, at, read: false }); return NextResponse.json({ ok: true });

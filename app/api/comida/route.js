@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { apiUser } from "@/lib/auth";
-import { nivelDe, HORAS } from "@/lib/cuerpo";
+import { nivelDe, HORAS, servidorEstado } from "@/lib/cuerpo";
 import { estaRetenido } from "@/lib/decomiso";
 import { esComida, neveraDe, enNevera, vencido, venceMs, FACTOR_NEVERA, HORAS_ENFERMO, PROB_ENFERMAR } from "@/lib/comida";
 const bad = (m, s = 400) => NextResponse.json({ error: m }, { status: s });
@@ -31,6 +31,7 @@ export async function POST(req) {
     return r.modifiedCount ? NextResponse.json({ ok: true, msg: `${it.name} fuera de la nevera` }) : bad("No se pudo sacar");
   }
   if (b.accion === "comer") {
+    if (!u.dev && !(await servidorEstado(d)).abierto) return bad("El servidor está cerrado: no puedes comer ni beber hasta que abra", 403);
     const { tipo, pct } = it.consumo || {}; if (!tipo) return bad("No se puede consumir");
     const actual = nivelDe(u.cuerpo?.[tipo], HORAS[tipo]); if (actual >= 95) return bad(tipo === "agua" ? "Todavía no tienes sed" : "Todavía no tienes hambre");
     const set = { [`cuerpo.${tipo}`]: { n: Math.min(100, actual + pct), t: ahora } }; let enfermo = false, perdida = null;
