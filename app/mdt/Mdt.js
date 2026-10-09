@@ -1,9 +1,10 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { Search, Shield, FileText, Gavel, Siren, Plus, Home, Wallet, Landmark, Receipt, Lock, Power } from "lucide-react";
+import { Search, Shield, FileText, Gavel, Siren, Plus, Home, Wallet, Landmark, Receipt, Lock, Power, Store } from "lucide-react";
 import CedulaCard from "@/components/CedulaCard";
 import ZoomMap from "@/components/ZoomMap";
 import Acceso from "./Acceso";
+import Insignia from "@/components/Insignia";
 import { RANGOS_POR_DEPTO, DEPTOS } from "@/lib/mdt";
 import LicenciaCard from "@/components/LicenciaCard";
 const fecC = (d) => new Date(d).toLocaleDateString("es", { day: "2-digit", month: "short", year: "numeric" });
@@ -90,7 +91,7 @@ function Casas({ aprueba, yo }) {
   const [sel, setSel] = useState(null), [motivo, setMotivo] = useState(""), [l, setL] = useState([]), [dentro, setDentro] = useState(null), cargar = async () => setL((await get("m=allan"))?.l || []);
   useEffect(() => { cargar(); const x = setInterval(cargar, 8000); return () => clearInterval(x); }, []);
   const grupos = dentro && dentro.items.reduce((g, i) => ((g[i.lugar] = g[i.lugar] || []).push(i), g), {});
-  return (<><div className="card"><b>Solicitar allanamiento</b><p className="mut">Cualquier agente puede solicitarlo. Desde el rango de Comisario se aprueba. Si lo aprueban, el agente que lo pidió puede entrar a revisar durante 1 hora.</p>
+  return (<><div className="card"><b>Solicitar allanamiento</b><p className="mut">Cualquier agente puede solicitarlo. Solo el Ministro del Interior lo aprueba. Si lo aprueban, el agente que lo pidió puede entrar a revisar durante 1 hora.</p>
     <Buscador m="casas" ph="Dueño de la casa (nombre, Roblox o cédula)" onPick={setSel} />
     {sel && <div style={{ marginTop: 8 }}><div>Propietario: <b>{sel.label}</b></div><textarea rows={2} value={motivo} onChange={(e) => setMotivo(e.target.value)} placeholder="Motivo del allanamiento" style={{ margin: "6px 0" }} />
       {sel.casas.map((c) => <div key={c.name + c.at} className="card" style={{ padding: 10, marginTop: 6, display: "flex", justifyContent: "space-between", gap: 8, alignItems: "center" }}><span>{c.name}<div className="mut">{c.ubicacion}{c.color ? ` · ${c.color}` : ""}</div></span><button className="btn" onClick={async () => { if (await post({ accion: "allanSolicitar", owner: sel.id, casaName: c.name, casaAt: c.at, motivo })) { alert("Solicitud enviada"); setSel(null); setMotivo(""); cargar(); } }}>Solicitar</button></div>)}</div>}</div>
@@ -186,6 +187,17 @@ function Decomisos() {
     <div className="card"><b>Retenciones activas ({act.length})</b>{act.map((r, k) => <div key={k} style={{ display: "flex", justifyContent: "space-between", gap: 8, padding: "8px 0", borderTop: "1px solid var(--bd)", flexWrap: "wrap" }}><div><b>{r.name}</b> <span className="tag">{r.category}</span><div className="mut">{r.sujetoN} · hasta {fecC(r.hasta)} · {r.por}{r.motivo ? ` · ${r.motivo}` : ""}</div></div><button className="btn g" onClick={async () => { if (confirm("¿Devolver este objeto ahora?") && (await post({ accion: "liberar", sujeto: r.sujeto, name: r.name, at: r.at }))) { cargar(); } }}>Devolver</button></div>)}{!act.length && <div className="mut">No hay objetos retenidos.</div>}</div></>);
 }
 const PLAZO_MIN = 10;
+function TiendaMin() {
+  const [t, setT] = useState(null), [busy, setBusy] = useState(false), cargar = async () => setT(await get("m=tiendaMin")); useEffect(() => { cargar(); }, []);
+  if (!t) return <p className="mut">Cargando...</p>;
+  const comprar = async (i) => { if (!confirm(`¿Comprar ${i.nombre} por ${$(i.precio)} de la Tesorería?`)) return; setBusy(true); const j = await post({ accion: "mejoraComprar", key: i.key }); setBusy(false); if (j) cargar(); };
+  return (<div style={{ display: "grid", gap: 12 }}>
+    <div className="card"><b>Tienda Ministerio</b><div className="mut">Mejoras que se pagan con el dinero de la Tesorería. Son opcionales: cada una dura 7 días y se puede comprar máximo {t.max} veces por semana. Solo el Ministro del Interior ve esta tienda.</div><div className="big" style={{ fontSize: 26 }}>{$(t.saldo)}</div><div className="mut">Saldo de la Tesorería</div></div>
+    {t.items.map((i) => <div className="card" key={i.key} style={{ marginBottom: 0 }}><b>{i.nombre}</b><div className="big" style={{ fontSize: 22 }}>{$(i.precio)}</div>
+      {i.activa ? <div style={{ color: "var(--ok)" }}>Activa hasta {fec(i.vence)}</div> : <div style={{ color: "var(--bad)", fontWeight: 600, margin: "6px 0" }}>{t.aviso}</div>}
+      <div className="mut">Compras esta semana: {i.compras} / {t.max}</div>
+      <button className="btn" style={{ width: "100%", marginTop: 8 }} disabled={busy || i.compras >= t.max || t.saldo < i.precio} onClick={() => comprar(i)}>{i.compras >= t.max ? "Límite semanal alcanzado" : t.saldo < i.precio ? "La Tesorería no alcanza" : i.activa ? "Renovar 7 días" : "Comprar"}</button></div>)}</div>);
+}
 const TABS = [["Ciudadanos", Shield, Ciudadanos], ["Expedientes", FileText, Expedientes], ["Arrestos", Gavel, Arrestos], ["Multas", Receipt, Multas], ["Decomisos", Lock, Decomisos], ["Reportes", Siren, Reportes], ["Casas", Home, Casas], ["Mi sueldo", Wallet, Sueldo]];
 export default function Mdt() {
   const [info, setInfo] = useState(null), [ok, setOk] = useState(false), [exp, setExp] = useState(0), [t, setT] = useState("Ciudadanos");
@@ -195,7 +207,7 @@ export default function Mdt() {
   useEffect(() => { if (!ok || !exp) return; const tm = setTimeout(() => location.reload(), Math.max(1000, exp - Date.now())); return () => clearTimeout(tm); }, [ok, exp]); // a los 35 min la MDT se reinicia y pide la placa
   const apagar = async () => { await fetch("/api/mdt", { method: "POST", body: JSON.stringify({ accion: "salir" }) }); location.reload(); };
   if (!info) return null; if (!ok) return <Acceso info={info} onOk={() => { setOk(true); setExp(Date.now() + 35 * 6e4); }} />;
-  const tabs = [...TABS, ...(info.ministro ? [["Tesorería", Landmark, Tesoreria]] : [])], V = (tabs.find((x) => x[0] === t) || tabs[0])[2];
-  return (<div style={{ maxWidth: 820, margin: "0 auto" }}><div style={{ display: "flex", gap: 12, alignItems: "center" }}><img src="/justicia-paz.png" alt="Justicia y Paz" style={{ height: 54, background: "#fff", borderRadius: 10, padding: 4 }} /><div><b style={{ fontSize: 18 }}>MDT · {info.ag.depto}</b><div className="mut">{info.ag.rango} {info.nombre} · @{info.discord} · Placa {info.ag.placa}</div></div><button className="btn g" style={{ marginLeft: "auto" }} onClick={apagar}><Power size={16} />Apagar MDT</button></div>
+  const tabs = [...TABS, ...(info.ministro ? [["Tesorería", Landmark, Tesoreria], ["Tienda Ministerio", Store, TiendaMin]] : [])], V = (tabs.find((x) => x[0] === t) || tabs[0])[2];
+  return (<div style={{ maxWidth: 820, margin: "0 auto" }}><div style={{ display: "flex", gap: 12, alignItems: "center" }}><img src="/justicia-paz.png" alt="Justicia y Paz" style={{ height: 54, background: "#fff", borderRadius: 10, padding: 4 }} /><div><b style={{ fontSize: 18 }}>MDT · {info.ag.depto}</b><div className="mut"><Insignia rango={info.ag.rango} depto={info.ag.depto} />{info.ag.rango} {info.nombre} · @{info.discord} · Placa {info.ag.placa}</div></div><button className="btn g" style={{ marginLeft: "auto" }} onClick={apagar}><Power size={16} />Apagar MDT</button></div>
     <div style={{ display: "flex", gap: 8, margin: "12px 0", flexWrap: "wrap" }}>{tabs.map(([n, I]) => <button key={n} className={"btn " + (t === n ? "" : "g")} onClick={() => cambiar(n)}><I size={16} />{n}</button>)}</div><V aprueba={info.aprueba} yo={info.yo} pnb={info.pnb} /></div>);
 }

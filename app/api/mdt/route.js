@@ -1,4 +1,5 @@
 import { encarcelar, vigilarCondenas } from "@/lib/jail";
+import { MEJORAS, DURACION, MAX_SEMANA, AVISO } from "@/lib/ministerio";
 import { tickAutomatico } from "@/lib/erlcauto";
 import { NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
@@ -81,6 +82,11 @@ export async function GET(req) {
     const sl = u.agente ? (await d.collection("config").findOne({ _id: "sueldos" }))?.[claveSueldo(u.agente.depto, u.agente.rango)] || 0 : 0;
     const pagos = (await d.collection("tx").find({ user: u.id, type: "sueldo" }).sort({ at: -1 }).limit(40).toArray()).map((x) => ({ monto: x.amount, at: x.at, det: x.item }));
     return NextResponse.json({ pagos, ultimo: pagos[0] || null, sueldo: sl, cuenta: u.agente?.cuenta || "efectivo", cuentas: [{ k: "efectivo", label: "Efectivo" }, ...cu], ultimoPago: u.agente?.ultimoPago || null, edita: !!u.agente });
+  }
+  if (m === "tiendaMin") { // SOLO el Ministro del Interior
+    if (!esMinistro(u.ag)) return bad("Solo el Ministro del Interior ve la Tienda Ministerio", 403);
+    const ahora = new Date(), desde = new Date(+ahora - DURACION), l = await d.collection("ministerio_mejoras").find({ $or: [{ at: { $gt: desde } }, { vence: { $gt: ahora } }] }).toArray();
+    return NextResponse.json({ saldo: await saldoTesoreria(d), max: MAX_SEMANA, aviso: AVISO, items: MEJORAS.map((x) => { const mine = l.filter((k) => k.key === x.key), vence = mine.map((k) => +new Date(k.vence)).filter((v) => v > +ahora).sort((a, b) => b - a)[0] || null; return { ...x, activa: !!vence, vence, compras: mine.filter((k) => new Date(k.at) > desde).length }; }) });
   }
   if (m === "tesoreria") { // SOLO el Ministro del Interior
     if (!esMinistro(u.ag)) return bad("Solo el Ministro del Interior ve la Tesorería", 403);
@@ -236,6 +242,17 @@ export async function POST(req) {
       await d.collection("audit").insertOne({ by: u.id, byName: u.name, rank: u.ag.rango, act: "negocio_" + b.estado, objetivo: NEGOCIOS[k].nombre, razon: razon || "Decisión del Ministro", detalle: b.estado === "clausurar" ? { multa } : undefined, at });
       return NextResponse.json({ ok: true });
     }
+    case "mejoraComprar": { // SOLO el Ministro: compra mejoras con el dinero de la Tesorería (máx. 3 por semana de cada una; duran 7 días)
+      if (!esMinistro(u.ag)) return bad("Solo el Ministro del Interior puede comprar mejoras", 403);
+      const mj = MEJORAS.find((x) => x.key === b.key); if (!mj) return bad("Mejora inválida");
+      const col = d.collection("ministerio_mejoras"), desde = new Date(Date.now() - DURACION);
+      if ((await col.countDocuments({ key: mj.key, at: { $gt: desde } })) >= MAX_SEMANA) return bad(`Máximo ${MAX_SEMANA} compras por semana de esta mejora`);
+      const act = await col.find({ key: mj.key, vence: { $gt: at } }).sort({ vence: -1 }).limit(1).toArray(), base = act[0] ? +new Date(act[0].vence) : +at;
+      if (!(await egresarTesoreria(d, mj.precio, `Tienda Ministerio: ${mj.nombre}`, u.id))) return bad("La Tesorería no tiene fondos suficientes");
+      await col.insertOne({ key: mj.key, nombre: mj.nombre, precio: mj.precio, por: u.id, porName: yo, at, vence: new Date(base + DURACION) });
+      await d.collection("audit").insertOne({ by: u.id, byName: u.name, rank: u.ag.rango, act: "mejoraMinisterio", objetivo: mj.nombre, razon: "Tienda Ministerio", detalle: { precio: mj.precio }, at });
+      return NextResponse.json({ ok: true });
+    }
     case "tasaSet": { // SOLO el Ministro: cambia el impuesto (ITBMS) de los objetos del Mercado
       if (!esMinistro(u.ag)) return bad("Solo el Ministro del Interior cambia los impuestos", 403);
       const p = Number(b.tasa); if (!(p >= 0 && p <= 30)) return bad("El impuesto debe estar entre 0% y 30%");
@@ -277,14 +294,14 @@ export async function POST(req) {
       const jail = minutos > 0 ? await encarcelar(d, s, minutos, cargos) : null;
       return NextResponse.json({ ok: true, cobrado, comision: com, oficiales: ids.length, jail: jail ? (jail.ok ? "ok" : jail.error) : null });
     }
-    case "allanSolicitar": { // cualquier agente solicita; desde Comisario se aprueba
+    case "allanSolicitar": { // cualquier agente solicita; solo el Ministro del Interior aprueba
       const dueno = await us.findOne({ id: txt(b.owner, 30), cedula: { $exists: true } }), casa = dueno?.inventory?.find((i) => i.category === "Propiedades" && i.name === b.casaName && +new Date(i.at) === +new Date(b.casaAt)), motivo = txt(b.motivo, 400);
       if (!dueno || !casa) return bad("Esa casa no existe"); if (motivo.length < 10) return bad("Explica el motivo del allanamiento (mínimo 10 letras)");
       const c = d.collection("allanamientos"); if (await c.findOne({ dueno: dueno.id, casaName: casa.name, casaAt: new Date(casa.at), por: u.id, estado: { $in: ["pendiente", "aprobada"] } })) return bad("Ya tienes una solicitud activa para esa casa");
       await c.insertOne({ dueno: dueno.id, duenoN: pub(dueno).label, casaName: casa.name, casaAt: new Date(casa.at), ubicacion: casa.ubicacion || "", motivo, por: u.id, porName: `${u.ag.rango} ${yo}`, estado: "pendiente", at }); return NextResponse.json({ ok: true });
     }
-    case "allanResolver": { // Comisario o superior; no puedes aprobar tu propia solicitud
-      if (!aprobador(u.ag)) return bad("Solo desde el rango de Comisario se aprueban allanamientos", 403); const id = oid(b.id); if (!id) return bad("Solicitud inválida");
+    case "allanResolver": { // solo el Ministro del Interior; no puedes aprobar tu propia solicitud
+      if (!aprobador(u.ag)) return bad("Solo el Ministro del Interior aprueba los allanamientos", 403); const id = oid(b.id); if (!id) return bad("Solicitud inválida");
       const r = await d.collection("allanamientos").findOneAndUpdate({ _id: id, estado: "pendiente", por: { $ne: u.id } }, { $set: { estado: b.ok ? "aprobada" : "rechazada", resolvio: `${u.ag.rango} ${yo}`, resueltoAt: at, vence: b.ok ? new Date(Date.now() + 36e5) : null } });
       if (!r) return bad("Ya fue resuelta o es tu propia solicitud", 409); return NextResponse.json({ ok: true });
     }

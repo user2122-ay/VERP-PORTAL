@@ -28,6 +28,12 @@ const perfilPub = (x, extra = {}) => ({ uid: x._id, handle: x.handle, nombre: x.
 export async function GET(req) {
   const u = await apiUser(); if (!u?.cedula) return bad("Sin sesión", 401);
   const c = await cols(), p = new URL(req.url).searchParams, m = p.get("m") || "feed", me = u.id;
+  if (m === "audio") { // reproduce un audio subido desde el celular
+    const _id = oid(p.get("id")), a = _id && (await c.d.collection("tv_audio").findOne({ _id })); if (!a) return bad("Ese audio ya no existe", 404);
+    const buf = Buffer.from(a.data, "base64"), h = { "Content-Type": a.mime, "Accept-Ranges": "bytes", "Cache-Control": "private, max-age=86400" }, rg = /bytes=(\d*)-(\d*)/.exec(req.headers.get("range") || "");
+    if (rg) { const ini = rg[1] ? +rg[1] : 0, fin = rg[2] ? Math.min(+rg[2], buf.length - 1) : buf.length - 1; return new Response(buf.subarray(ini, fin + 1), { status: 206, headers: { ...h, "Content-Range": `bytes ${ini}-${fin}/${buf.length}`, "Content-Length": String(fin - ini + 1) } }); }
+    return new Response(buf, { headers: { ...h, "Content-Length": String(buf.length) } });
+  }
   if (m === "me") { const x = await c.per.findOne({ _id: me }); return NextResponse.json({ perfil: x ? perfilPub(x) : null, avatar: u.cedula?.avatar || null, contactos: (u.wa?.contactos || []).map((k) => ({ num: k.num, alias: k.alias || fmtTel(k.num) })), puedeCompartir: waListo(u), staff: canReview(u.rank) }); }
   if (!(await c.per.findOne({ _id: me }, { projection: { _id: 1 } }))) return bad("Crea tu cuenta de TikVerp primero", 403);
   if (m === "feed") {
@@ -71,9 +77,17 @@ export async function POST(req) {
   }
   if (!yo) return bad("Crea tu cuenta de TikVerp primero", 403);
   const nuevoSonido = async (s) => {
-    const titulo = String(s?.titulo || "").trim().slice(0, 50), artista = String(s?.artista || "").trim().slice(0, 40) || yo.nombre, r = validarLink(s?.url, "audio"); if (!titulo) return { error: "Ponle un título a tu música" }; if (r.error) return r;
+    const titulo = String(s?.titulo || "").trim().slice(0, 50), artista = String(s?.artista || "").trim().slice(0, 40) || yo.nombre; if (!titulo) return { error: "Ponle un título a tu música" };
+    if (!s?.dataUrl && !s?.url) return { error: "Elige un audio de tu celular o pega un link de Discord" };
+    let href, arch = null;
+    if (s?.dataUrl) { // audio subido desde el celular (se guarda en la base de datos, máx. 2.5 MB)
+      const du = String(s.dataUrl), i = du.indexOf(";base64,"), mime = du.slice(5, i), data = du.slice(i + 8);
+      if (i < 0 || !/^(audio\/[\w.+-]+|video\/(mp4|webm))$/.test(mime)) return { error: "Ese archivo no es un audio válido" }; if (data.length > 3.4e6) return { error: "El audio pesa más de 2.5 MB: usa uno más corto" }; if (!/^[A-Za-z0-9+/=]+$/.test(data)) return { error: "Audio dañado, intenta de nuevo" };
+      if ((await c.d.collection("tv_audio").countDocuments({ uid: me })) >= 20) return { error: "Ya subiste 20 audios. Usa los del catálogo" }; arch = { mime, data };
+    } else { const r = validarLink(s.url, "audio"); if (r.error) return r; href = r.href; }
     if ((await c.so.countDocuments({ uid: me, at: { $gt: new Date(+at - 36e5) } })) >= 5) return { error: "Máximo 5 sonidos por hora" };
-    const x = await c.so.insertOne({ titulo, artista, url: r.href, uid: me, handle: yo.handle, usos: 0, at }); return { id: x.insertedId, titulo, artista, url: r.href };
+    if (arch) { const a = await c.d.collection("tv_audio").insertOne({ uid: me, mime: arch.mime, data: arch.data, at }); href = `/api/tikverp?m=audio&id=${a.insertedId}`; }
+    const x = await c.so.insertOne({ titulo, artista, url: href, uid: me, handle: yo.handle, usos: 0, at }); return { id: x.insertedId, titulo, artista, url: href };
   };
   if (b.accion === "sonido") { const s = await nuevoSonido(b); return s.error ? bad(s.error) : NextResponse.json({ ok: true }); }
   if (b.accion === "publicar") {

@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { Search, Plus, Trash2, Skull, Check } from "lucide-react";
 import { canAdmin, RANK_LABEL } from "@/lib/roles";
 import { RANGOS_POR_DEPTO, DEPTOS } from "@/lib/mdt";
+import Insignia from "@/components/Insignia";
 const CATS = ["Concesionario", "Propiedades", "Licencias", "Objetos", "Armas", "Herramientas", "Telefonía", "Tecnología"], INV = ["Banco", "Telefonía", "Tecnología", "Propiedades", "Concesionario", "Herramientas", "Objetos", "Armas", "Licencias"], CIVIL = ["SOLTERO", "CASADO", "DIVORCIADO", "VIUDO"];
 const BK = { bvc: "BVC", mer: "Mercantil VERP", pro: "Provincial", ven: "VERNESCO", vca: "VERCARIBE", com: "Comerciante" }, $ = (n) => `$${Number(n || 0).toLocaleString("es")}`;
 const post = async (a, data) => { const r = await fetch("/api/admin", { method: "POST", body: JSON.stringify({ a, ...data }) }), j = await r.json().catch(() => ({})); if (!r.ok) { alert(j.error || "Error"); return false; } return true; };
@@ -113,7 +114,7 @@ function AgenteForm() {
 function Agentes({ agentes }) {
   return (<div className="card"><b>Agentes de la MDT</b><p className="mut">Asigna a un policía con su departamento, rango y placa. El sueldo ya no se pone aquí: lo fija y lo libera el Ministro del Interior desde la Tesorería de la MDT. Al entrar a la MDT, solo le pedirá su placa. Desde "Comisario" aprueban allanamientos.</p>
     <AgenteForm />
-    {agentes.map((x) => <div key={x.id} style={{ display: "flex", justifyContent: "space-between", gap: 8, padding: "8px 0", borderTop: "1px solid var(--bd)" }}><span><b>{x.rango}</b> {x.nombre || x.name}<div className="mut">@{x.name} · Placa {x.placa} · {x.depto}</div></span><button className="btn r" onClick={async () => { if (confirm(`¿Quitar a ${x.name} de la MDT?`) && (await post("agenteDel", { uid: x.id }))) location.reload(); }}><Trash2 size={14} /></button></div>)}{!agentes.length && <p className="mut">Aún no hay agentes asignados.</p>}</div>);
+    {agentes.map((x) => <div key={x.id} style={{ display: "flex", justifyContent: "space-between", gap: 8, padding: "8px 0", borderTop: "1px solid var(--bd)" }}><span><Insignia rango={x.rango} depto={x.depto} /><b>{x.rango}</b> {x.nombre || x.name}<div className="mut">@{x.name} · Placa {x.placa} · {x.depto}</div></span><button className="btn r" onClick={async () => { if (confirm(`¿Quitar a ${x.name} de la MDT?`) && (await post("agenteDel", { uid: x.id }))) location.reload(); }}><Trash2 size={14} /></button></div>)}{!agentes.length && <p className="mut">Aún no hay agentes asignados.</p>}</div>);
 }
 export default function Admin({ rank, items, reps, audit, robos = [], apertura = null, staff = [], agentes = [], canStaff = false, apelaciones = [], auto = null }) {
   const full = canAdmin(rank), TABS = full ? ["Usuarios", "Mercado", "Solicitudes", "Apelaciones", "Agentes MDT", "Auditoría", "Reportes 911", "ER:LC", "Apertura", ...(canStaff ? ["Staff"] : [])] : ["Solicitudes", "Apelaciones"];
