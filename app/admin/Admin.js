@@ -66,11 +66,23 @@ function Apelaciones({ apelaciones }) {
   return (<div className="card"><b>Apelaciones de CK ({apelaciones.length})</b><p className="mut">Personajes muertos por sed o hambre que piden volver (por ejemplo, por un corte de luz). Si aprueban, vuelve con comida y agua al 100%.</p>{apelaciones.map((r) => <div key={r.id} style={{ padding: "10px 0", borderTop: "1px solid var(--bd)" }}><div><b>{r.nombre}</b> · murió de {r.causa}</div><div className="mut">{new Date(r.at).toLocaleString("es")}</div><div style={{ margin: "6px 0" }}>{r.razon}</div>
     <div style={{ display: "flex", gap: 8 }}><button className="btn" onClick={() => dec(r.id, true)}>Aprobar</button><button className="btn r" onClick={() => dec(r.id, false)}>Denegar</button></div></div>)}{!apelaciones.length && <p className="mut">Sin apelaciones pendientes.</p>}</div>);
 }
-function Solicitudes({ robos }) {
-  return (<div className="card"><b>Solicitudes de robo de autos ({robos.length})</b>{robos.map((r) => <div key={r.id} style={{ padding: "10px 0", borderTop: "1px solid var(--bd)" }}>
+function Evid({ u, t }) { return <a href={u} target="_blank" rel="noreferrer" title={t}><img src={u} alt={t} loading="lazy" referrerPolicy="no-referrer" style={{ width: 96, height: 72, objectFit: "cover", borderRadius: 8, border: "1px solid var(--bd)" }} /></a>; }
+function Trabajos({ trabajos }) {
+  return (<div className="card" style={{ marginTop: 12 }}><b>Solicitudes de trabajo secundario ({trabajos.length})</b>
+    {trabajos.map((r) => <div key={r.id} style={{ padding: "10px 0", borderTop: "1px solid var(--bd)" }}>
+      <div><b>{r.trabajo}</b> · {r.horas} h × ${r.tarifa.toLocaleString("es")} = <b style={{ color: "var(--ok)" }}>${r.total.toLocaleString("es")}</b></div>
+      <div className="mut">Solicita: {r.user} · Roblox: {r.roblox} · {new Date(r.at).toLocaleString("es")}</div>
+      <div className="mut" style={{ marginTop: 6 }}>Inicio · Durante · Final (3)</div>
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 4 }}><Evid u={r.ev.inicio} t="Inicio" /><Evid u={r.ev.durante} t="Durante" />{r.ev.final.map((x, i) => <Evid key={i} u={x} t={`Final ${i + 1}`} />)}</div>
+      <div style={{ display: "flex", gap: 8, marginTop: 8 }}><button className="btn" onClick={async () => { if (confirm(`¿Aprobar y pagar $${r.total.toLocaleString("es")} a ${r.user}?`) && (await post("trabajoOk", { id: r.id }))) location.reload(); }}><Check size={16} />Aprobar y pagar</button>
+        <button className="btn r" onClick={async () => { const m = ask("Razón para rechazar:"); if (m && (await post("trabajoNo", { id: r.id, razon: m }))) location.reload(); }}><Trash2 size={16} />Rechazar</button></div></div>)}
+    {!trabajos.length && <p className="mut">No hay solicitudes de trabajo pendientes.</p>}</div>);
+}
+function Solicitudes({ robos, trabajos }) {
+  return (<><div className="card"><b>Solicitudes de robo de autos ({robos.length})</b>{robos.map((r) => <div key={r.id} style={{ padding: "10px 0", borderTop: "1px solid var(--bd)" }}>
     <img src={r.img} alt="" style={{ width: "100%", maxWidth: 360, borderRadius: 10 }} /><div><b>{r.modelo}</b> · {r.color} · Placa {r.placa}</div><div className="mut">Solicita: {r.user}</div><div>{r.specs}</div>
     <div style={{ display: "flex", gap: 8, marginTop: 8 }}><button className="btn" onClick={async () => { if (await post("roboOk", { id: r.id })) location.reload(); }}><Check size={16} />Aprobar</button>
-      <button className="btn r" onClick={async () => { const m = ask("Razón para rechazar:"); if (m && (await post("roboNo", { id: r.id, razon: m }))) location.reload(); }}><Trash2 size={16} />Rechazar</button></div></div>)}{!robos.length && <p className="mut">No hay solicitudes pendientes.</p>}</div>);
+      <button className="btn r" onClick={async () => { const m = ask("Razón para rechazar:"); if (m && (await post("roboNo", { id: r.id, razon: m }))) location.reload(); }}><Trash2 size={16} />Rechazar</button></div></div>)}{!robos.length && <p className="mut">No hay solicitudes pendientes.</p>}</div><Trabajos trabajos={trabajos} /></>);
 }
 function Staff({ staff }) {
   return (<div className="card"><b>Staff de Administración</b><p className="mut">Solo quienes están aquí pueden entrar a Administración, y al entrar les pide su placa. Lo asignan el Developer, Fundación y Asuntos Internos. La persona debe haber iniciado sesión en el portal al menos una vez. Junta Directiva, Fundación y Asuntos Internos hacen todo; Moderador solo revisa solicitudes.</p>
@@ -116,13 +128,13 @@ function Agentes({ agentes }) {
     <AgenteForm />
     {agentes.map((x) => <div key={x.id} style={{ display: "flex", justifyContent: "space-between", gap: 8, padding: "8px 0", borderTop: "1px solid var(--bd)" }}><span><Insignia rango={x.rango} depto={x.depto} /><b>{x.rango}</b> {x.nombre || x.name}<div className="mut">@{x.name} · Placa {x.placa} · {x.depto}</div></span><button className="btn r" onClick={async () => { if (confirm(`¿Quitar a ${x.name} de la MDT?`) && (await post("agenteDel", { uid: x.id }))) location.reload(); }}><Trash2 size={14} /></button></div>)}{!agentes.length && <p className="mut">Aún no hay agentes asignados.</p>}</div>);
 }
-export default function Admin({ rank, items, reps, audit, robos = [], apertura = null, staff = [], agentes = [], canStaff = false, apelaciones = [], auto = null }) {
+export default function Admin({ trabajos = [], rank, items, reps, audit, robos = [], apertura = null, staff = [], agentes = [], canStaff = false, apelaciones = [], auto = null }) {
   const full = canAdmin(rank), TABS = full ? ["Usuarios", "Mercado", "Solicitudes", "Apelaciones", "Agentes MDT", "Auditoría", "Reportes 911", "ER:LC", "Apertura", ...(canStaff ? ["Staff"] : [])] : ["Solicitudes", "Apelaciones"];
   const [tab, setTab] = useState(full ? "Usuarios" : "Solicitudes");
-  useEffect(() => { clearTimeout(window.__admOut); const out = () => navigator.sendBeacon("/api/admin/salir"); addEventListener("pagehide", out); return () => { removeEventListener("pagehide", out); window.__admOut = setTimeout(out, 400); }; }, []); // la sesión de Administración no se mantiene: al salir del panel hay que volver a poner la placa
+  // La sesión de Administración dura 35 minutos desde que pones la placa. Ya no se cierra al recargar o al hacer una acción.
   return (<div style={{ maxWidth: 900, margin: "0 auto" }}><img src="/admin-logo.jpg" alt="VE:RP" style={{ width: "min(380px,100%)", borderRadius: 12, display: "block", margin: "0 auto 8px" }} /><h2 style={{ textAlign: "center" }}>Administración Y Asuntos Internos De Venezuela Community</h2><span className="tag">{RANK_LABEL[rank] || rank}</span>
     <div style={{ display: "flex", gap: 8, margin: "12px 0", flexWrap: "wrap" }}>{TABS.map((t) => <button key={t} className={"btn " + (tab === t ? "" : "g")} onClick={() => setTab(t)}>{t}</button>)}</div>
-    {tab === "Solicitudes" && <Solicitudes robos={robos} />}{tab === "Apelaciones" && <Apelaciones apelaciones={apelaciones} />}{tab === "Staff" && <Staff staff={staff} />}{tab === "Agentes MDT" && <Agentes agentes={agentes} />}{tab === "Usuarios" && <Usuarios items={items} />}{tab === "Mercado" && <Mercado items={items} />}
+    {tab === "Solicitudes" && <Solicitudes robos={robos} trabajos={trabajos} />}{tab === "Apelaciones" && <Apelaciones apelaciones={apelaciones} />}{tab === "Staff" && <Staff staff={staff} />}{tab === "Agentes MDT" && <Agentes agentes={agentes} />}{tab === "Usuarios" && <Usuarios items={items} />}{tab === "Mercado" && <Mercado items={items} />}
     {tab === "ER:LC" && <Erlc auto={auto} />}{tab === "Apertura" && <Apertura ultimo={apertura} />}
     {tab === "Auditoría" && <div className="card"><b>Registro de auditoría (últimas 100 acciones)</b>{audit.map((x) => <div key={x.id} style={{ padding: "8px 0", borderTop: "1px solid var(--bd)" }}><b>{x.act}</b> · {x.obj}<div className="mut">{x.by} ({String(x.rank).replace("_", " ")}) · {new Date(x.at).toLocaleString("es")}</div><div>Razón: {x.razon}</div></div>)}{!audit.length && <p className="mut">Sin registros.</p>}</div>}
     {tab === "Reportes 911" && <div className="card"><b>Reportes 911</b>{reps.map((r) => <div key={r.id} style={{ margin: "8px 0" }}>{r.t}<div className="mut">{r.d} · {r.e}</div><button className="btn g" onClick={async () => { if (await post("done", { id: r.id })) location.reload(); }}><Check size={16} className="neon" />Resuelto</button></div>)}{!reps.length && <p className="mut">Sin reportes pendientes.</p>}</div>}</div>);

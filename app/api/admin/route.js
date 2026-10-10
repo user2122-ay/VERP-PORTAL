@@ -38,9 +38,9 @@ export async function POST(req) {
   const a = await reviewUser(); if (!a) return err("Sin permiso", 403);
   const b = await req.json(), d = await db(), users = d.collection("users"), at = new Date();
   const razon = str(b.razon, 300);
-  if (!canAdmin(a.rank) && !["roboOk", "roboNo", "apelOk", "apelNo"].includes(b.a)) return err("Tu rango solo puede revisar solicitudes", 403);
+  if (!canAdmin(a.rank) && !["roboOk", "roboNo", "apelOk", "apelNo", "trabajoOk", "trabajoNo"].includes(b.a)) return err("Tu rango solo puede revisar solicitudes", 403);
   // Toda acción administrativa (salvo marcar un reporte como resuelto) exige razón y queda en la colección "audit".
-  if (!["done", "roboOk", "staffSet", "staffDel", "agenteSet", "agenteDel", "erlcTest", "erlcCmd", "erlcAuto", "apertura"].includes(b.a) && razon.length < 3) return err("La razón es obligatoria");
+  if (!["done", "roboOk", "trabajoOk", "staffSet", "staffDel", "agenteSet", "agenteDel", "erlcTest", "erlcCmd", "erlcAuto", "apertura"].includes(b.a) && razon.length < 3) return err("La razón es obligatoria");
   const log = (act, objetivo, detalle) => d.collection("audit").insertOne({ by: a.id, byName: a.name, rank: a.rank, act, objetivo, razon, detalle, at });
   const t = b.uid ? await users.findOne({ id: str(b.uid, 30) }) : null, quien = t ? `${t.name} (${t.id})` : null;
   if (b.uid && !t) return err("Usuario no existe", 404);
@@ -173,6 +173,19 @@ export async function POST(req) {
       if (!DEPTOS.includes(depto)) return err("Departamento inválido");
       if (await users.findOne({ "agente.placa": placa, id: { $ne: x.id } })) return err("Esa placa ya la tiene otro agente");
       await users.updateOne({ id: x.id }, { $set: { "agente.rango": rango, "agente.placa": placa, "agente.depto": depto } }); await d.collection("notifs").insertOne({ uid: x.id, title: "Asignado a la MDT", body: `${rango} · ${depto} · Placa ${placa}. Entra por el menú MDT y elige en qué banco quieres recibir tu sueldo.`, at, read: false }); await log("agenteSet", `${x.name} (${x.id})`, { rango, placa, depto }); break;
+    }
+    case "trabajoOk": case "trabajoNo": { // solicitudes de trabajo secundario: las revisa cualquier rango con acceso a Solicitudes (Moderación hasta Junta Directiva)
+      const id = oid(b.id), tc = d.collection("trabajos"), r = id && (await tc.findOne({ _id: id, estado: "pendiente" })); if (!r) return err("Solicitud no encontrada o ya revisada", 404);
+      if (r.user === a.id && !a.dev) return err("No puedes revisar tu propia solicitud", 403);
+      if (b.a === "trabajoNo") {
+        if (!(await tc.updateOne({ _id: id, estado: "pendiente" }, { $set: { estado: "rechazado", por: a.name, motivo: razon, resuelto: at } })).modifiedCount) return err("Ya fue revisada");
+        await d.collection("notifs").insertOne({ uid: r.user, title: "Trabajo rechazado", body: `Tu solicitud de ${r.trabajoN} (${r.horas} h) fue rechazada: ${razon}`, at, read: false }); await log("trabajoNo", r.userName, { trabajo: r.trabajoN, horas: r.horas }); break;
+      }
+      if (!(await tc.updateOne({ _id: id, estado: "pendiente" }, { $set: { estado: "aprobado", por: a.name, resuelto: at } })).modifiedCount) return err("Ya fue revisada"); // se reclama primero para no pagar dos veces
+      const dest = await users.findOne({ id: r.user }), k = r.cuenta && r.cuenta !== "efectivo" && dest?.cuentas?.[r.cuenta] ? r.cuenta : "efectivo";
+      await users.updateOne({ id: r.user }, { $inc: { [k === "efectivo" ? "balance" : `cuentas.${k}.saldo`]: r.total } });
+      await d.collection("tx").insertOne({ user: r.user, type: "trabajo", item: `Trabajo secundario: ${r.trabajoN} (${r.horas} h)`, amount: r.total, at });
+      await d.collection("notifs").insertOne({ uid: r.user, title: "Trabajo aprobado", body: `Te pagaron $${r.total.toLocaleString("es")} por ${r.horas} h de ${r.trabajoN}.`, at, read: false }); await log("trabajoOk", r.userName, { trabajo: r.trabajoN, horas: r.horas, total: r.total, cuenta: k }); break;
     }
     case "roboOk": case "roboNo": {
       const id = oid(b.id), r = id && (await d.collection("robos").findOne({ _id: id, estado: "pendiente" })); if (!r) return err("Solicitud no encontrada", 404);

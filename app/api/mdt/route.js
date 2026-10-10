@@ -11,7 +11,7 @@ import { BANCOS } from "@/lib/bancos";
 import { NEGOCIOS } from "@/lib/negocios";
 import { saldoTesoreria, egresarTesoreria, tasaITBMS, setTasa } from "@/lib/tesoreria";
 import { normPlaca } from "@/lib/placa";
-import { licTipo } from "@/lib/licencia";
+import { licTipo, tieneLic } from "@/lib/licencia";
 import { estadoMulta, esPNB, PLAZO_MIN_DIAS, PLAZO_MAX_DIAS, MONTO_MAX } from "@/lib/multas";
 import { estaRetenido, decomisable, MAX_DIAS_RETENCION } from "@/lib/decomiso";
 import { enviarPush } from "@/lib/push";
@@ -39,7 +39,11 @@ export async function GET(req) {
   if (m === "ficha") {
     const x = await us.findOne({ id: txt(p.get("id"), 30), cedula: { $exists: true } }); if (!x) return bad("No existe", 404);
     const ar = await d.collection("arrestos").find({ sujeto: x.id }).sort({ at: -1 }).limit(30).toArray(), ex = await d.collection("expedientes").find({ sujetos: x.id }).sort({ at: -1 }).limit(20).toArray();
-    return NextResponse.json({ licencias: (x.inventory || []).filter((i) => licTipo(i)).map((i) => ({ tipo: licTipo(i), num: i.licNum || "—", at: i.at, ret: estaRetenido(i) ? i.retenido.hasta : null })), cedula: x.cedula, linea: x.chip?.num || null, autos: (x.inventory || []).filter((i) => i.category === "Concesionario").map((i) => ({ name: i.name, placa: i.placa || "", robado: !!i.robado, color: i.color || "", detalles: i.detalles || [], img: i.img || "", ret: estaRetenido(i) ? i.retenido.hasta : null })), retenidos: (x.inventory || []).filter(estaRetenido).map((i) => ({ name: i.name, category: i.category, hasta: i.retenido.hasta, por: i.retenido.porName, motivo: i.retenido.motivo || "" })), multas: (await d.collection("multas").find({ sujeto: x.id }).sort({ at: -1 }).limit(30).toArray()).map(mu),
+    // Lo que lleva ENCIMA (no guardado en casa): para ver si hay cosas ilegales. Las licencias, casas y autos se muestran aparte.
+    const conArma = tieneLic(x, "armas"), encima = (x.inventory || []).filter((i) => i.loc !== "casa" && !i.plantada && !["Propiedades", "Licencias", "Concesionario"].includes(i.category))
+      .map((i) => { const ilegal = i.robado ? "Robado" : i.category === "Sustancias" ? "Sustancia ilegal" : i.category === "Armas" && !conArma ? "Arma sin licencia" : ""; return { name: i.name, category: i.category || "", cant: Number(i.cant) > 0 ? Number(i.cant) : 1, ilegal, ret: estaRetenido(i) ? i.retenido.hasta : null }; })
+      .sort((p, q) => (q.ilegal ? 1 : 0) - (p.ilegal ? 1 : 0) || p.name.localeCompare(q.name));
+    return NextResponse.json({ encima, licencias: (x.inventory || []).filter((i) => licTipo(i)).map((i) => ({ tipo: licTipo(i), num: i.licNum || "—", at: i.at, ret: estaRetenido(i) ? i.retenido.hasta : null })), cedula: x.cedula, linea: x.chip?.num || null, autos: (x.inventory || []).filter((i) => i.category === "Concesionario").map((i) => ({ name: i.name, placa: i.placa || "", robado: !!i.robado, color: i.color || "", detalles: i.detalles || [], img: i.img || "", ret: estaRetenido(i) ? i.retenido.hasta : null })), retenidos: (x.inventory || []).filter(estaRetenido).map((i) => ({ name: i.name, category: i.category, hasta: i.retenido.hasta, por: i.retenido.porName, motivo: i.retenido.motivo || "" })), multas: (await d.collection("multas").find({ sujeto: x.id }).sort({ at: -1 }).limit(30).toArray()).map(mu),
       arrestos: ar.map((a) => ({ id: String(a._id), cargos: a.cargos, multa: a.multa, cobrado: a.cobrado, minutos: a.minutos, por: a.porName, at: a.at })), expedientes: ex.map((e) => ({ id: String(e._id), titulo: e.titulo, estado: e.estado })) });
   }
   if (m === "casas") { // ciudadanos con sus casas (para solicitar allanamiento)

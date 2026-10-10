@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { apiUser } from "@/lib/auth";
-import { waListo, fmtTel, normNum, esDesechable, anonActiva, telDesechable, ANON_NUM, ANON_SESIONES, ANON_MIN, ANON_USOS } from "@/lib/redes";
+import { waListo, fmtTel, normNum, esDesechable, anonActiva, telDesechable, PAISES_ANON, ANON_NUM, ANON_SESIONES, ANON_MIN, ANON_USOS } from "@/lib/redes";
 import { enviarPush } from "@/lib/push";
 export const dynamic = "force-dynamic";
 const bad = (m, s = 400) => NextResponse.json({ error: m }, { status: s });
@@ -14,7 +14,7 @@ async function limpiarTel(d, u) {
   if (r.modifiedCount) await d.collection("notifs").insertOne({ uid: u.id, title: "Celular desechable destruido", body: `Usaste tus ${ANON_SESIONES} sesiones anónimas: el celular desechable se destruyó. Compra otro en el Mercado si lo necesitas.`, at: new Date(), read: false });
   return !!r.modifiedCount;
 }
-const anonInfo = (u) => { const a = u.wa?.anon; return a ? { num: a.num, exp: a.exp, usos: a.usos || 0, max: a.max || ANON_USOS, activa: anonActiva(u) } : null; };
+const anonInfo = (u) => { const a = u.wa?.anon; return a ? { pais: a.pais || null, exp: a.exp, usos: a.usos || 0, max: a.max || ANON_USOS, activa: anonActiva(u) } : null; };
 export async function GET(req) {
   const u = await apiUser(); if (!waListo(u)) return bad("Sin línea", 401);
   const d0 = await db(); if (await limpiarTel(d0, u)) return NextResponse.json({ yo: { num: null, destruido: true, modo: "real", desechable: false, tieneChip: !!u.chip, anon: null }, lista: [], chat: [], nombre: "", foto: null });
@@ -28,13 +28,13 @@ export async function GET(req) {
   }
   const msgs = await col.find({ $or: [{ de: me }, { para: me }] }).sort({ at: -1 }).limit(400).toArray(), conv = new Map(), otro = (m) => (m.de === me ? m.para : m.de);
   for (const m of msgs) { const o = otro(m); if (!conv.has(o)) conv.set(o, { num: o, ultimo: m.texto, at: m.at, sin: 0 }); if (m.para === me && !m.leido) conv.get(o).sin++; }
-  const alias = anonModo ? {} : Object.fromEntries((u.wa?.contactos || []).map((c) => [c.num, c.alias])), anonDe = new Set(msgs.filter((m) => m.anon && m.de !== me).map((m) => m.de));
+  const alias = anonModo ? {} : Object.fromEntries((u.wa?.contactos || []).map((c) => [c.num, c.alias])), anonDe = new Set(msgs.filter((m) => m.anon && m.de !== me).map((m) => m.de)), anonLbl = {}; for (const m of msgs) if (m.anon && m.de !== me && !anonLbl[m.de]) anonLbl[m.de] = `Cuenta anónima${m.pc ? ` · ${m.pc} ${m.pn}` : ""}`;
   for (const n of Object.keys(alias)) if (!conv.has(n)) conv.set(n, { num: n, ultimo: "", at: null, sin: 0 });
   const rows = await d.collection("users").find({ "chip.num": { $in: [...conv.keys()] } }, { projection: { chip: 1, "cedula.avatar": 1 } }).toArray(), nombres = Object.fromEntries(rows.map((x) => [x.chip.num, x.chip.nombre])), fotos = Object.fromEntries(rows.map((x) => [x.chip.num, x.cedula?.avatar || null]));
-  const lista = [...conv.values()].map((x) => ({ ...x, alias: alias[x.num] || (anonDe.has(x.num) ? "Número anónimo · " + fmtTel(x.num) : nombres[x.num]) || fmtTel(x.num), foto: fotos[x.num] || null })).sort((a, b) => (b.at ? +new Date(b.at) : 0) - (a.at ? +new Date(a.at) : 0));
+  const lista = [...conv.values()].map((x) => ({ ...x, alias: alias[x.num] || (anonDe.has(x.num) ? anonLbl[x.num] || "Cuenta anónima" : nombres[x.num]) || fmtTel(x.num), foto: fotos[x.num] || null })).sort((a, b) => (b.at ? +new Date(b.at) : 0) - (a.at ? +new Date(a.at) : 0));
   const chat = con ? msgs.filter((m) => otro(m) === con).reverse().map((m) => ({ id: String(m._id), mio: m.de === me, texto: m.texto, at: m.at })) : [];
   if (con) await col.updateMany({ de: con, para: me, leido: { $ne: true } }, { $set: { leido: true } });
-  return NextResponse.json({ yo, lista, chat, nombre: anonDe.has(con) ? "Número anónimo" : nombres[con] || "", foto: fotos[con] || null });
+  return NextResponse.json({ yo, lista, chat, nombre: anonDe.has(con) ? "Cuenta anónima" : nombres[con] || "", foto: fotos[con] || null });
 }
 export async function POST(req) {
   const u = await apiUser(); if (!waListo(u)) return bad("Sin línea", 401);
@@ -46,12 +46,12 @@ export async function POST(req) {
     if (b.modo !== "real" && b.modo !== "anon") return bad("Cuenta inválida");
     await users.updateOne({ id: u.id }, { $set: { "wa.modo": b.modo } }); return NextResponse.json({ ok: true });
   }
-  if (b.accion === "anon_nueva") { // abre una sesión anónima: número falso +58 412 0000000, 15 minutos, 5 usos
+  if (b.accion === "anon_nueva") { // abre una sesión anónima: sin número (solo "Cuenta anónima" y un código de país), 15 minutos, 5 usos
     const t = telDesechable(u); if (!des || !t) return bad("Necesitas un Celular Desechable");
     if (anonActiva(u)) return bad("Ya tienes una cuenta anónima activa");
     if ((t.anonSes || 0) >= ANON_SESIONES) return bad("Tu celular desechable ya usó sus 5 sesiones. Compra otro");
-    const at = new Date(), sid = Math.random().toString(36).slice(2) + Date.now().toString(36);
-    const r = await users.updateOne({ id: u.id }, { $set: { "wa.anon": { num: ANON_NUM, sid, at, exp: new Date(+at + ANON_MIN * 6e4), usos: 0, max: ANON_USOS }, "wa.modo": "anon" }, $inc: { "inventory.$[e].anonSes": 1 } }, { arrayFilters: [{ "e.sku": "cel-desechable" }] });
+    const at = new Date(), sid = Math.random().toString(36).slice(2) + Date.now().toString(36), [pn, pc] = PAISES_ANON[Math.floor(Math.random() * PAISES_ANON.length)];
+    const r = await users.updateOne({ id: u.id }, { $set: { "wa.anon": { num: ANON_NUM, sid, pais: { n: pn, c: pc }, at, exp: new Date(+at + ANON_MIN * 6e4), usos: 0, max: ANON_USOS }, "wa.modo": "anon" }, $inc: { "inventory.$[e].anonSes": 1 } }, { arrayFilters: [{ "e.sku": "cel-desechable" }] });
     return r.modifiedCount ? NextResponse.json({ ok: true }) : bad("No se pudo abrir la sesión");
   }
   if (!me) return bad(anonModo ? "Tu sesión anónima terminó. Abre una nueva cuenta anónima" : "Sin línea", 403);
@@ -79,8 +79,8 @@ export async function POST(req) {
       const r = await users.updateOne({ id: u.id, "wa.anon.sid": u.wa.anon.sid, "wa.anon.exp": { $gt: new Date() }, "wa.anon.usos": { $lt: ANON_USOS } }, { $inc: { "wa.anon.usos": 1 } });
       if (!r.modifiedCount) return bad("Tu sesión anónima terminó (15 minutos o 5 usos). Abre una nueva cuenta anónima");
     }
-    await d.collection("wa_msgs").insertOne({ de: me, para, texto, at: new Date(), leido: false, ...(anonModo ? { anon: true, uid: u.id, sid: u.wa.anon.sid } : {}) });
-    await enviarPush(rec.id, { title: anonModo ? "Número anónimo" : rec.wa?.contactos?.find((c) => c.num === me)?.alias || u.chip?.nombre || fmtTel(me), body: texto.slice(0, 100), url: "/whatsapp", tag: "wa-" + me });
+    await d.collection("wa_msgs").insertOne({ de: me, para, texto, at: new Date(), leido: false, ...(anonModo ? { anon: true, uid: u.id, sid: u.wa.anon.sid, pn: u.wa.anon.pais?.n || "", pc: u.wa.anon.pais?.c || "" } : {}) });
+    await enviarPush(rec.id, { title: anonModo ? "Cuenta anónima" : rec.wa?.contactos?.find((c) => c.num === me)?.alias || u.chip?.nombre || fmtTel(me), body: texto.slice(0, 100), url: "/whatsapp", tag: "wa-" + me });
     return NextResponse.json({ ok: true });
   }
   return bad("Acción inválida");
