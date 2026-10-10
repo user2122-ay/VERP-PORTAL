@@ -12,7 +12,7 @@ export default function Form({ discord, initial }) {
   const start = (e) => { e.preventDefault(); const roblox = new FormData(e.target).get("roblox"); run(async () => { const r = await post("/api/verify/start", { roblox }); r.ok ? (setV({ code: r.code, robloxName: r.robloxName }), setStep(2)) : setErr(r.error); }); };
   const check = () => run(async () => { const r = await post("/api/verify/check"); r.ok ? (setV((x) => ({ ...x, ok: true, avatar: r.avatar, robloxName: r.robloxName })), setStep(3)) : setErr(r.error); });
   const copy = () => { navigator.clipboard?.writeText(v.code); setCopied(true); setTimeout(() => setCopied(false), 1500); };
-  const send = (e) => { e.preventDefault(); const f = Object.fromEntries(new FormData(e.target)); run(async () => { const r = await post("/api/cedula", { ...f, venezolano: true }); r.ok ? (location.href = "/cedula") : setErr(r.error); }); };
+  const send = (e) => { e.preventDefault(); const f = Object.fromEntries(new FormData(e.target)); run(async () => { const r = await post("/api/cedula", { ...f, venezolano: ven === "si" }); r.ok ? (location.href = "/cedula") : setErr(r.error); }); };
   const Err = () => err ? <p style={{ color: "var(--bad)" }}>{err}</p> : null;
   const dots = <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>{[1, 2, 3, 4].map((n) => <div key={n} style={{ flex: 1, height: 4, borderRadius: 4, background: n <= step ? "var(--ac)" : "var(--bd)" }} />)}</div>;
 
@@ -37,10 +37,10 @@ export default function Form({ discord, initial }) {
 
   return (<form className="card" onSubmit={send}>{dots}<h2>Crea tu cédula</h2>
     <label>¿Eres venezolano?</label><select value={ven} onChange={(e) => setVen(e.target.value)}><option value="si">Sí, soy venezolano</option><option value="no">No, soy extranjero</option></select>
-    {ven === "no" ? <p style={{ color: "var(--bad)" }}>Los extranjeros deben tramitar su <b>visa</b> (visación) con el staff en el Discord antes de poder obtener cédula.</p> : <>
+    <>
       <label>Nombres</label><input name="nombres" required maxLength={40} /><label>Apellidos</label><input name="apellidos" required maxLength={40} />
       <label>Fecha de nacimiento</label><input name="nac" type="date" required />
-      <label>¿Dónde naciste?</label><select name="lugar" required>{LUGARES.map((l) => <option key={l}>{l}</option>)}</select>
+      {ven === "no" ? <><label>País de origen</label><input name="pais" required maxLength={40} placeholder="Ej: Colombia" /><p className="mut" style={{ fontSize: 13 }}>Tu cédula dirá <b>EXTRANJERO</b> y el número empezará con E.</p></> : <><label>¿Dónde naciste?</label><select name="lugar" required>{LUGARES.map((l) => <option key={l}>{l}</option>)}</select></>}
       <label>Estado civil</label><select name="edoCivil" required>{ESTADOS.map((l) => <option key={l}>{l}</option>)}</select>
-      <Err /><button className="btn" style={{ width: "100%" }} disabled={busy}><UserPlus size={18} />{busy ? "Creando..." : "Crear cédula"}</button></>}</form>);
+      <Err /><button className="btn" style={{ width: "100%" }} disabled={busy}><UserPlus size={18} />{busy ? "Creando..." : "Crear cédula"}</button></></form>);
 }

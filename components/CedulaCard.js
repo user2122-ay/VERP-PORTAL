@@ -15,12 +15,12 @@ export default function CedulaCard({ c }) {
       <T x={172} y={310} center size={2.1} c="#3a3a3a" fw={600}>F. EXPEDICIÓN</T>
       <T x={273} y={310} center size={2.1} c="#3a3a3a" fw={600}>F. VENCIMIENTO</T>
       <T x={264} y={57} center size={2.9} c="#222" ls="0.45em">CÉDULA DE IDENTIDAD</T>
-      <T x={227} y={345} center size={5.6} c="#111">VENEZOLANO</T>
+      <T x={227} y={345} center size={5.6} c="#111">{c.nacionalidad || "VENEZOLANO"}</T>
       <T x={464} y={105} center size={2.3}>A. Batista</T>
       <T x={461} y={126} center size={2.1} c="#333" fw={400}>Director</T>
       <T x={269} y={26.5} center size={3.1} c="#fff" ls="0.16em">VENEZUELA COMMUNITY ROLEPLAY</T>
       <T x={471} y={79} center size={3}>12-08-2025</T>
-      <T x={205} y={85} size={3.6}>V-{String(c.num).padStart(8, "0").replace(/\B(?=(\d{3})+(?!\d))/g, ".")}</T>
+      <T x={205} y={85} size={3.6}>{c.nacionalidad === "EXTRANJERO" ? "E" : "V"}-{String(c.num).padStart(8, "0").replace(/\B(?=(\d{3})+(?!\d))/g, ".")}</T>
       <T x={72} y={122}>{c.apellidos}</T>
       <T x={68} y={149}>{c.nombres}</T>
       <T x={10} y={228} size={4} c="#1a2a6c"><i style={{ fontFamily: "'Brush Script MT', cursive", fontWeight: 400 }}>{c.nombres.split(" ")[0]} {c.apellidos.split(" ")[0]}</i></T>
