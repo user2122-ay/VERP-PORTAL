@@ -24,7 +24,7 @@ export default function Shell({ user, children }) {
     document.startViewTransition(go).ready.then(() => d.animate({ clipPath: [`circle(0 at ${x}px ${y}px)`, `circle(${r}px at ${x}px ${y}px)`] }, { duration: 650, easing: "ease-in-out", pseudoElement: "::view-transition-new(root)" }));
   }
   const vpn = tieneVpn(user);
-  const items = [...L, ...(vpn ? [["/darkweb", "Dark Web", Globe]] : []), ...(user.delictivo || user.rank === "FUNDACION" ? [["/delictivo", "Delictivo", Skull]] : []), ...(user.agente || user.dev ? [["/mdt", "MDT", Shield]] : []), ...(canReview(user.rank) ? [["/admin", "Administración", ShieldCheck]] : [])];
+  const items = [...L, ...(vpn ? [["/darkweb", "Dark Web", Globe]] : []), ...(vpn || user.rank === "FUNDACION" ? [["/delictivo", "Delictivo", Skull]] : []), ...(user.agente || user.dev ? [["/mdt", "MDT", Shield]] : []), ...(canReview(user.rank) ? [["/admin", "Administración", ShieldCheck]] : [])];
   return (<><div className="top"><img src="/logo.png" alt="VE:RP" /><Miembros />
     <nav className="nav">{items.map(([h, t, I]) => <Link key={h} href={h} className={p === h ? "on" : ""}><I size={18} className="neon" />{t}</Link>)}</nav>
     <button className="btn g" onClick={toggle} aria-label="Cambiar tema"><Sun size={18} className="neon" /></button>

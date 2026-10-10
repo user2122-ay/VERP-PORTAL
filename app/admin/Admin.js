@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { Search, Plus, Trash2, Skull, Check } from "lucide-react";
 import { canAdmin, RANK_LABEL } from "@/lib/roles";
-import { RANGOS_POR_DEPTO, DEPTOS } from "@/lib/mdt";
+import { RANGOS_POR_DEPTO, DEPTOS, nombreDepto } from "@/lib/mdt";
 import Insignia from "@/components/Insignia";
 const CATS = ["Concesionario", "Propiedades", "Licencias", "Objetos", "Armas", "Herramientas", "Telefonía", "Tecnología"], INV = ["Banco", "Telefonía", "Tecnología", "Propiedades", "Concesionario", "Herramientas", "Objetos", "Armas", "Licencias"], CIVIL = ["SOLTERO", "CASADO", "DIVORCIADO", "VIUDO"];
 const BK = { bvc: "BVC", mer: "Mercantil VERP", pro: "Provincial", ven: "VERNESCO", vca: "VERCARIBE", com: "Comerciante" }, $ = (n) => `$${Number(n || 0).toLocaleString("es")}`;
@@ -120,13 +120,13 @@ function Erlc({ auto }) {
 function AgenteForm() {
   const [dep, setDep] = useState(DEPTOS[1] || DEPTOS[0]);
   return (<form className="row2" onSubmit={async (e) => { const v = vals(e); if (await post("agenteSet", v)) location.reload(); }}><input name="username" placeholder="Usuario de Discord" required />
-    <select name="depto" value={dep} onChange={(e) => setDep(e.target.value)}>{DEPTOS.map((d) => <option key={d}>{d}</option>)}</select>
+    <select name="depto" value={dep} onChange={(e) => setDep(e.target.value)}>{DEPTOS.map((d) => <option key={d} value={d}>{nombreDepto(d)}</option>)}</select>
     <select name="rango">{(RANGOS_POR_DEPTO[dep] || []).map((r) => <option key={r}>{r}</option>)}</select><input name="placa" placeholder="Placa" required /><button className="btn"><Plus size={16} />Asignar</button></form>);
 }
 function Agentes({ agentes }) {
   return (<div className="card"><b>Agentes de la MDT</b><p className="mut">Asigna a un policía con su departamento, rango y placa. El sueldo ya no se pone aquí: lo fija y lo libera el Ministro del Interior desde la Tesorería de la MDT. Al entrar a la MDT, solo le pedirá su placa. Desde "Comisario" aprueban allanamientos.</p>
     <AgenteForm />
-    {agentes.map((x) => <div key={x.id} style={{ display: "flex", justifyContent: "space-between", gap: 8, padding: "8px 0", borderTop: "1px solid var(--bd)" }}><span><Insignia rango={x.rango} depto={x.depto} /><b>{x.rango}</b> {x.nombre || x.name}<div className="mut">@{x.name} · Placa {x.placa} · {x.depto}</div></span><button className="btn r" onClick={async () => { if (confirm(`¿Quitar a ${x.name} de la MDT?`) && (await post("agenteDel", { uid: x.id }))) location.reload(); }}><Trash2 size={14} /></button></div>)}{!agentes.length && <p className="mut">Aún no hay agentes asignados.</p>}</div>);
+    {agentes.map((x) => <div key={x.id} style={{ display: "flex", justifyContent: "space-between", gap: 8, padding: "8px 0", borderTop: "1px solid var(--bd)" }}><span><Insignia rango={x.rango} depto={x.depto} /><b>{x.rango}</b> {x.nombre || x.name}<div className="mut">@{x.name} · Placa {x.placa} · {nombreDepto(x.depto)}</div></span><button className="btn r" onClick={async () => { if (confirm(`¿Quitar a ${x.name} de la MDT?`) && (await post("agenteDel", { uid: x.id }))) location.reload(); }}><Trash2 size={14} /></button></div>)}{!agentes.length && <p className="mut">Aún no hay agentes asignados.</p>}</div>);
 }
 export default function Admin({ trabajos = [], rank, items, reps, audit, robos = [], apertura = null, staff = [], agentes = [], canStaff = false, apelaciones = [], auto = null }) {
   const full = canAdmin(rank), TABS = full ? ["Usuarios", "Mercado", "Solicitudes", "Apelaciones", "Agentes MDT", "Auditoría", "Reportes 911", "ER:LC", "Apertura", ...(canStaff ? ["Staff"] : [])] : ["Solicitudes", "Apelaciones"];

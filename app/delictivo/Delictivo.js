@@ -11,7 +11,7 @@ export default function Delictivo({ asaltos, robos }) {
   const elegir = async (x) => { setT(x); setSel({}); setInfo(null); const r = await fetch("/api/delictivo?ver=" + x.id); if (r.ok) setInfo(await r.json()); };
   const marcados = info ? info.items.filter((i) => sel[i.name + i.at]) : [], veh = marcados.some((i) => i.category === "Concesionario");
   const v = (e) => { e.preventDefault(); return Object.fromEntries(new FormData(e.target)); };
-  return (<><h2 style={{ color: "var(--ac)", display: "flex", gap: 8, alignItems: "center" }}><Skull />Panel delictivo</h2><p className="mut">Solo para quienes tienen el rol delictivo. Todo queda registrado.</p>
+  return (<><h2 style={{ color: "var(--ac)", display: "flex", gap: 8, alignItems: "center" }}><Skull />Panel delictivo</h2><p className="mut">Se entra con la VPN comprada (la misma de la Dark Web). Todo queda registrado.</p>
     <div className="card"><b>Asaltar a un ciudadano</b><p className="mut">Solo puedes robar lo que la persona lleva encima. Lo que guarda en su casa no se ve ni se puede robar. La víctima recibe un aviso y decide si acepta.</p>
       <form className="row2" onSubmit={buscar}><input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Nombre, Roblox o cédula" /><button className="btn g"><Search size={16} />Buscar</button></form>
       {res.map((x) => <div key={x.id} className="card" style={{ cursor: "pointer", padding: 10, marginTop: 6, borderColor: t?.id === x.id ? "var(--ac)" : "var(--bd)" }} onClick={() => elegir(x)}>{x.label}</div>)}

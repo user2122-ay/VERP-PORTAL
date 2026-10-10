@@ -189,3 +189,10 @@ lib/rol.js, lib/placa.js, components/CedulaCard.js, app/darkweb/*, app/delictivo
 - **WhatsApp anónimo (celular desechable)**: la cuenta anónima ya no muestra ningún número: dice **"Cuenta anónima"** y un código de país al azar (+7 Rusia, +86 China, etc.).
 - **Cosecha**: la planta tarda **48 horas** (antes 1 minuto de prueba).
 - **MDT → Ciudadanos**: la ficha muestra el **inventario que lleva encima** (lo que no está guardado en casa) y marca en rojo lo ilegal: robado, sustancias y armas sin licencia.
+
+## Actualización 16: Bomberos y Protección Civil en la MDT, y la VPN abre lo delictivo
+- **Trabajos secundarios**: se quitaron **Protección Civil** y **Bomberos** de la lista.
+- **MDT → departamentos** (con su nombre completo): Cuerpo de la Policía Nacional Bolivariana, Cuerpo de Investigaciones Científicas, Penales y Criminalísticas, Servicio Bolivariano de Inteligencia Nacional, **Dirección General Nacional de Bomberos** y **Dirección Nacional de Protección Civil y Administración de Desastres** (en `lib/mdt.js`; la clave guardada sigue corta: PNB, CICPC, SEBIN, `Bomberos`, `Protección Civil`).
+- **Rangos de Bomberos**: Distinguido, Cabo Segundo, Cabo Primero, Sargento Segundo, Sargento Primero, Sargento Mayor, Teniente, Primer Teniente, Capitán, Mayor, Teniente Coronel, Coronel, General de Bomberos, Primer General o Primera Generala. **Protección Civil**: Oficial I, II, III; Oficial Supervisor I, II, III; Coordinador I, II; Coordinador General.
+- **Permisos**: Bomberos y Protección Civil solo ven **Reportes 911** y **Mi sueldo** (el servidor lo exige; no ven los reportes de autos robados). El Ministro les fija el sueldo en la Tesorería como a los demás. Se asignan desde Administración → Agentes MDT.
+- **Panel Delictivo y Dark Web**: ahora se entra solo con la **VPN comprada** (ya no hace falta el rol delictivo de Discord). El menú "Delictivo" aparece con la VPN, y en la Dark Web salen las semillas, la venta de sustancias y la publicación de autos.

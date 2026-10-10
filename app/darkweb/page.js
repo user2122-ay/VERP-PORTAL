@@ -27,5 +27,5 @@ export default async function P() {
       <div><b style={{ fontSize: 20 }}>{NEGOCIOS.taller.nombre}</b><div className="mut">{NEGOCIOS.taller.edita}. Compras autos robados a los delictivos (negociando por chat) y los vendes a la plataforma. Se paga con Tarjeta de Comerciante.</div><div className="big" style={{ fontSize: 26 }}>${NEGOCIOS.taller.precio.toLocaleString("es")}</div>
         {t?.owner ? <span className="tag">{t.owner === u.id ? "Eres el dueño" : `Dueño: ${dueño?.cedula ? dueño.cedula.nombres.split(" ")[0] + " " + dueño.cedula.apellidos.split(" ")[0] : dueño?.name || "—"}`}</span>
           : <Comprar url="/api/negocios" body={{ accion: "comprar", key: "taller" }} metodos={metodosDe(u)} msg="¡Taller comprado! Las ofertas de autos llegarán aquí." label="Comprar taller" />}</div></div>
-    <Dark mercado={{ factor: mn.factor, mood: mn.mood, proxima: mn.proxima }} yo={u.id} delictivo={await esRol(u, "delictivo")} dueño={t?.owner === u.id} autos={autos} listas={listas} metodos={metodosDe(u)} cultivo={{ hoy, bolsas }} /></div></Shell>);
+    <Dark mercado={{ factor: mn.factor, mood: mn.mood, proxima: mn.proxima }} yo={u.id} delictivo={true} dueño={t?.owner === u.id} autos={autos} listas={listas} metodos={metodosDe(u)} cultivo={{ hoy, bolsas }} /></div></Shell>);
 }

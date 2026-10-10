@@ -5,7 +5,7 @@ import CedulaCard from "@/components/CedulaCard";
 import ZoomMap from "@/components/ZoomMap";
 import Acceso from "./Acceso";
 import Insignia from "@/components/Insignia";
-import { RANGOS_POR_DEPTO, DEPTOS } from "@/lib/mdt";
+import { RANGOS_POR_DEPTO, DEPTOS, nombreDepto } from "@/lib/mdt";
 import LicenciaCard from "@/components/LicenciaCard";
 const fecC = (d) => new Date(d).toLocaleDateString("es", { day: "2-digit", month: "short", year: "numeric" });
 const $ = (n) => `$${Number(n || 0).toLocaleString("es")}`, fec = (d) => new Date(d).toLocaleString("es", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
@@ -136,7 +136,7 @@ Sin fondos para: ${j.sinFondos.join(", ")}` : ""}`); setSl(""); cargar(); }
       <p className="mut">Aquí llega el ITBMS de lo que se compra en el Mercado, los impuestos de los bancos y los negocios legales. El mercado negro no paga impuestos.</p></div>
     <div className="card"><b>Impuesto a los objetos (ITBMS)</b><div className="big" style={{ fontSize: 28 }}>{Math.round(t.tasa * 1000) / 10}%</div><div className="row2"><input type="number" min="0" max="30" step="0.5" value={tasa} onChange={(e) => setTasa(e.target.value)} placeholder="Nuevo impuesto (%)" /><button className="btn" onClick={guardarTasa}>Aplicar</button></div><p className="mut">Sube o baja el impuesto de todo lo que se vende en el Mercado (de 0% a 30%).</p></div>
     <div className="card"><b>Pagar sueldos</b>
-      <label className="mut">Departamento</label><select value={dep} onChange={(e) => { setDep(e.target.value); setRg(""); setSl(""); }}>{DEPTOS.map((d) => <option key={d}>{d}</option>)}</select>
+      <label className="mut">Departamento</label><select value={dep} onChange={(e) => { setDep(e.target.value); setRg(""); setSl(""); }}>{DEPTOS.map((d) => <option key={d} value={d}>{nombreDepto(d)}</option>)}</select>
       <label className="mut">Rango</label><select value={rango} onChange={(e) => { setRg(e.target.value); setSl(""); }}>{rangos.map((r) => <option key={r}>{r}</option>)}</select>
       <label className="mut">Sueldo semanal ($)</label><input type="number" min="1" value={sl} onChange={(e) => setSl(e.target.value)} placeholder={sueldo ? `Actual: ${$(sueldo)}` : "Escribe el sueldo"} />
       <b style={{ display: "block", marginTop: 6 }}>Miembros con este rango ({miembros.length})</b>
@@ -210,7 +210,7 @@ export default function Mdt() {
   useEffect(() => { if (!ok || !exp) return; const tm = setTimeout(() => location.reload(), Math.max(1000, exp - Date.now())); return () => clearTimeout(tm); }, [ok, exp]); // a los 35 min la MDT se reinicia y pide la placa
   const apagar = async () => { await fetch("/api/mdt", { method: "POST", body: JSON.stringify({ accion: "salir" }) }); location.reload(); };
   if (!info) return null; if (!ok) return <Acceso info={info} onOk={() => { setOk(true); setExp(Date.now() + 35 * 6e4); }} />;
-  const tabs = [...TABS, ...(info.ministro ? [["Tesorería", Landmark, Tesoreria], ["Tienda Ministerio", Store, TiendaMin]] : [])], V = (tabs.find((x) => x[0] === t) || tabs[0])[2];
-  return (<div style={{ maxWidth: 820, margin: "0 auto" }}><div style={{ display: "flex", gap: 12, alignItems: "center" }}><img src="/justicia-paz.png" alt="Justicia y Paz" style={{ height: 54, background: "#fff", borderRadius: 10, padding: 4 }} /><div><b style={{ fontSize: 18 }}>MDT · {info.ag.depto}</b><div className="mut"><Insignia rango={info.ag.rango} depto={info.ag.depto} />{info.ag.rango} {info.nombre} · @{info.discord} · Placa {info.ag.placa}</div></div><button className="btn g" style={{ marginLeft: "auto" }} onClick={apagar}><Power size={16} />Apagar MDT</button></div>
-    <div style={{ display: "flex", gap: 8, margin: "12px 0", flexWrap: "wrap" }}>{tabs.map(([n, I]) => <button key={n} className={"btn " + (t === n ? "" : "g")} onClick={() => cambiar(n)}><I size={16} />{n}</button>)}</div><V aprueba={info.aprueba} yo={info.yo} pnb={info.pnb} /></div>);
+  const tabs = [...(info.emerg ? TABS.filter(([n]) => ["Reportes", "Mi sueldo"].includes(n)) : TABS), ...(info.ministro ? [["Tesorería", Landmark, Tesoreria], ["Tienda Ministerio", Store, TiendaMin]] : [])], V = (tabs.find((x) => x[0] === t) || tabs[0])[2], cur = (tabs.find((x) => x[0] === t) || tabs[0])[0];
+  return (<div style={{ maxWidth: 820, margin: "0 auto" }}><div style={{ display: "flex", gap: 12, alignItems: "center" }}><img src="/justicia-paz.png" alt="Justicia y Paz" style={{ height: 54, background: "#fff", borderRadius: 10, padding: 4 }} /><div><b style={{ fontSize: 18 }}>MDT · {nombreDepto(info.ag.depto)}</b><div className="mut"><Insignia rango={info.ag.rango} depto={info.ag.depto} />{info.ag.rango} {info.nombre} · @{info.discord} · Placa {info.ag.placa}</div></div><button className="btn g" style={{ marginLeft: "auto" }} onClick={apagar}><Power size={16} />Apagar MDT</button></div>
+    <div style={{ display: "flex", gap: 8, margin: "12px 0", flexWrap: "wrap" }}>{tabs.map(([n, I]) => <button key={n} className={"btn " + (cur === n ? "" : "g")} onClick={() => cambiar(n)}><I size={16} />{n}</button>)}</div><V aprueba={info.aprueba} yo={info.yo} pnb={info.pnb} /></div>);
 }

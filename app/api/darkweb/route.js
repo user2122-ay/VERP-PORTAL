@@ -47,7 +47,6 @@ export async function POST(req) {
   const mine = (id) => ({ _id: id, $or: [{ seller: u.id }, { buyer: u.id }] });
   switch (b.accion) {
     case "publicar": {
-      if (!(await esRol(u, "delictivo"))) return bad("Necesitas el rol delictivo", 403);
       const precio = Math.floor(Number(b.precio)); if (!(precio >= 1 && precio <= 15000)) return bad("El precio inicial debe estar entre $1 y $15.000");
       if (!pagoKey(u, b.pago)) return bad("Cuenta de cobro inválida");
       const car = await sacar(d, u, b); if (!car) return bad("Ese vehículo ya no está en tu inventario");

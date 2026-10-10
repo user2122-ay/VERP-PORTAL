@@ -6,7 +6,7 @@ import { ObjectId } from "mongodb";
 import { db } from "@/lib/db";
 import { apiUser } from "@/lib/auth";
 import { nombreDe } from "@/lib/rol";
-import { agenteDe, aprobador, casaRef, esMinistro, SEMANA, RANGOS_POR_DEPTO, claveSueldo } from "@/lib/mdt";
+import { agenteDe, aprobador, casaRef, esMinistro, SEMANA, RANGOS_POR_DEPTO, claveSueldo, solo911 } from "@/lib/mdt";
 import { BANCOS } from "@/lib/bancos";
 import { NEGOCIOS } from "@/lib/negocios";
 import { saldoTesoreria, egresarTesoreria, tasaITBMS, setTasa } from "@/lib/tesoreria";
@@ -28,9 +28,10 @@ const pub = (x) => ({ id: x.id, label: `${x.cedula.nombres} ${x.cedula.apellidos
 export async function GET(req) {
   try { await vigilarCondenas(await db()); } catch {}
   const p = new URL(req.url).searchParams, m = p.get("m");
-  if (m === "estado") { const u = await policia(true); if (!u) return bad("Sin permiso", 403); return NextResponse.json({ ok: fresca(u), exp: fresca(u) ? +new Date(u.mdtSesion) + 35 * 6e4 : 0, ag: u.ag, nombre: nombreDe(u), discord: u.name, yo: u.id, aprueba: aprobador(u.ag), ministro: esMinistro(u.ag), pnb: esPNB(u.ag) }); }
+  if (m === "estado") { const u = await policia(true); if (!u) return bad("Sin permiso", 403); return NextResponse.json({ ok: fresca(u), exp: fresca(u) ? +new Date(u.mdtSesion) + 35 * 6e4 : 0, ag: u.ag, nombre: nombreDe(u), discord: u.name, yo: u.id, aprueba: aprobador(u.ag), ministro: esMinistro(u.ag), pnb: esPNB(u.ag), emerg: solo911(u.ag) }); }
   const u = await policia(); if (!u) return bad("Sin sesión de la MDT", 401);
   const d = await db(), us = d.collection("users");
+  if (solo911(u.ag) && !["rep", "sueldo"].includes(m)) return bad("Tu departamento solo ve los reportes 911 y tu sueldo", 403);
   if (m === "buscar") {
     const q = txt(p.get("q"), 40); if (q.length < 2) return NextResponse.json({ users: [] });
     const rx = new RegExp(esc(q), "i"), dg = q.replace(/\D/g, "").replace(/^0+/, "");
@@ -76,7 +77,7 @@ export async function GET(req) {
     return NextResponse.json({ exps: l.map((e) => ({ id: String(e._id), titulo: e.titulo, desc: e.desc, estado: e.estado, creador: e.creadorName, at: e.at, sujetos: e.sujetosN || [], notas: e.notas || [] })) });
   }
   if (m === "rep") {
-    const a = await d.collection("reports").find().sort({ at: -1 }).limit(40).toArray(), b = await d.collection("reportes").find().sort({ at: -1 }).limit(40).toArray();
+    const a = await d.collection("reports").find().sort({ at: -1 }).limit(40).toArray(), b = solo911(u.ag) ? [] : await d.collection("reportes").find().sort({ at: -1 }).limit(40).toArray();
     const r = [...a.map((x) => ({ src: "e", id: String(x._id), titulo: `911 · ${x.tipo}`, det: `${x.zona}${x.calle ? " · " + x.calle : ""} — ${x.desc}`, por: x.nombre, zona: x.zona, x: x.x, y: x.y, atiende: x.atiende || null, resuelto: x.estado === "resuelto", seg: x.seg || [], at: x.at })),
       ...b.map((x) => ({ src: "v", id: String(x._id), titulo: `${x.tipo}: ${x.modelo}`, det: `Color ${x.color || "—"} · Placa ${x.placa || "—"}${x.specs ? " · " + x.specs : ""}`, por: x.denuncia || "", atiende: x.atiende || null, resuelto: x.estado === "resuelto", seg: x.seg || [], at: x.at }))].sort((x, y) => +new Date(y.at) - +new Date(x.at));
     return NextResponse.json({ reps: r });
@@ -131,6 +132,7 @@ export async function POST(req) {
     await us.updateOne({ id: u.id }, { $set: { mdtSesion: at }, $unset: { mdtFail: "" } }); return NextResponse.json({ ok: true });
   }
   if (b.accion === "salir") { await us.updateOne({ id: u.id }, { $unset: { mdtSesion: "" } }); return NextResponse.json({ ok: true }); }
+  if (solo911(u.ag) && (!["repAtender", "repNota", "repEstado"].includes(b.accion) || b.src === "v")) return bad("Tu departamento solo atiende reportes 911", 403);
   switch (b.accion) {
     case "multar": { // SOLO la PNB: la multa llega al Inventario del ciudadano; no se cobra sola
       if (!esPNB(u.ag)) return bad("Solo la Policía Nacional Bolivariana puede poner multas", 403);

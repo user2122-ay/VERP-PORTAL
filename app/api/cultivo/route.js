@@ -17,10 +17,10 @@ export async function POST(req) {
   if (u.muerte) return bad("Tu personaje murió", 403);
   const b = await req.json().catch(() => ({})), d = await db(), us = d.collection("users"), inv = u.inventory || [], at = new Date(), a = b.accion;
   const buscar = () => inv.find((i) => i.name === b.name && +new Date(i.at) === +new Date(b.at));
-  const delict = async () => (await esRol(u, "delictivo")) && tieneVpn(u);
+  const delict = async () => tieneVpn(u); // se entra con la VPN comprada
 
   if (a === "comprar") {
-    if (!(await delict())) return bad("Necesitas el rol delictivo y una VPN activa", 403);
+    if (!(await delict())) return bad("Necesitas una VPN activa", 403);
     const p = PLANTAS[b.tipo]; if (!p) return bad("Producto inválido");
     const comp = d.collection("cultivo_compras"); if ((await comp.countDocuments({ uid: u.id, tipo: b.tipo, at: { $gte: new Date(+at - 864e5) } })) >= LIM_DIA) return bad(`Solo puedes comprar ${LIM_DIA} semillas de ${p.nombre} cada 24 horas`);
     const k = pagoKey(u, b.pago); if (!k) return bad("Método de pago inválido");
@@ -47,7 +47,7 @@ export async function POST(req) {
   // ——— ventas: solo lo que llevas encima (no lo que está en casa) ———
   const llevo = () => { const it = buscar(); return it && esBolsa(it) && it.loc !== "casa" && !estaRetenido(it) ? it : null; };
   if (a === "vender") { // venta en la Dark Web: la plataforma compra al precio vigente (mismo mercado que los autos: x0.60 a x1.40, cambia cada 2 horas). El dinero sale de la nada
-    if (!(await delict())) return bad("Necesitas el rol delictivo y una VPN activa", 403);
+    if (!(await delict())) return bad("Necesitas una VPN activa", 403);
     const it = llevo(); if (!it) return bad("Esa sustancia no está en lo que llevas encima (lo que está en casa hay que sacarlo primero)");
     const unidad = b.unidad === "kilo" ? "kilo" : "bolsa", n = Math.floor(+b.cant), need = unidad === "kilo" ? n * POR_KILO : n; if (!(n >= 1)) return bad("Escribe la cantidad"); if (it.cant < need) return bad(`Solo tienes ${it.cant} bolsitas`);
     const mn = await factorHoy(d), total = Math.max(1, Math.round(n * TRAF[unidad] * mn.factor));
