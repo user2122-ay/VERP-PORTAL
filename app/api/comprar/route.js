@@ -38,7 +38,7 @@ export async function POST(req) {
   const pl = esAuto ? await nuevaPlaca(d, { modelo: it.name, color, detalles, img: it.img || "", brand: it.brand || "", year: it.year || "", clase: it.clase || "", desc: it.desc || "", dueno: u.id, duenoN: nombreDe(u) }) : null;
   const vence = it.dias ? new Date(Math.max(Date.now(), vigente ? +new Date(vigente.vence) : 0) + it.dias * 864e5) : null;
   const guard = (lt && it.sku) || (unico && !it.dias) ? { inventory: { $not: { $elemMatch: it.sku ? { sku: it.sku } : { name: it.name } } } } : {};
-  const nuevo = { name: it.name, category: it.category, price: it.price, at: new Date(), sku: it.sku || null, tipo: it.tipo || null, ubicacion: it.ubicacion || null, img: it.img || null, placa: pl, color, detalles, vence, licNum: lt ? numeroLicencia(lt) : null };
+  const nuevo = { name: it.name, category: it.category, price: it.price, at: new Date(), sku: it.sku || null, tipo: it.tipo || null, ubicacion: it.ubicacion || null, img: it.img || null, placa: pl, color, detalles, vence, licNum: lt ? numeroLicencia(lt) : null, ...(it.category === "Propiedades" ? { impProx: new Date(Date.now() + 7 * 864e5) } : {}) };
   const upd = vigente ? { $inc: { [pk]: -total }, $set: { "inventory.$[e].vence": vence } } : { $inc: { [pk]: -total }, $push: { inventory: nuevo } }, opts = vigente ? { arrayFilters: [{ "e.sku": it.sku, "e.vence": vigente.vence }] } : {};
   const r = await d.collection("users").updateOne({ id: u.id, [pk]: { $gte: total }, ...guard }, upd, opts);
   if (!r.modifiedCount) { if (pl) await d.collection("placas").deleteOne({ _id: normPlaca(pl) }); if (it.stock > 0) await items.updateOne({ _id }, { $inc: { stock: 1 } }); return err("Saldo insuficiente"); }

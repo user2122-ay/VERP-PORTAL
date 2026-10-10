@@ -199,3 +199,8 @@ lib/rol.js, lib/placa.js, components/CedulaCard.js, app/darkweb/*, app/delictivo
 
 ## Actualización 17: Heladería
 - Nuevo negocio **Heladería** ($135.000, Mercado → Negocios; se maneja como los demás de comida: precios máximo $500, sin impuestos). Vende: **Helado de cono** (+8% de comida), **Pote de helado** (+14%), **Paleta** (+5%), **Bandeja de helado** (+18%) y **Banana Kami** (+23%), en ese orden. Fotos nuevas en `public/items` y `public/negocios/heladeria.jpg`. Precios iniciales y duración en `lib/comida.js` (editables).
+
+## Actualización 18: impuesto semanal de las casas
+- El impuesto de la casa (el que pone Administración al crear o editar la casa) ahora es **semanal** y **se cobra de verdad**: cada 7 días desde la compra (casas anteriores: el primer cobro es 7 días después de esta actualización). Se descuenta de las tarjetas del dueño y, si no alcanzan, del efectivo, y **el dinero entra a la Tesorería** del Estado (queda en su libro de ingresos como "Impuesto semanal de la casa: ..."). Si no hay saldo, queda pendiente y se reintenta en cada visita (hasta 8 semanas atrasadas). El dueño recibe un aviso por cada cobro.
+- En **Inventario → Casa** se ve el impuesto semanal y la fecha del próximo cobro. En el Mercado y Administración la etiqueta dice "Impuesto semanal" (antes "mensual").
+- El cobro se hace cuando el dueño entra al portal (no hay cron): si pasa varias semanas sin entrar, al volver se cobran las atrasadas.
