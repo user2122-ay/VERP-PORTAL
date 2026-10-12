@@ -4,7 +4,7 @@ import { db } from "@/lib/db";
 import { apiUser } from "@/lib/auth";
 import { waListo, fmtTel } from "@/lib/redes";
 import { canReview, RANK_LABEL } from "@/lib/roles";
-import { validarLink, etiquetas, HANDLE } from "@/lib/tikverp";
+import { validarLink, etiquetas, HANDLE, insignia, esFund } from "@/lib/tikverp";
 export const dynamic = "force-dynamic";
 const bad = (m, s = 400) => NextResponse.json({ error: m }, { status: s });
 const oid = (s) => { try { return new ObjectId(String(s)); } catch { return null; } };
@@ -19,10 +19,11 @@ const aviso = (d, uid, title, body) => d.collection("notifs").insertOne({ uid, t
 // Agrega autor, insignia y si yo di like / sigo al autor.
 async function armar(c, posts, me) {
   const uids = [...new Set(posts.map((p) => p.uid))], per = Object.fromEntries((await c.per.find({ _id: { $in: uids } }).toArray()).map((x) => [x._id, x]));
-  const fl = Object.fromEntries((await c.d.collection("users").find({ id: { $in: uids } }, { projection: { id: 1, dev: 1, staff: 1 } }).toArray()).map((x) => [x.id, x.dev ? "Developer" : RANK_LABEL[x.staff] || null]));
+  const fl = Object.fromEntries((await c.d.collection("users").find({ id: { $in: uids } }, { projection: { id: 1, dev: 1, staff: 1 } }).toArray()).map((x) => [x.id, insignia(x, per[x.id]?.seguidores)]));
   const likes = new Set((await c.li.find({ _id: { $in: posts.map((p) => `${p._id}:${me}`) } }).toArray()).map((x) => x._id)), sig = new Set((await c.fo.find({ a: me, b: { $in: uids } }).toArray()).map((x) => x.b));
-  return posts.map((p) => ({ id: String(p._id), uid: p.uid, handle: p.handle, nombre: per[p.uid]?.nombre || p.handle, foto: per[p.uid]?.foto || null, badge: fl[p.uid] || null, tipo: p.tipo, url: p.url, desc: p.desc, tags: p.tags || [], sonido: p.sonido || null, likes: p.likes || 0, comentarios: p.comentarios || 0, compartidos: p.compartidos || 0, at: p.at, liked: likes.has(`${p._id}:${me}`), sigue: sig.has(p.uid), mio: p.uid === me }));
+  return posts.map((p) => ({ id: String(p._id), uid: p.uid, handle: p.handle, nombre: per[p.uid]?.nombre || "Cuenta no encontrada", foto: per[p.uid]?.foto || null, badge: fl[p.uid] || null, tipo: p.tipo, url: p.url, desc: p.desc, tags: p.tags || [], sonido: p.sonido || null, likes: p.likes || 0, comentarios: p.comentarios || 0, compartidos: p.compartidos || 0, at: p.at, liked: likes.has(`${p._id}:${me}`), sigue: sig.has(p.uid), mio: p.uid === me }));
 }
+const yo_h = (x) => (x?.handleAt ? new Date(+new Date(x.handleAt) + 7 * 864e5).toISOString() : null);
 const perfilPub = (x, extra = {}) => ({ uid: x._id, handle: x.handle, nombre: x.nombre, bio: x.bio || "", foto: x.foto || null, seguidores: x.seguidores || 0, siguiendo: x.siguiendo || 0, likes: x.likes || 0, ...extra });
 
 export async function GET(req) {
@@ -34,7 +35,7 @@ export async function GET(req) {
     if (rg) { const ini = rg[1] ? +rg[1] : 0, fin = rg[2] ? Math.min(+rg[2], buf.length - 1) : buf.length - 1; return new Response(buf.subarray(ini, fin + 1), { status: 206, headers: { ...h, "Content-Range": `bytes ${ini}-${fin}/${buf.length}`, "Content-Length": String(fin - ini + 1) } }); }
     return new Response(buf, { headers: { ...h, "Content-Length": String(buf.length) } });
   }
-  if (m === "me") { const x = await c.per.findOne({ _id: me }); return NextResponse.json({ perfil: x ? perfilPub(x) : null, avatar: u.cedula?.avatar || null, contactos: (u.wa?.contactos || []).map((k) => ({ num: k.num, alias: k.alias || fmtTel(k.num) })), puedeCompartir: waListo(u), staff: canReview(u.rank) }); }
+  if (m === "me") { const x = await c.per.findOne({ _id: me }); return NextResponse.json({ perfil: x ? perfilPub(x) : null, avatar: u.cedula?.avatar || null, handleEn: yo_h(x), contactos: (u.wa?.contactos || []).map((k) => ({ num: k.num, alias: k.alias || fmtTel(k.num) })), puedeCompartir: waListo(u), staff: canReview(u.rank) || esFund(u), mod: esFund(u) }); }
   if (!(await c.per.findOne({ _id: me }, { projection: { _id: 1 } }))) return bad("Crea tu cuenta de TikVerp primero", 403);
   if (m === "feed") {
     const t = p.get("t") === "sig" ? "sig" : "para", antes = Number(p.get("antes")), q = {};
@@ -45,14 +46,14 @@ export async function GET(req) {
     return NextResponse.json({ posts: await armar(c, l, me), fin: l.length < 12 });
   }
   if (m === "perfil") {
-    const h = String(p.get("h") || "").toLowerCase(), x = await c.per.findOne({ handle: h }); if (!x) return bad("Ese perfil no existe", 404);
+    const h = String(p.get("h") || "").toLowerCase(), x = await c.per.findOne({ handle: h }); if (!x) return bad("Cuenta no encontrada", 404);
     const l = await c.po.find({ uid: x._id }).sort({ at: -1 }).limit(60).toArray(), fl = await c.d.collection("users").findOne({ id: x._id }, { projection: { dev: 1, staff: 1 } });
-    return NextResponse.json({ perfil: perfilPub(x, { sigo: !!(await c.fo.findOne({ _id: `${me}:${x._id}` })), yo: x._id === me, badge: fl?.dev ? "Developer" : RANK_LABEL[fl?.staff] || null }), posts: await armar(c, l, me) });
+    return NextResponse.json({ perfil: perfilPub(x, { sigo: !!(await c.fo.findOne({ _id: `${me}:${x._id}` })), yo: x._id === me, badge: insignia(fl, x.seguidores), mod: esFund(u) }), posts: await armar(c, l, me) });
   }
   if (m === "com") {
     const id = oid(p.get("id")); if (!id) return bad("Publicación inválida");
     const l = await c.co.find({ post: String(id) }).sort({ at: 1 }).limit(150).toArray(), per = Object.fromEntries((await c.per.find({ _id: { $in: [...new Set(l.map((x) => x.uid))] } }).toArray()).map((x) => [x._id, x]));
-    return NextResponse.json({ l: l.map((x) => ({ id: String(x._id), uid: x.uid, handle: x.handle, foto: per[x.uid]?.foto || null, txt: x.txt, at: x.at, mio: x.uid === me })) });
+    return NextResponse.json({ l: l.map((x) => ({ id: String(x._id), uid: x.uid, handle: per[x.uid] ? per[x.uid].handle : "Cuenta no encontrada", borrada: !per[x.uid], foto: per[x.uid]?.foto || null, txt: x.txt, at: x.at, mio: x.uid === me })) });
   }
   if (m === "sonidos") { const q = String(p.get("q") || "").trim().slice(0, 30), l = await c.so.find(q ? { titulo: new RegExp(esc(q), "i") } : {}).sort({ usos: -1, at: -1 }).limit(40).toArray(); return NextResponse.json({ l: l.map((x) => ({ id: String(x._id), titulo: x.titulo, artista: x.artista, url: x.url, por: x.handle, usos: x.usos || 0 })) }); }
   if (m === "buscar") {
@@ -70,7 +71,16 @@ export async function POST(req) {
   if (b.accion === "crear" || b.accion === "editar") {
     const nombre = String(b.nombre || "").trim().slice(0, 30), bio = String(b.bio || "").trim().slice(0, 120); if (!nombre) return bad("Escribe tu nombre");
     let foto = yo?.foto || u.cedula?.avatar || null; if (b.accion === "editar" || String(b.foto || "").trim()) { const f = String(b.foto || "").trim(); if (f) { const r = validarLink(f, "foto"); if (r.error) return bad(r.error); foto = r.href; } else if (b.accion === "editar") foto = u.cedula?.avatar || null; }
-    if (b.accion === "editar") { if (!yo) return bad("Crea tu cuenta primero"); await c.per.updateOne({ _id: me }, { $set: { nombre, bio, foto } }); return NextResponse.json({ ok: true }); }
+    if (b.accion === "editar") {
+      if (!yo) return bad("Crea tu cuenta primero"); const set = { nombre, bio, foto }, nh = String(b.handle || "").trim().toLowerCase().replace(/^@/, "");
+      if (nh && nh !== yo.handle) { // el usuario solo se puede cambiar cada 7 días
+        if (!HANDLE.test(nh)) return bad("El usuario debe tener 3 a 20 letras minúsculas, números, _ o .");
+        const falta = yo.handleAt ? +new Date(yo.handleAt) + 7 * 864e5 - +at : 0; if (falta > 0) return bad(`Solo puedes cambiar tu usuario cada 7 días. Te faltan ${Math.ceil(falta / 864e5)} día(s)`);
+        try { await c.per.updateOne({ _id: me }, { $set: { ...set, handle: nh, handleAt: at } }); } catch (e) { if (e.code === 11000) return bad("Ese usuario ya está en uso"); throw e; }
+        await c.po.updateMany({ uid: me }, { $set: { handle: nh } }); await c.co.updateMany({ uid: me }, { $set: { handle: nh } }); return NextResponse.json({ ok: true, handle: nh });
+      }
+      await c.per.updateOne({ _id: me }, { $set: set }); return NextResponse.json({ ok: true });
+    }
     if (yo) return bad("Ya tienes cuenta"); const handle = String(b.handle || "").trim().toLowerCase().replace(/^@/, ""); if (!HANDLE.test(handle)) return bad("El usuario debe tener 3 a 20 letras minúsculas, números, _ o .");
     try { await c.per.insertOne({ _id: me, handle, nombre, bio, foto, seguidores: 0, siguiendo: 0, likes: 0, at }); } catch (e) { if (e.code === 11000) return bad("Ese usuario ya está en uso"); throw e; }
     return NextResponse.json({ ok: true });
@@ -98,6 +108,17 @@ export async function POST(req) {
     else if (b.sonidoNuevo) { const s = await nuevoSonido(b.sonidoNuevo); if (s.error) return bad(s.error); await c.so.updateOne({ _id: s.id }, { $inc: { usos: 1 } }); sonido = { id: String(s.id), titulo: s.titulo, artista: s.artista, url: s.url }; }
     await c.po.insertOne({ uid: me, handle: yo.handle, tipo: r.media, url: r.href, desc, tags: etiquetas(desc), sonido, likes: 0, comentarios: 0, compartidos: 0, at }); return NextResponse.json({ ok: true });
   }
+  if (b.accion === "eliminarCuenta") { // el dueño borra su cuenta; Fundación/Developer pueden borrar la de otro (b.handle)
+    let t = yo; if (b.handle && String(b.handle).toLowerCase().replace(/^@/, "") !== yo.handle) { if (!esFund(u)) return bad("No puedes eliminar la cuenta de otra persona", 403); t = await c.per.findOne({ handle: String(b.handle).toLowerCase().replace(/^@/, "") }); if (!t) return bad("Ese perfil no existe", 404); }
+    const uid = t._id, posts = await c.po.find({ uid }, { projection: { _id: 1 } }).toArray(), ids = posts.map((x) => String(x._id));
+    if (ids.length) { await c.li.deleteMany({ post: { $in: ids } }); await c.co.deleteMany({ post: { $in: ids } }); await c.po.deleteMany({ uid }); }
+    for (const l of await c.li.find({ uid }).limit(5000).toArray()) { const _id = oid(l.post); if (_id) { const r = await c.po.findOneAndUpdate({ _id }, { $inc: { likes: -1 } }); if (r) await c.per.updateOne({ _id: r.uid }, { $inc: { likes: -1 } }); } }
+    await c.li.deleteMany({ uid });
+    for (const f of await c.fo.find({ $or: [{ a: uid }, { b: uid }] }).toArray()) { if (f.a === uid) await c.per.updateOne({ _id: f.b }, { $inc: { seguidores: -1 } }); else await c.per.updateOne({ _id: f.a }, { $inc: { siguiendo: -1 } }); }
+    await c.fo.deleteMany({ $or: [{ a: uid }, { b: uid }] }); await c.per.deleteOne({ _id: uid });
+    if (uid !== me) await aviso(c.d, uid, "Cuenta de TikVerp eliminada", "Un moderador (Fundación/Developer) eliminó tu cuenta de TikVerp. Puedes crear otra.");
+    return NextResponse.json({ ok: true, propia: uid === me });
+  }
   const id = oid(b.id), post = id && (await c.po.findOne({ _id: id })); if (b.accion !== "seguir" && !post) return bad("Esa publicación ya no existe", 404);
   if (b.accion === "like") {
     const k = `${id}:${me}`; let on;
@@ -119,8 +140,9 @@ export async function POST(req) {
     await c.co.deleteOne({ _id: cid }); await c.po.updateOne({ _id: id }, { $inc: { comentarios: -1 } }); return NextResponse.json({ ok: true });
   }
   if (b.accion === "borrar") {
-    if (post.uid !== me) return bad("Solo el dueño del video puede borrarlo", 403);
+    if (post.uid !== me && !esFund(u)) return bad("Solo el dueño del video puede borrarlo", 403);
     const nl = await c.li.countDocuments({ post: String(id) }); await c.po.deleteOne({ _id: id }); await c.li.deleteMany({ post: String(id) }); await c.co.deleteMany({ post: String(id) }); await c.per.updateOne({ _id: post.uid }, { $inc: { likes: -nl } });
+    if (post.uid !== me) await aviso(c.d, post.uid, "Publicación eliminada en TikVerp", "Un moderador (Fundación/Developer) eliminó una de tus publicaciones.");
     return NextResponse.json({ ok: true });
   }
   if (b.accion === "compartir") { // enviar la publicación a un contacto por VE WhatsApp, o solo contar el enlace copiado

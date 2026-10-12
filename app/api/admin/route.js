@@ -17,6 +17,7 @@ import { nuevaPlaca, registrarPlaca } from "@/lib/placa";
 import { nombreDe } from "@/lib/rol";
 import { NEGOCIO_DE } from "@/lib/negocios";
 import { licTipo, numeroLicencia } from "@/lib/licencia";
+import { COLORES_CASA } from "@/lib/catalogo";
 const err = (m, s = 400) => NextResponse.json({ error: m }, { status: s });
 const CATS = ["Concesionario", "Propiedades", "Licencias", "Objetos", "Armas", "Herramientas", "Telefonía", "Tecnología"];
 const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), str = (s, n = 80) => String(s || "").trim().slice(0, n), up = (s, n = 40) => str(s, n).replace(/\s+/g, " ").toUpperCase();
@@ -92,14 +93,19 @@ export async function POST(req) {
     }
     case "invAgregar": {
       const id = oid(b.itemId), it = id && (await d.collection("items").findOne({ _id: id })); if (!it) return err("Artículo no existe", 404);
+      const casa = it.category === "Propiedades"; // una casa regalada deja de estar en venta (se gasta su única unidad) y empieza a pagar el impuesto semanal
+      if (casa && it.stock > 0 && !(await d.collection("items").updateOne({ _id: id, stock: { $gt: 0 } }, { $inc: { stock: -1 } })).modifiedCount) return err("Esa casa ya no está disponible", 409);
+      if (casa && it.stock === 0) return err("Esa casa ya tiene dueño", 409);
       const pl = it.category === "Concesionario" ? await nuevaPlaca(d, { modelo: it.name, dueno: t.id, duenoN: nombreDe(t) }) : null;
-      await users.updateOne({ id: t.id }, { $push: { inventory: { name: it.name, category: it.category, price: it.price, at, admin: true, sku: it.sku || null, tipo: it.tipo || null, ubicacion: it.ubicacion || null, img: it.img || null, placa: pl, vence: it.dias ? new Date(Date.now() + it.dias * 864e5) : null, licNum: licTipo(it) ? numeroLicencia(licTipo(it)) : null } } });
+      await users.updateOne({ id: t.id }, { $push: { inventory: { ...(casa ? { impProx: new Date(+at + 7 * 864e5), color: COLORES_CASA[0] } : {}), name: it.name, category: it.category, price: it.price, at, admin: true, sku: it.sku || null, tipo: it.tipo || null, ubicacion: it.ubicacion || null, img: it.img || null, placa: pl, vence: it.dias ? new Date(Date.now() + it.dias * 864e5) : null, licNum: licTipo(it) ? numeroLicencia(licTipo(it)) : null } } });
       await d.collection("notifs").insertOne({ uid: t.id, title: "Artículo recibido", body: `Un administrador agregó ${it.name} a tu inventario.`, at, read: false });
       await log("invAgregar", quien, { item: it.name }); break;
     }
     case "invQuitar": {
       const n = new Date(b.at); if (isNaN(n)) return err("Artículo inválido");
+      const quitada = (t.inventory || []).find((i) => i.name === str(b.name, 120) && +new Date(i.at) === +n);
       const r = await users.updateOne({ id: t.id }, { $pull: { inventory: { name: str(b.name, 120), at: n } } }); if (!r.modifiedCount) return err("No se encontró ese artículo", 404);
+      if (quitada?.category === "Propiedades" && quitada.ubicacion) await d.collection("items").updateOne({ category: "Propiedades", name: quitada.name, ubicacion: quitada.ubicacion, stock: 0 }, { $set: { stock: 1 } }); // la casa quitada vuelve a estar en venta
       await log("invQuitar", quien, { item: str(b.name, 120) }); break;
     }
     case "ck": {

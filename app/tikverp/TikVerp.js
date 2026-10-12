@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Heart, MessageCircle, Share2, Music, Plus, Home, Search, User, X, Send, Trash2, Volume2, VolumeX, Play, Link2, BadgeCheck, Disc3 } from "lucide-react";
+import { Heart, MessageCircle, Share2, Music, Plus, Home, Search, User, X, Send, Trash2, Volume2, VolumeX, Play, Link2, BadgeCheck, Disc3, Crown } from "lucide-react";
 import Av from "../whatsapp/Av";
 const api = async (q) => { const r = await fetch("/api/tikverp?" + q, { cache: "no-store" }); return r.ok ? r.json() : null; };
 const post = async (b) => { const r = await fetch("/api/tikverp", { method: "POST", body: JSON.stringify(b) }), j = await r.json().catch(() => ({})); if (!r.ok) { alert(j.error || "Error"); return null; } return j; };
@@ -9,6 +9,8 @@ const fd = (e) => { e.preventDefault(); return Object.fromEntries(new FormData(e
 // Audio desde el celular: se manda directo al sitio (sin pasar por Discord). Máx. 2.5 MB.
 const leer = (f) => new Promise((ok, no) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = no; r.readAsDataURL(f); });
 const sonidoDe = async (f) => { const a = f.sfile instanceof File && f.sfile.size ? f.sfile : null; if (!a) return { titulo: f.titulo, artista: f.artista, url: f.url }; if (a.size > 2.5 * 1024 * 1024) { alert("El audio pesa más de 2.5 MB. Usa uno más corto (hasta ~2 minutos)."); return null; } return { titulo: f.titulo, artista: f.artista, dataUrl: await leer(a) }; };
+// Insignia: azul = verificado (17+ seguidores); dorada con corona = Fundación y Developer (moderan TikVerp)
+const Insig = ({ t, size = 16 }) => !t ? null : t === "Verificado" ? <span title="Cuenta verificada"><BadgeCheck size={size} color="#4da3ff" /></span> : <span title={t + " · moderador de TikVerp"}><Crown size={size} color="#ffc83d" fill="#ffc83d33" /></span>;
 const Logo = ({ h = 26 }) => <img src="/tikverp-logo.png" alt="TikVerp" style={{ height: h }} />;
 
 // ---- Crear cuenta ----
@@ -53,10 +55,10 @@ function Item({ p, mudo, setMudo, acc }) {
       <button onClick={() => setMudo(!mudo)} aria-label="Sonido">{mudo ? <VolumeX size={28} /> : <Volume2 size={28} />}</button>
       {p.sonido && <div className="tv-disc" />}</div>
     <div className="tv-info">
-      <div style={{ fontWeight: 800, fontSize: 16, display: "flex", gap: 4, alignItems: "center", cursor: "pointer" }} onClick={() => acc.perfil(p.handle)}>@{p.handle}{p.badge && <span title={p.badge}><BadgeCheck size={16} color="#4da3ff" /></span>}</div>
+      <div style={{ fontWeight: 800, fontSize: 16, display: "flex", gap: 4, alignItems: "center", cursor: "pointer" }} onClick={() => acc.perfil(p.handle)}>@{p.handle}<Insig t={p.badge} /></div>
       <div style={{ margin: "4px 0", wordBreak: "break-word" }}>{p.desc.split(/(#[\p{L}\p{N}_]+)/u).map((x, k) => x.startsWith("#") ? <button key={k} className="tv-tag" onClick={() => acc.tag(x)}>{x}</button> : x)}</div>
       <div className="tv-mq" style={{ fontSize: 13, display: "flex", gap: 6, alignItems: "center" }}><Music size={14} style={{ flex: "none" }} /><div className="tv-mq" style={{ flex: 1 }}><span>{p.sonido ? `${p.sonido.titulo} · ${p.sonido.artista}` : `Sonido original · ${p.handle}`}</span></div></div></div>
-    {p.mio ? <button onClick={() => acc.borrar(p)} aria-label="Borrar" style={{ position: "absolute", top: 46, right: 10, zIndex: 3, background: "#0008", border: 0, color: "#fff", borderRadius: 99, padding: 8, cursor: "pointer" }}><Trash2 size={16} /></button> : null}
+    {p.mio || acc.mod ? <button onClick={() => acc.borrar(p)} aria-label="Borrar" style={{ position: "absolute", top: 46, right: 10, zIndex: 3, background: "#0008", border: 0, color: "#fff", borderRadius: 99, padding: 8, cursor: "pointer" }}><Trash2 size={16} /></button> : null}
   </div>);
 }
 
@@ -110,16 +112,18 @@ function Buscar({ acc }) {
 const Mini = ({ p, abrir }) => <div onClick={() => abrir(p)}>{p.tipo === "video" ? <video src={p.url + "#t=0.1"} preload="metadata" muted playsInline /> : <img src={p.url} alt="" referrerPolicy="no-referrer" />}<span style={{ position: "absolute", left: 4, bottom: 3, fontSize: 11, textShadow: "0 1px 3px #000", display: "flex", gap: 2, alignItems: "center" }}><Heart size={11} />{n(p.likes)}</span></div>;
 
 // ---- Perfil ----
-function Perfil({ h, acc, yoHandle, recargar }) {
-  const [d, setD] = useState(null), [ed, setEd] = useState(false), cargar = useCallback(async () => setD(await api("m=perfil&h=" + encodeURIComponent(h))), [h]);
+function Perfil({ h, acc, yoHandle, yoEn, recargar }) {
+  const [d, setD] = useState(null), [ed, setEd] = useState(false), [nf, setNf] = useState(false), cargar = useCallback(async () => { const j = await api("m=perfil&h=" + encodeURIComponent(h)); setD(j || false); }, [h]);
   useEffect(() => { setD(null); cargar(); }, [h, acc.tick]);
+  if (d === false) return <div className="tv-pg" style={{ display: "grid", justifyItems: "center", gap: 6, textAlign: "center", paddingTop: 40 }}><Av src={null} nombre="" size={84} /><b style={{ fontSize: 18 }}>Cuenta no encontrada</b><div style={{ color: "#9fb0d0", fontSize: 14 }}>Esta cuenta no existe o fue eliminada.</div></div>;
   if (!d) return <div className="tv-pg"><p style={{ color: "#9fb0d0" }}>Cargando...</p></div>;
   const x = d.perfil;
   return (<div className="tv-pg"><div style={{ display: "grid", justifyItems: "center", gap: 4, textAlign: "center" }}><Av src={x.foto} nombre={x.nombre} size={84} />
-    <b style={{ fontSize: 18, display: "flex", gap: 4, alignItems: "center" }}>@{x.handle}{x.badge && <span title={x.badge}><BadgeCheck size={16} color="#4da3ff" /></span>}</b><div>{x.nombre}</div>{x.bio && <div style={{ color: "#9fb0d0", fontSize: 14 }}>{x.bio}</div>}
+    <b style={{ fontSize: 18, display: "flex", gap: 4, alignItems: "center" }}>@{x.handle}<Insig t={x.badge} /></b><div>{x.nombre}</div>{x.bio && <div style={{ color: "#9fb0d0", fontSize: 14 }}>{x.bio}</div>}
     <div style={{ display: "flex", gap: 22, margin: "8px 0" }}>{[["Siguiendo", x.siguiendo], ["Seguidores", x.seguidores], ["Me gusta", x.likes]].map(([t, v]) => <div key={t}><b style={{ fontSize: 17 }}>{n(v)}</b><div style={{ color: "#9fb0d0", fontSize: 12 }}>{t}</div></div>)}</div>
-    {x.yo ? <button className="btn g" onClick={() => setEd(!ed)}>Editar perfil</button> : <button className={"btn " + (x.sigo ? "g" : "")} onClick={async () => { await acc.seguir(x.handle); cargar(); }}>{x.sigo ? "Siguiendo" : "Seguir"}</button>}</div>
-    {ed && <form onSubmit={async (e) => { if (await post({ accion: "editar", ...fd(e) })) { setEd(false); cargar(); recargar(); } }} style={{ marginTop: 10 }}><label>Nombre</label><input name="nombre" defaultValue={x.nombre} required maxLength={30} /><label>Bio</label><textarea name="bio" rows={2} maxLength={120} defaultValue={x.bio} /><label>Foto (link de Discord; vacío = avatar de la cédula)</label><input name="foto" placeholder="https://cdn.discordapp.com/....png" /><button className="btn" style={{ width: "100%" }}>Guardar</button></form>}
+    {x.yo ? <button className="btn g" onClick={() => setEd(!ed)}>Editar perfil</button> : <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center" }}><button className={"btn " + (x.sigo ? "g" : "")} onClick={async () => { await acc.seguir(x.handle); cargar(); }}>{x.sigo ? "Siguiendo" : "Seguir"}</button>{d.perfil.mod && <button className="btn g" style={{ color: "#ff6b7a" }} onClick={async () => { if (confirm(`¿Eliminar la cuenta @${x.handle} y todas sus publicaciones? (moderación)`) && (await post({ accion: "eliminarCuenta", handle: x.handle }))) { acc.upd2(); setD(false); } }}><Trash2 size={14} />Eliminar cuenta</button>}</div>}</div>
+    {ed && <form onSubmit={async (e) => { const j = await post({ accion: "editar", ...fd(e) }); if (j) { setEd(false); if (j.handle) acc.perfil(j.handle); else cargar(); recargar(); } }} style={{ marginTop: 10 }}><label>Usuario (se puede cambiar cada 7 días)</label><input name="handle" defaultValue={x.handle} minLength={3} maxLength={20} autoComplete="off" />{yoEn && new Date(yoEn) > new Date() && <div style={{ color: "#9fb0d0", fontSize: 12, margin: "-6px 0 8px" }}>Podrás cambiarlo de nuevo el {new Date(yoEn).toLocaleDateString("es-VE")}.</div>}<label>Nombre</label><input name="nombre" defaultValue={x.nombre} required maxLength={30} /><label>Bio</label><textarea name="bio" rows={2} maxLength={120} defaultValue={x.bio} /><label>Foto (link de Discord; vacío = avatar de la cédula)</label><input name="foto" placeholder="https://cdn.discordapp.com/....png" /><button className="btn" style={{ width: "100%" }}>Guardar</button>
+      <button type="button" className="btn g" style={{ width: "100%", marginTop: 8, color: "#ff6b7a" }} onClick={async () => { if (!confirm("¿Eliminar tu cuenta de TikVerp? Se borran tus publicaciones, seguidores y me gusta. No se puede deshacer.")) return; if (!confirm("Última confirmación: ¿seguro que quieres eliminar tu cuenta?")) return; if (await post({ accion: "eliminarCuenta" })) { acc.upd2(); recargar(); } }}><Trash2 size={14} />Eliminar mi cuenta</button></form>}
     <div className="tv-grid" style={{ marginTop: 12 }}>{d.posts.map((p) => <Mini key={p.id} p={p} abrir={acc.abrir} />)}</div>{!d.posts.length && <p style={{ color: "#9fb0d0", textAlign: "center" }}>Sin publicaciones.</p>}</div>);
 }
 
@@ -128,7 +132,7 @@ function Comentarios({ p, cerrar, acc }) {
   const [l, setL] = useState([]), [t, setT] = useState(""), cargar = async () => setL((await api("m=com&id=" + p.id))?.l || []);
   useEffect(() => { cargar(); }, []);
   return (<><div className="tv-bk" onClick={cerrar} /><div className="tv-sheet"><div style={{ display: "flex", justifyContent: "space-between" }}><b>{n(l.length)} comentarios</b><button onClick={cerrar} style={{ background: "none", border: 0, color: "#fff", cursor: "pointer" }}><X size={20} /></button></div>
-    <div style={{ overflowY: "auto", flex: 1, minHeight: 120 }}>{l.map((c) => <div key={c.id} style={{ display: "flex", gap: 8, padding: "6px 0" }}><Av src={c.foto} nombre={c.handle} size={30} /><div style={{ flex: 1 }}><b style={{ fontSize: 13 }}>@{c.handle}</b><div style={{ wordBreak: "break-word" }}>{c.txt}</div></div>{(c.mio || p.mio || acc.staff) && <button onClick={async () => { await post({ accion: "borrarCom", id: p.id, cid: c.id }); cargar(); acc.upd(p.id, (x) => ({ ...x, comentarios: Math.max(0, x.comentarios - 1) })); }} style={{ background: "none", border: 0, color: "#9fb0d0", cursor: "pointer" }}><Trash2 size={14} /></button>}</div>)}{!l.length && <p style={{ color: "#9fb0d0" }}>Sé el primero en comentar.</p>}</div>
+    <div style={{ overflowY: "auto", flex: 1, minHeight: 120 }}>{l.map((c) => <div key={c.id} style={{ display: "flex", gap: 8, padding: "6px 0" }}><Av src={c.foto} nombre={c.borrada ? "" : c.handle} size={30} /><div style={{ flex: 1 }}><b style={{ fontSize: 13, ...(c.borrada ? { color: "#9fb0d0" } : {}) }}>{c.borrada ? c.handle : "@" + c.handle}</b><div style={{ wordBreak: "break-word" }}>{c.txt}</div></div>{(c.mio || p.mio || acc.staff || acc.mod) && <button onClick={async () => { await post({ accion: "borrarCom", id: p.id, cid: c.id }); cargar(); acc.upd(p.id, (x) => ({ ...x, comentarios: Math.max(0, x.comentarios - 1) })); }} style={{ background: "none", border: 0, color: "#9fb0d0", cursor: "pointer" }}><Trash2 size={14} /></button>}</div>)}{!l.length && <p style={{ color: "#9fb0d0" }}>Sé el primero en comentar.</p>}</div>
     <form className="row2" onSubmit={async (e) => { e.preventDefault(); if (!t.trim()) return; const x = t; setT(""); if (await post({ accion: "comentar", id: p.id, txt: x })) { cargar(); acc.upd(p.id, (y) => ({ ...y, comentarios: y.comentarios + 1 })); } }}><input value={t} onChange={(e) => setT(e.target.value)} maxLength={150} placeholder="Añade un comentario..." style={{ margin: 0 }} /><button className="btn"><Send size={16} /></button></form></div></>);
 }
 function Compartir({ p, cerrar, me, acc }) {
@@ -152,7 +156,7 @@ export default function TikVerp({ v }) {
   }, [t, posts, v]);
   useEffect(() => { if (me?.perfil) cargar(true); }, [t, me?.perfil?.uid]);
   const upd = (id, f) => { setPosts((l) => l.map((x) => (x.id === id ? f(x) : x))); setVis((x) => (x && x.id === id ? f(x) : x)); setSh((x) => (x && x.id === id ? f(x) : x)); };
-  const acc = { staff: me?.staff, tick, upd, q, perfil: (hd) => { setVis(null); setH(hd); setVista("perfil"); },
+  const acc = { staff: me?.staff, mod: me?.mod, upd2: () => { setPosts([]); setTick((k) => k + 1); }, tick, upd, q, perfil: (hd) => { setVis(null); setH(hd); setVista("perfil"); },
     like: async (p) => { upd(p.id, (x) => ({ ...x, liked: !x.liked, likes: x.likes + (x.liked ? -1 : 1) })); if (!(await post({ accion: "like", id: p.id }))) upd(p.id, (x) => ({ ...x, liked: p.liked, likes: p.likes })); },
     seguir: async (hd) => { const j = await post({ accion: "seguir", handle: hd }); if (j) { setPosts((l) => l.map((x) => (x.handle === hd ? { ...x, sigue: j.sigue } : x))); setTick((k) => k + 1); } },
     com: (p) => setCom(p), share: (p) => setSh(p), tag: (x) => { setQ(x); setVista("buscar"); setVis(null); }, abrir: (p) => setVis(p),
@@ -166,7 +170,7 @@ export default function TikVerp({ v }) {
     {vista === "buscar" && <Buscar acc={acc} />}
     {vista === "subir" && <Subir pre={pre} onOk={() => { setPre(""); setVista("feed"); cargar(true); setTick((k) => k + 1); }} />}
     {vista === "sonidos" && <Sonidos usar={(id) => { setPre(id); setVista("subir"); }} />}
-    {vista === "perfil" && <Perfil h={h || me.perfil.handle} acc={acc} recargar={cargarMe} />}
+    {vista === "perfil" && <Perfil h={h || me.perfil.handle} acc={acc} yoEn={me.handleEn} recargar={cargarMe} />}
     {vis && <div style={{ position: "absolute", inset: 0, zIndex: 8 }}><Item p={vis} mudo={mudo} setMudo={setMudo} acc={acc} /><button onClick={() => setVis(null)} aria-label="Cerrar" style={{ position: "absolute", top: 10, left: 10, zIndex: 9, background: "#000a", border: 0, color: "#fff", borderRadius: 99, padding: 8, cursor: "pointer" }}><X size={18} /></button></div>}
     {com && <Comentarios p={posts.find((x) => x.id === com.id) || vis || com} cerrar={() => setCom(null)} acc={acc} />}
     {sh && <Compartir p={sh} me={me} cerrar={() => setSh(null)} acc={acc} />}</div>
