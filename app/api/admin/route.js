@@ -3,7 +3,8 @@ import { ObjectId } from "mongodb";
 import { db } from "@/lib/db";
 import { adminUser, reviewUser } from "@/lib/admin";
 import { aplicarCK } from "@/lib/ck";
-import { canAdmin, canStaff } from "@/lib/roles";
+import { canAdmin, canStaff, FUND_ONLY } from "@/lib/roles";
+import { pasaTope, traspaso } from "@/lib/reserva";
 import { erlcComando } from "@/lib/erlc";
 import { configAuto, REGLAS } from "@/lib/erlcauto";
 import { enviarApertura, aperturaListo } from "@/lib/apertura";
@@ -39,6 +40,7 @@ export async function POST(req) {
   const a = await reviewUser(); if (!a) return err("Sin permiso", 403);
   const b = await req.json(), d = await db(), users = d.collection("users"), at = new Date();
   const razon = str(b.razon, 300);
+  if (["ecoSet", "ecoMover"].includes(b.a) && !FUND_ONLY.includes(a.rank)) return err("Solo Developer y Fundación", 403);
   if (!canAdmin(a.rank) && !["roboOk", "roboNo", "apelOk", "apelNo", "trabajoOk", "trabajoNo"].includes(b.a)) return err("Tu rango solo puede revisar solicitudes", 403);
   // Toda acción administrativa (salvo marcar un reporte como resuelto) exige razón y queda en la colección "audit".
   if (!["done", "roboOk", "trabajoOk", "staffSet", "staffDel", "agenteSet", "agenteDel", "erlcTest", "erlcCmd", "erlcAuto", "apertura"].includes(b.a) && razon.length < 3) return err("La razón es obligatoria");
@@ -85,6 +87,7 @@ export async function POST(req) {
     case "dinero": {
       const m = Math.floor(Number(b.monto)), sg = b.tipo === "quitar" ? -1 : 1, dest = b.destino || "efectivo"; if (!(m > 0) || m > 1e9) return err("Monto inválido");
       if (dest !== "efectivo" && !t.cuentas?.[dest]) return err("El usuario no tiene esa cuenta");
+      if (sg > 0 && (await pasaTope(d, m))) return err("Eso superaría el tope de dinero en circulación (Economía). Sube el tope o mueve dinero de la Tesorería/Reserva");
       const k = dest === "efectivo" ? "balance" : `cuentas.${dest}.saldo`, f = { id: t.id }; if (sg < 0) f[k] = { $gte: m };
       if (!(await users.updateOne(f, { $inc: { [k]: sg * m } })).modifiedCount) return err("Saldo insuficiente para quitar");
       await d.collection("tx").insertOne({ user: t.id, type: "admin", item: `Ajuste administrativo (${dest})`, amount: sg * m, at });
@@ -157,6 +160,14 @@ export async function POST(req) {
     case "delItem": {
       const id = oid(b.id), it = id && (await d.collection("items").findOneAndDelete({ _id: id })); if (!it) return err("Artículo no existe", 404);
       await log("delItem", it.name, { price: it.price }); break;
+    }
+    case "ecoSet": { // inflación, tope de circulación, impuesto a ganancias y estado (beta/abierto) del casino y el trading
+      const n = (v, mn, mx) => Math.min(mx, Math.max(mn, Number(v) || 0)), set = { inflacion: n(b.inflacion, 0, 1000), tope: Math.floor(n(b.tope, 0, 1e12)), impGan: n(b.impGan, 0, 100), casino: b.casino === "abierto" ? "abierto" : "beta", trading: b.trading === "abierto" ? "abierto" : "beta" };
+      await d.collection("config").updateOne({ _id: "economia" }, { $set: set }, { upsert: true }); await log("ecoSet", "Economía", set); break;
+    }
+    case "ecoMover": {
+      const m = Math.floor(Number(b.monto)); if (!(m > 0) || !["tes2res", "res2tes"].includes(b.dir)) return err("Monto inválido");
+      const e = await traspaso(d, b.dir, m, a.id); if (e) return err(e); await log("ecoMover", b.dir, { monto: m }); break;
     }
     case "done": {
       const id = oid(b.id); if (!id) return err("ID inválido");

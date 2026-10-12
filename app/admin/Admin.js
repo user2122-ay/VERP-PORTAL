@@ -4,6 +4,7 @@ import { Search, Plus, Trash2, Skull, Check } from "lucide-react";
 import { canAdmin, RANK_LABEL } from "@/lib/roles";
 import { RANGOS_POR_DEPTO, DEPTOS, nombreDepto } from "@/lib/mdt";
 import Insignia from "@/components/Insignia";
+import Economia from "./Economia";
 const CATS = ["Concesionario", "Propiedades", "Licencias", "Objetos", "Armas", "Herramientas", "Telefonía", "Tecnología"], INV = ["Banco", "Telefonía", "Tecnología", "Propiedades", "Concesionario", "Herramientas", "Objetos", "Armas", "Licencias"], CIVIL = ["SOLTERO", "CASADO", "DIVORCIADO", "VIUDO"];
 const BK = { bvc: "BVC", mer: "Mercantil VERP", pro: "Provincial", ven: "VERNESCO", vca: "VERCARIBE", com: "Comerciante" }, $ = (n) => `$${Number(n || 0).toLocaleString("es")}`;
 const post = async (a, data) => { const r = await fetch("/api/admin", { method: "POST", body: JSON.stringify({ a, ...data }) }), j = await r.json().catch(() => ({})); if (!r.ok) { alert(j.error || "Error"); return false; } return true; };
@@ -141,14 +142,14 @@ function Agentes({ agentes }) {
     <AgenteForm />
     {agentes.map((x) => <div key={x.id} style={{ display: "flex", justifyContent: "space-between", gap: 8, padding: "8px 0", borderTop: "1px solid var(--bd)" }}><span><Insignia rango={x.rango} depto={x.depto} /><b>{x.rango}</b> {x.nombre || x.name}<div className="mut">@{x.name} · Placa {x.placa} · {nombreDepto(x.depto)}</div></span><button className="btn r" onClick={async () => { if (confirm(`¿Quitar a ${x.name} de la MDT?`) && (await post("agenteDel", { uid: x.id }))) location.reload(); }}><Trash2 size={14} /></button></div>)}{!agentes.length && <p className="mut">Aún no hay agentes asignados.</p>}</div>);
 }
-export default function Admin({ trabajos = [], rank, items, reps, audit, robos = [], apertura = null, staff = [], agentes = [], canStaff = false, apelaciones = [], auto = null }) {
-  const full = canAdmin(rank), TABS = full ? ["Usuarios", "Mercado", "Solicitudes", "Apelaciones", "Agentes MDT", "Auditoría", "Reportes 911", "ER:LC", "Apertura", ...(canStaff ? ["Staff"] : []), ...(rank === "DEVELOPER" ? ["Reiniciar"] : [])] : ["Solicitudes", "Apelaciones"];
+export default function Admin({ trabajos = [], rank, items, reps, audit, robos = [], apertura = null, staff = [], agentes = [], canStaff = false, apelaciones = [], auto = null, eco = null }) {
+  const full = canAdmin(rank), TABS = full ? ["Usuarios", "Mercado", "Solicitudes", "Apelaciones", "Agentes MDT", "Auditoría", "Reportes 911", "ER:LC", "Apertura", ...(eco ? ["Economía"] : []), ...(canStaff ? ["Staff"] : []), ...(rank === "DEVELOPER" ? ["Reiniciar"] : [])] : ["Solicitudes", "Apelaciones"];
   const [tab, setTab] = useState(full ? "Usuarios" : "Solicitudes");
   // La sesión de Administración dura 35 minutos desde que pones la placa. Ya no se cierra al recargar o al hacer una acción.
   return (<div style={{ maxWidth: 900, margin: "0 auto" }}><img src="/admin-logo.jpg" alt="VE:RP" style={{ width: "min(380px,100%)", borderRadius: 12, display: "block", margin: "0 auto 8px" }} /><h2 style={{ textAlign: "center" }}>Administración Y Asuntos Internos De Venezuela Community</h2><span className="tag">{RANK_LABEL[rank] || rank}</span>
     <div style={{ display: "flex", gap: 8, margin: "12px 0", flexWrap: "wrap" }}>{TABS.map((t) => <button key={t} className={"btn " + (tab === t ? "" : "g")} onClick={() => setTab(t)}>{t}</button>)}</div>
     {tab === "Solicitudes" && <Solicitudes robos={robos} trabajos={trabajos} />}{tab === "Apelaciones" && <Apelaciones apelaciones={apelaciones} />}{tab === "Staff" && <Staff staff={staff} />}{tab === "Agentes MDT" && <Agentes agentes={agentes} />}{tab === "Usuarios" && <Usuarios items={items} />}{tab === "Mercado" && <Mercado items={items} />}
-    {tab === "ER:LC" && <Erlc auto={auto} />}{tab === "Apertura" && <Apertura ultimo={apertura} />}{tab === "Reiniciar" && <Reiniciar />}
+    {tab === "ER:LC" && <Erlc auto={auto} />}{tab === "Apertura" && <Apertura ultimo={apertura} />}{tab === "Reiniciar" && <Reiniciar />}{tab === "Economía" && eco && <Economia eco={eco} />}
     {tab === "Auditoría" && <div className="card"><b>Registro de auditoría (últimas 100 acciones)</b>{audit.map((x) => <div key={x.id} style={{ padding: "8px 0", borderTop: "1px solid var(--bd)" }}><b>{x.act}</b> · {x.obj}<div className="mut">{x.by} ({String(x.rank).replace("_", " ")}) · {new Date(x.at).toLocaleString("es")}</div><div>Razón: {x.razon}</div></div>)}{!audit.length && <p className="mut">Sin registros.</p>}</div>}
     {tab === "Reportes 911" && <div className="card"><b>Reportes 911</b>{reps.map((r) => <div key={r.id} style={{ margin: "8px 0" }}>{r.t}<div className="mut">{r.d} · {r.e}</div><button className="btn g" onClick={async () => { if (await post("done", { id: r.id })) location.reload(); }}><Check size={16} className="neon" />Resuelto</button></div>)}{!reps.length && <p className="mut">Sin reportes pendientes.</p>}</div>}</div>);
 }
