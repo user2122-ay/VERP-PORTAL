@@ -4,16 +4,15 @@ const $ = (n) => `$${Number(n || 0).toLocaleString("es")}`, CARA = ["", "⚀", "
 const Dado = ({ v, rod }) => <span style={{ fontSize: 54, lineHeight: 1, display: "inline-block", animation: rod ? "dd-r .15s linear infinite" : "dd-p .5s ease-out", filter: "drop-shadow(0 2px 4px #0008)" }}>{CARA[v]}</span>;
 // Dados 1 contra 1: cada uno apuesta lo mismo, tiran 2 dados y el total más alto se lleva todo el pozo.
 export default function Dados({ metodos: m0, imp }) {
-  const [d, setD] = useState(null), [metodos, setMetodos] = useState(m0), [monto, setMonto] = useState(500), [pago, setPago] = useState("efectivo"), [dep, setDep] = useState("efectivo"), [para, setPara] = useState(""), [msg, setMsg] = useState(""), [busy, setBusy] = useState(false), [acp, setAcp] = useState(null), [anim, setAnim] = useState(null);
+  const [d, setD] = useState(null), [metodos, setMetodos] = useState(m0), [monto, setMonto] = useState(500), [pago, setPago] = useState("efectivo"), [dep, setDep] = useState("efectivo"), [para, setPara] = useState(""), [msg, setMsg] = useState(""), [busy, setBusy] = useState(false), [acp, setAcp] = useState(null), [anim, setAnim] = useState(null), [vistos] = useState(() => new Set());
   const cargar = useCallback(async () => { const r = await fetch("/api/dados", { cache: "no-store" }); if (r.ok) { const j = await r.json(); setD(j); setMetodos(j.metodos); } }, []);
   useEffect(() => { cargar(); const t = setInterval(cargar, 5000); return () => clearInterval(t); }, [cargar]);
   const post = async (b) => { setBusy(true); setMsg(""); const r = await fetch("/api/dados", { method: "POST", body: JSON.stringify(b) }), j = await r.json().catch(() => ({})); setBusy(false); if (!r.ok) { setMsg("⚠️ " + (j.error || "Error")); return null; } return j; };
   const crear = async () => { const j = await post({ accion: "crear", monto, pago, deposito: dep, para }); if (j) { setMsg("✅ " + j.msg); setPara(""); cargar(); } };
-  const aceptar = async (r) => {
-    const j = await post({ accion: "aceptar", id: r.id, pago: acp.pago, deposito: acp.dep }); if (!j) return; setAcp(null);
-    setAnim({ rod: true, mios: [1, 1], suyos: [1, 1] }); const iv = setInterval(() => setAnim((a) => a && { ...a, mios: [rnd(), rnd()], suyos: [rnd(), rnd()] }), 90);
-    setTimeout(() => { clearInterval(iv); setAnim({ rod: false, ...j }); setMetodos(j.metodos); cargar(); }, 1400);
-  };
+  // La misma animación la ven los DOS: quien acepta (al instante) y quien creó el reto (apenas se juega, aunque esté en otra pestaña).
+  const animar = (j) => { setAnim({ rod: true, mios: [1, 1], suyos: [1, 1], rival: j.rival }); const iv = setInterval(() => setAnim((a) => a && { ...a, mios: [rnd(), rnd()], suyos: [rnd(), rnd()] }), 90); setTimeout(() => { clearInterval(iv); setAnim({ rod: false, ...j }); cargar(); }, 1600); };
+  const aceptar = async (r) => { const j = await post({ accion: "aceptar", id: r.id, pago: acp.pago, deposito: acp.dep }); if (!j) return; setAcp(null); setMetodos(j.metodos); animar(j); };
+  useEffect(() => { const n = d?.historial?.find((h) => h.nuevo); if (n && !anim && !vistos.has(n.id)) { vistos.add(n.id); fetch("/api/dados", { method: "POST", body: JSON.stringify({ accion: "visto", id: n.id }) }); animar({ mios: n.mios, suyos: n.suyos, gane: n.gane, neto: n.neto, imp: n.imp, rival: n.rival, monto: n.monto }); } }, [d]);
   if (!d) return <div className="card"><p className="mut">Cargando...</p></div>;
   return (<div style={{ maxWidth: 460, margin: "0 auto" }}>
     <style>{`@keyframes dd-r{from{transform:rotate(0) translateY(-6px)}to{transform:rotate(180deg) translateY(6px)}}@keyframes dd-p{0%{transform:scale(1.5) rotate(-30deg)}100%{transform:none}}`}</style>

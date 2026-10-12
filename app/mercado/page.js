@@ -19,6 +19,7 @@ import Usados from "./Usados";
 import { iva, tasaITBMS } from "@/lib/tesoreria";
 import { SUBS, MENUS, estrellas, dura, tieneCasa, neveraDe, esNevera } from "@/lib/comida";
 import { NEGOCIOS } from "@/lib/negocios";
+import { autoMigrar } from "@/lib/imagen";
 export const dynamic = "force-dynamic";
 // Botones de arriba: cada categoría tiene su propio lugar. "Todo" muestra todo junto.
 const CHIPS = ["Todo", "Comida y bebida", "Tarjetas", "Licencias", "Concesionario", "Propiedades", "Armas", "Herramientas", "Telefonía", "Tecnología", "Segunda mano", "Negocios"];
@@ -30,7 +31,7 @@ export default async function P({ searchParams }) {
   const subs = cat === "Comida y bebida" && <div style={{ display: "flex", gap: 8, flexWrap: "wrap", paddingBottom: 10 }}>{[null, ...SUBS].map((x) => <Link key={x || "t"} href={x ? `/mercado?c=Comida%20y%20bebida&sub=${encodeURIComponent(x)}` : "/mercado?c=Comida%20y%20bebida"} className={"btn " + ((searchParams?.sub || null) === x || (!x && !SUBS.includes(searchParams?.sub)) ? "" : "g")} style={{ padding: "5px 12px", fontSize: 13 }}>{x || "Todo"}</Link>)}</div>;
   if (cat === "Segunda mano") return <Shell user={u}><h2>Mercado</h2>{chips}<Usados u={u} /></Shell>;
   if (cat === "Negocios") return <Shell user={u}><h2>Mercado</h2>{chips}<Negocios u={u} /></Shell>;
-  const d = await db(); await sembrar(d);
+  const d = await db(); await sembrar(d); await autoMigrar(d); // las fotos de Discord se detectan y se guardan solas en el sitio
   const sub = SUBS.includes(searchParams?.sub) ? searchParams.sub : null, items = cat === "Tarjetas" ? [] : await d.collection("items").find({ stock: { $ne: 0 }, ...(cat === "Todo" ? {} : { category: cat }), ...(cat === "Comida y bebida" && sub ? { sub } : {}) }).sort({ category: 1, _id: -1 }).toArray();
   const clausurados = new Set((await d.collection("negocios").find({ estado: "clausurado" }).toArray()).map((n) => n._id));
   // Candados: sin licencia de conducir no se compran autos; sin licencia de armas no se compran armas; las licencias ya compradas salen bloqueadas.

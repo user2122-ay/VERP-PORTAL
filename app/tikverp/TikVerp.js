@@ -12,8 +12,8 @@ const sonidoDe = async (f) => { const a = f.sfile instanceof File && f.sfile.siz
 // Insignia: azul = verificado (17+ seguidores); dorada con corona = Fundación y Developer (moderan VE TikTok)
 const PTS = Array.from({ length: 24 }, (_, i) => { const a = (Math.PI * 2 * i) / 24 - Math.PI / 2, r = i % 2 ? 41 : 50; return `${(50 + r * Math.cos(a)).toFixed(1)},${(50 + r * Math.sin(a)).toFixed(1)}`; }).join(" ");
 const Azul = ({ size = 16 }) => <svg viewBox="0 0 100 100" width={size} height={size} style={{ flex: "none" }}><polygon points={PTS} fill="#3b9cf5" stroke="#3b9cf5" strokeWidth="7" strokeLinejoin="round" /><path d="M29 52l14 14 28-31" fill="none" stroke="#fff" strokeWidth="11" strokeLinecap="round" strokeLinejoin="round" /></svg>;
-// Insignia: sello azul con palomita = verificado (17+ seguidores). Fundación y Developer tienen ese sello Y ADEMÁS la corona dorada (y moderan VE TikTok).
-const Insig = ({ t, size = 16 }) => !t ? null : t === "Verificado" ? <span title="Cuenta verificada" style={{ display: "inline-flex" }}><Azul size={size} /></span> : <span title={t + " · moderador de VE TikTok"} style={{ display: "inline-flex", gap: 3, alignItems: "center" }}><Crown size={size} color="#ffc83d" fill="#ffc83d33" /><Azul size={size} /></span>;
+// Insignia: el mismo sello azul con palomita para quien llega a 17 seguidores y para Fundación y Developer (que además moderan VE TikTok).
+const Insig = ({ t, size = 16 }) => !t ? null : <span title={t === "Verificado" ? "Cuenta verificada" : t + " · moderador de VE TikTok"} style={{ display: "inline-flex" }}><Azul size={size} /></span>;
 const Logo = ({ h = 26 }) => <img src="/tikverp-logo.png" alt="VE TikTok" style={{ height: h }} />;
 
 // ---- Crear cuenta ----

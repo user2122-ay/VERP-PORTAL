@@ -25,11 +25,12 @@ import { Cultivar, Cosechar } from "./Cultivo";
 import { esSemilla } from "@/lib/cultivo";
 import { esNevera, esComida, neveraDe } from "@/lib/comida";
 import { tasaITBMS } from "@/lib/tesoreria";
+import { autoMigrar } from "@/lib/imagen";
 export const dynamic = "force-dynamic";
 const G = { display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(300px,1fr))", gap: 14 };
 export default async function P({ searchParams }) {
   const u = await needUser(), cu = u.cuentas || {}, own = Object.keys(BANCOS).filter((k) => cu[k]), items = u.inventory || [], nombres = [...new Set(items.filter((i) => !i.img).map((i) => i.name))];
-  const dd = await db(); await ensureNegocios(dd);
+  const dd = await db(); await ensureNegocios(dd); await autoMigrar(dd, items.map((i) => i.img).filter(Boolean));
   const multas = (await dd.collection("multas").find({ sujeto: u.id }).sort({ at: -1 }).limit(50).toArray()).map((m) => ({ ...m, id: String(m._id), est: estadoMulta(m) })), debe = multas.filter((m) => m.est !== "pagada"), hayVencida = multas.some((m) => m.est === "vencida"), metodos = metodosDe(u);
   const misNeg = (await dd.collection("negocios").find({ owner: u.id }).toArray()).filter((n) => NEGOCIOS[n._id]), planes = await planesDe(dd), itemsNeg = {}, recientes = {};
   for (const n of misNeg) recientes[n._id] = (await dd.collection("tx").find({ user: u.id, type: "venta", neg: n._id }).sort({ at: -1 }).limit(6).toArray()).map((t) => ({ item: t.item, amount: t.amount, at: t.at }));
