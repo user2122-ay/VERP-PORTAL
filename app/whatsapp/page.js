@@ -16,7 +16,7 @@ export default async function P({ searchParams }) {
   const d = await db(), cas = await appVisible(d, u, "casino"), tra = await appVisible(d, u, "trading");
   return (<Shell user={u}><h2 style={{ textAlign: "center" }}>Teléfono</h2>
     <div style={{ display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap", marginTop: 20 }}>
-      <Link href="/tikverp" className="card" style={T}><img src="/tikverp-logo.png" alt="TikVerp" style={{ height: 96, filter: "drop-shadow(0 0 10px #2f8cffaa)" }} /><b style={{ fontSize: 20 }}>TikVerp</b></Link>
+      <Link href="/tikverp" className="card" style={T}><img src="/tikverp-logo.png" alt="VE TikTok" style={{ height: 96, filter: "drop-shadow(0 0 10px #2f8cffaa)" }} /><b style={{ fontSize: 20 }}>VE TikTok</b></Link>
       <Link href="/whatsapp?app=wa" className="card" style={T}><Logo /><b style={{ fontSize: 20 }}>{WA}</b></Link>
       {cas && <Link href="/casino" className="card" style={T}><span style={{ fontSize: 76, filter: "drop-shadow(0 0 10px #ffc83daa)" }}>🎰</span><b style={{ fontSize: 20 }}>Casino</b></Link>}
       {tra && <Link href="/trading" className="card" style={T}><span style={{ fontSize: 76, filter: "drop-shadow(0 0 10px #22c55eaa)" }}>📈</span><b style={{ fontSize: 20 }}>Trading</b></Link>}</div></Shell>);

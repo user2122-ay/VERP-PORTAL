@@ -162,7 +162,7 @@ export async function POST(req) {
       await log("delItem", it.name, { price: it.price }); break;
     }
     case "ecoSet": { // inflación, tope de circulación, impuesto a ganancias y estado (beta/abierto) del casino y el trading
-      const n = (v, mn, mx) => Math.min(mx, Math.max(mn, Number(v) || 0)), set = { inflacion: n(b.inflacion, 0, 1000), tope: Math.floor(n(b.tope, 0, 1e12)), impGan: n(b.impGan, 0, 100), casino: b.casino === "abierto" ? "abierto" : "beta", trading: b.trading === "abierto" ? "abierto" : "beta" };
+      const n = (v, mn, mx) => Math.min(mx, Math.max(mn, Number(v) || 0)), set = { inflacion: n(b.inflacion, 0, 1000), tope: Math.floor(n(b.tope, 0, 1e12)), impGan: n(b.impGan, 0, 100), casino: b.casino === "abierto" ? "abierto" : "beta", trading: b.trading === "abierto" ? "abierto" : "beta", tiktokChat: b.tiktokChat === "abierto" ? "abierto" : "beta" };
       await d.collection("config").updateOne({ _id: "economia" }, { $set: set }, { upsert: true }); await log("ecoSet", "Economía", set); break;
     }
     case "ecoMover": {
