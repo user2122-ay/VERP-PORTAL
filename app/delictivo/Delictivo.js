@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { aImagen } from "@/lib/imgcliente";
 import { Skull, Search, Car } from "lucide-react";
 const call = async (b) => { const r = await fetch("/api/delictivo", { method: "POST", body: JSON.stringify(b) }), j = await r.json().catch(() => ({})); if (!r.ok) { alert(j.error || "Error"); return false; } return true; };
 const EST = { pendiente: "var(--mut)", aceptado: "var(--ok)", aprobado: "var(--ok)", rechazado: "var(--bad)", cerrando: "var(--mut)" };
@@ -23,6 +24,6 @@ export default function Delictivo({ asaltos, robos }) {
           <div className="row2"><input name="efectivo" type="number" min="0" max={info.efectivo} placeholder={`Efectivo (máx. ${$(info.efectivo)})`} /><input name="tarjeta" type="number" min="0" placeholder="De su tarjeta ($)" /></div>
           <input name="evidencia" placeholder={veh ? "Foto del robo (link de Discord) — obligatoria" : "Foto del robo (opcional)"} required={veh} /><input name="msg" placeholder="Mensaje (opcional)" /><button className="btn r">Asaltar</button></>}</form>}
       <Hist l={asaltos} /></div>
-    <form className="card" onSubmit={async (e) => { const b = v(e); if (await call({ accion: "robo", ...b })) { alert("Solicitud enviada al staff."); location.reload(); } }}><b>Robar un auto (solicitud al staff)</b><p className="mut">El staff revisa la foto. Si lo aprueba, el auto aparece en tu inventario como ROBADO y la policía recibe el reporte (modelo, color y matrícula, sin ubicación).</p>
-      <input name="img" placeholder="Foto del robo (link de Discord)" required /><div className="row2"><input name="modelo" placeholder="Modelo" required /><input name="color" placeholder="Color" required /><input name="placa" placeholder="Matrícula" required maxLength={8} /></div><textarea name="specs" rows={2} placeholder="Especificaciones del auto" required /><button className="btn"><Car size={16} />Enviar solicitud</button><Hist l={robos} /></form></>);
+    <form className="card" onSubmit={async (e) => { const b = v(e); if (b.archivo?.size) b.img = await aImagen(b.archivo); delete b.archivo; if (await call({ accion: "robo", ...b })) { alert("Solicitud enviada al staff."); location.reload(); } }}><b>Robar un auto (solicitud al staff)</b><p className="mut">El staff revisa la foto. Si lo aprueba, el auto aparece en tu inventario como ROBADO y la policía recibe el reporte (modelo, color y matrícula, sin ubicación).</p>
+      <input name="img" placeholder="Foto del robo (link de Discord)" /><label className="mut">…o sube la foto desde tu dispositivo</label><input name="archivo" type="file" accept="image/*" /><div className="row2"><input name="modelo" placeholder="Modelo" required /><input name="color" placeholder="Color" required /><input name="placa" placeholder="Matrícula" required maxLength={8} /></div><textarea name="specs" rows={2} placeholder="Especificaciones del auto" required /><button className="btn"><Car size={16} />Enviar solicitud</button><Hist l={robos} /></form></>);
 }

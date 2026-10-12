@@ -5,6 +5,7 @@ import { canAdmin, RANK_LABEL } from "@/lib/roles";
 import { RANGOS_POR_DEPTO, DEPTOS, nombreDepto } from "@/lib/mdt";
 import Insignia from "@/components/Insignia";
 import Economia from "./Economia";
+import { aImagen } from "@/lib/imgcliente";
 const CATS = ["Concesionario", "Propiedades", "Licencias", "Objetos", "Armas", "Herramientas", "Telefonía", "Tecnología"], INV = ["Banco", "Telefonía", "Tecnología", "Propiedades", "Concesionario", "Herramientas", "Objetos", "Armas", "Licencias"], CIVIL = ["SOLTERO", "CASADO", "DIVORCIADO", "VIUDO"];
 const BK = { bvc: "BVC", mer: "Mercantil VERP", pro: "Provincial", ven: "VERNESCO", vca: "VERCARIBE", com: "Comerciante" }, $ = (n) => `$${Number(n || 0).toLocaleString("es")}`;
 const post = async (a, data) => { const r = await fetch("/api/admin", { method: "POST", body: JSON.stringify({ a, ...data }) }), j = await r.json().catch(() => ({})); if (!r.ok) { alert(j.error || "Error"); return false; } return true; };
@@ -41,7 +42,7 @@ function Usuarios({ items }) {
         <p className="mut">Borra cédula, efectivo, cuentas, inventario, línea, chats y estados. El usuario podrá registrar un personaje nuevo.</p><input name="confirm" placeholder='Escribe "CK" para confirmar' required /><Razon /><button className="btn r"><Skull size={16} />Aplicar CK</button></form></div>}</>);
 }
 function Mercado({ items }) {
-  const [cat, setCat] = useState(CATS[0]), [f, setF] = useState("Todos"), [q, setQ] = useState(""), [n, setN] = useState(40), TIPOS = ["0", "1", "2", "3", "4"], run = async (a, e) => { const v = vals(e), f = e.target; if (await post(a, v)) { alert("Listo"); f.reset(); location.reload(); } };
+  const [cat, setCat] = useState(CATS[0]), [f, setF] = useState("Todos"), [q, setQ] = useState(""), [n, setN] = useState(40), TIPOS = ["0", "1", "2", "3", "4"], run = async (a, e) => { const v = vals(e), f = e.target; if (v.archivo?.size) v.img = await aImagen(v.archivo); delete v.archivo; if (await post(a, v)) { alert("Listo"); f.reset(); location.reload(); } };
   const norm = (x) => String(x || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""), cats = ["Todos", ...[...new Set(items.map((i) => i.category))].sort()];
   const lista = items.filter((i) => (f === "Todos" || i.category === f) && norm(`${i.name} ${i.ubicacion || ""} ${i.brand || ""} ${i.category}`).includes(norm(q.trim())));
   return (<><div className="card"><b>Catálogo ({lista.length}{lista.length !== items.length ? ` de ${items.length}` : ""})</b>
@@ -52,15 +53,17 @@ function Mercado({ items }) {
       <button className="btn g" onClick={async () => { const r = ask(`Razón para eliminar "${i.name}":`); if (r && (await post("delItem", { id: i.id, razon: r }))) location.reload(); }}><Trash2 size={16} /></button></span></div>)}
     {lista.length > n && <button className="btn g" style={{ width: "100%", marginTop: 8 }} onClick={() => setN(n + 60)}>Mostrar más ({lista.length - n} restantes)</button>}
     {!lista.length && <p className="mut">No hay artículos con ese filtro.</p>}</div>
+    <div className="card" style={{ marginTop: 12 }}><b>Fotos de Discord</b><p className="mut">Los links de Discord vencen y luego la foto no carga. Al agregar un artículo con link o archivo, la foto ahora se guarda en el sitio y no vence. Este botón guarda así las fotos de artículos viejos que aún carguen (de 25 en 25); las que ya vencieron se quitan y debes volver a subirlas.</p>
+      <button className="btn g" onClick={async () => { const r = ask("Razón (ej: guardar fotos de Discord):"); if (!r) return; const x = await fetch("/api/admin", { method: "POST", body: JSON.stringify({ a: "imgMigrar", razon: r }) }), j = await x.json().catch(() => ({})); if (!x.ok) return alert(j.error || "Error"); alert(`Guardadas: ${j.guardadas}. Vencidas: ${j.vencidasN}${j.vencidas?.length ? "\n" + j.vencidas.join("\n") : ""}\nQuedan por revisar: ${j.quedan}${j.quedan ? " (vuelve a pulsar)" : ""}`); }}>Guardar fotos de Discord en el sitio</button></div>
     <details className="card" style={{ marginTop: 12 }}><summary style={{ cursor: "pointer" }}><b>Agregar casas o artículos nuevos</b></summary>
     <form className="card" onSubmit={(e) => run("addCasas", e)}><b>Lote de casas (un tipo, una región, muchos números)</b>
-    <select name="tipo">{TIPOS.map((t) => <option key={t} value={t}>Casa tipo {t}</option>)}</select><input name="img" placeholder="Link de la imagen (Discord)" required /><input name="region" placeholder="Región (ej: Caracas)" required />
+    <select name="tipo">{TIPOS.map((t) => <option key={t} value={t}>Casa tipo {t}</option>)}</select><input name="img" placeholder="Link de la imagen (Discord) — se guarda en el sitio" /><label className="mut">…o sube la foto desde tu dispositivo (no vence)</label><input name="archivo" type="file" accept="image/*" /><input name="region" placeholder="Región (ej: Caracas)" required />
     <textarea name="numeros" rows={3} placeholder="Números de casa: 401, 402, 405-420 ..." required /><input name="price" type="number" min="0" placeholder="Precio" required /><input name="impuesto" type="number" min="0" placeholder="Impuesto semanal" /><Razon /><button className="btn"><Plus size={18} />Crear casas</button></form>
     <form className="card" style={{ marginTop: 12 }} onSubmit={(e) => run("addItem", e)}><b>Nuevo artículo del mercado</b>
       <select name="category" value={cat} onChange={(e) => setCat(e.target.value)}>{CATS.map((x) => <option key={x}>{x}</option>)}</select><input name="name" placeholder="Nombre" required /><input name="price" type="number" min="0" placeholder="Precio" required /><textarea name="desc" placeholder="Descripción" rows={2} />
       {cat === "Propiedades" && <><input name="ubicacion" placeholder="Ubicación (ej: Caracas 405)" required /><input name="impuesto" type="number" min="0" placeholder="Impuesto semanal" /></>}
       {cat === "Concesionario" && <><input name="clase" placeholder="Clase (ej: Deportivo, SUV)" /><input name="brand" placeholder="Marca / modelo" /><input name="year" placeholder="Año" /><input name="impuesto" type="number" min="0" placeholder="Impuesto" /></>}
-      <input name="img" placeholder="URL de la foto (opcional)" /><input name="stock" type="number" min="1" placeholder="Stock (vacío = ilimitado)" /><Razon /><button className="btn"><Plus size={18} />Agregar</button></form></details></>);
+      <input name="img" placeholder="Link de la foto (opcional; se guarda en el sitio)" /><label className="mut">…o sube la foto desde tu dispositivo (no vence)</label><input name="archivo" type="file" accept="image/*" /><input name="stock" type="number" min="1" placeholder="Stock (vacío = ilimitado)" /><Razon /><button className="btn"><Plus size={18} />Agregar</button></form></details></>);
 }
 function Apelaciones({ apelaciones }) {
   const dec = async (id, ok) => { const r = prompt(ok ? "Razón de la aprobación:" : "Razón de la denegación (se la mostramos al usuario):"); if (!r || r.trim().length < 3) return r !== null && alert("La razón es obligatoria"); if (await post(ok ? "apelOk" : "apelNo", { id, razon: r.trim() })) location.reload(); };

@@ -10,7 +10,8 @@ import Admin from "./Admin";
 import { sembrar } from "@/lib/catalogo";
 import { configAuto } from "@/lib/erlcauto";
 import { FUND_ONLY } from "@/lib/roles";
-import { ecoCfg, masa, snapshot, serie, movDias } from "@/lib/reserva";
+import { ecoCfg, masa, snapshot, serie, movDias, saldoCasino } from "@/lib/reserva";
+import { apuestaMax, casinoAbierto } from "@/lib/casino";
 export const dynamic = "force-dynamic";
 export default async function P() {
   const u = await needUser(), rank = await staffRank(u); if (!canReview(rank)) redirect("/");
@@ -28,6 +29,6 @@ export default async function P() {
   const agentes = full ? (await us.find({ agente: { $exists: true } }).limit(200).toArray()).map((x) => ({ id: x.id, name: x.name, nombre: x.cedula ? `${x.cedula.nombres} ${x.cedula.apellidos}` : "", ...x.agente })) : [];
   const ap = await d.collection("config").findOne({ _id: "apertura" }), apertura = ap ? { tipo: ap.tipo, por: ap.por, at: new Date(ap.at).toISOString(), servidor: ap.servidor || "abierto" } : { servidor: "abierto" };
   const trabajos = (await d.collection("trabajos").find({ estado: "pendiente" }).sort({ at: 1 }).limit(50).toArray()).map((r) => ({ id: String(r._id), user: r.userName, roblox: r.roblox, trabajo: r.trabajoN, tarifa: r.tarifa, horas: r.horas, total: r.total, ev: r.ev, at: r.at.toISOString() }));
-  let eco = null; if (FUND_ONLY.includes(rank)) { await snapshot(d); eco = { cfg: await ecoCfg(d), masa: await masa(d), serie: await serie(d), dias: await movDias(d) }; }
+  let eco = null; if (FUND_ONLY.includes(rank)) { await snapshot(d); const sc = await saldoCasino(d); eco = { casinoAbierto: casinoAbierto(sc), casinoMax: apuestaMax(sc), cfg: await ecoCfg(d), masa: await masa(d), serie: await serie(d), dias: await movDias(d) }; }
   return <Shell user={{ ...u, rank }}><Admin eco={eco} trabajos={trabajos} auto={auto} apertura={apertura} rank={rank} items={full ? items : []} reps={full ? reps : []} audit={full ? audit : []} robos={robos} apelaciones={apelaciones} staff={staff} canStaff={canStaff(rank)} agentes={agentes} /></Shell>;
 }

@@ -7,6 +7,7 @@ import { nuevaPlaca, registrarPlaca } from "@/lib/placa";
 import { enviarPush } from "@/lib/push";
 import { estaRetenido } from "@/lib/decomiso";
 import { tieneVpn } from "@/lib/vpn";
+import { importarImagen } from "@/lib/imagen";
 const bad = (m, s = 400) => NextResponse.json({ error: m }, { status: s });
 const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), money = (n) => "$" + Number(n).toLocaleString("es");
 const oid = (s) => { try { return new ObjectId(String(s)); } catch { return null; } };
@@ -63,8 +64,8 @@ export async function POST(req) {
   }
   if (b.accion === "robo") { // solicitud al staff para robar un auto de la calle
     if (!tieneVpn(u)) return bad("Necesitas una VPN para entrar a la parte delictiva", 403);
-    const img = https(b.img), modelo = String(b.modelo || "").trim().slice(0, 60), color = String(b.color || "").trim().slice(0, 30), pl = String(b.placa || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8), specs = String(b.specs || "").trim().slice(0, 400);
-    if (!img) return bad("Sube la foto del robo (link https de Discord)"); if (!modelo || !color || pl.length < 5 || !specs) return bad("Completa modelo, color, matrícula y especificaciones");
+    const foto = await importarImagen(d, b.img); if (foto.error) return bad(foto.error); const img = foto.url, modelo = String(b.modelo || "").trim().slice(0, 60), color = String(b.color || "").trim().slice(0, 30), pl = String(b.placa || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8), specs = String(b.specs || "").trim().slice(0, 400);
+    if (!img) return bad("Pon el link de la foto del robo o súbela desde tu dispositivo"); if (!modelo || !color || pl.length < 5 || !specs) return bad("Completa modelo, color, matrícula y especificaciones");
     if ((await d.collection("robos").countDocuments({ user: u.id, estado: "pendiente" })) >= 3) return bad("Ya tienes 3 solicitudes pendientes");
     await d.collection("robos").insertOne({ user: u.id, userName: yo, img, modelo, color, placa: pl, specs, estado: "pendiente", at }); return NextResponse.json({ ok: true });
   }

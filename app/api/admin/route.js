@@ -4,7 +4,7 @@ import { db } from "@/lib/db";
 import { adminUser, reviewUser } from "@/lib/admin";
 import { aplicarCK } from "@/lib/ck";
 import { canAdmin, canStaff, FUND_ONLY } from "@/lib/roles";
-import { pasaTope, traspaso } from "@/lib/reserva";
+import { pasaTope, traspaso, DIRS } from "@/lib/reserva";
 import { erlcComando } from "@/lib/erlc";
 import { configAuto, REGLAS } from "@/lib/erlcauto";
 import { enviarApertura, aperturaListo } from "@/lib/apertura";
@@ -19,6 +19,7 @@ import { nombreDe } from "@/lib/rol";
 import { NEGOCIO_DE } from "@/lib/negocios";
 import { licTipo, numeroLicencia } from "@/lib/licencia";
 import { COLORES_CASA } from "@/lib/catalogo";
+import { importarImagen, esDiscord } from "@/lib/imagen";
 const err = (m, s = 400) => NextResponse.json({ error: m }, { status: s });
 const CATS = ["Concesionario", "Propiedades", "Licencias", "Objetos", "Armas", "Herramientas", "Telefonía", "Tecnología"];
 const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), str = (s, n = 80) => String(s || "").trim().slice(0, n), up = (s, n = 40) => str(s, n).replace(/\s+/g, " ").toUpperCase();
@@ -121,7 +122,8 @@ export async function POST(req) {
       const price = Number(b.price), cat = str(b.category, 30), imp = Number(b.impuesto || 0);
       if (!str(b.name) || !Number.isFinite(price) || price < 0) return err("Nombre o precio inválido"); if (!CATS.includes(cat)) return err("Categoría inválida");
       if (cat === "Propiedades" && !str(b.ubicacion)) return err("Las propiedades necesitan ubicación (ej: Caracas 405)");
-      const doc = { name: str(b.name), category: cat, negocio: NEGOCIO_DE[cat] || null, price, desc: str(b.desc, 400), brand: str(b.brand), year: str(b.year, 10), clase: str(b.clase, 30), ubicacion: str(b.ubicacion, 80), impuesto: Number.isFinite(imp) && imp > 0 ? imp : 0, img: str(b.img, 500), stock: b.stock ? Math.floor(Number(b.stock)) || -1 : -1 };
+      const foto = await importarImagen(d, b.img); if (foto.error) return err(foto.error);
+      const doc = { name: str(b.name), category: cat, negocio: NEGOCIO_DE[cat] || null, price, desc: str(b.desc, 400), brand: str(b.brand), year: str(b.year, 10), clase: str(b.clase, 30), ubicacion: str(b.ubicacion, 80), impuesto: Number.isFinite(imp) && imp > 0 ? imp : 0, img: foto.url, stock: b.stock ? Math.floor(Number(b.stock)) || -1 : -1 };
       await d.collection("items").insertOne(doc); await log("addItem", doc.name, { price, category: cat }); break;
     }
     case "cuentaQuitar": {
@@ -143,12 +145,12 @@ export async function POST(req) {
     case "planQuitar": { if (!t.plan) return err("No tiene plan"); await users.updateOne({ id: t.id }, { $unset: { plan: "" } }); await log("planQuitar", quien, { monto: t.plan.monto }); break; }
     case "addCasas": {
       const tipo = String(b.tipo); if (!["0", "1", "2", "3", "4"].includes(tipo)) return err("Tipo de casa inválido");
-      let h; try { h = new URL(b.img); } catch { return err("Link de imagen inválido"); } if (h.protocol !== "https:") return err("La imagen debe ser un link https (Discord)");
+      const foto = await importarImagen(d, b.img); if (foto.error) return err(foto.error); if (!foto.url) return err("Pon el link de la imagen o sube la foto");
       const region = str(b.region, 40), price = Number(b.price), imp = Number(b.impuesto || 0); if (!region || !Number.isFinite(price) || price < 0) return err("Región o precio inválido");
       const nums = []; for (const p of String(b.numeros || "").split(/[\s,;]+/).filter(Boolean)) { const m = /^(\d+)-(\d+)$/.exec(p); if (m) { for (let i = +m[1]; i <= +m[2] && nums.length <= 500; i++) nums.push(String(i)); } else if (/^\d+$/.test(p)) nums.push(p); else return err(`Número inválido: ${p}`); }
       if (!nums.length || nums.length > 500) return err("Escribe de 1 a 500 números de casa (puedes usar rangos: 401-420)");
       const col = d.collection("items"), ya = new Set((await col.find({ category: "Propiedades", tipo, region, numero: { $in: nums } }, { projection: { numero: 1 } }).toArray()).map((x) => x.numero)), nuevos = [...new Set(nums)].filter((n) => !ya.has(n));
-      if (nuevos.length) await col.insertMany(nuevos.map((n) => ({ name: `Casa tipo ${tipo}`, category: "Propiedades", tipo, region, numero: n, ubicacion: `${region} ${n}`, price, impuesto: imp > 0 ? imp : 0, img: h.href, desc: `Casa tipo ${tipo} en ${region}`, brand: "", year: "", clase: "", stock: 1 })));
+      if (nuevos.length) await col.insertMany(nuevos.map((n) => ({ name: `Casa tipo ${tipo}`, category: "Propiedades", tipo, region, numero: n, ubicacion: `${region} ${n}`, price, impuesto: imp > 0 ? imp : 0, img: foto.url, desc: `Casa tipo ${tipo} en ${region}`, brand: "", year: "", clase: "", stock: 1 })));
       await log("addCasas", `Tipo ${tipo} · ${region}`, { creadas: nuevos.length, repetidas: nums.length - nuevos.length, price }); break;
     }
     case "setPrice": {
@@ -162,12 +164,17 @@ export async function POST(req) {
       await log("delItem", it.name, { price: it.price }); break;
     }
     case "ecoSet": { // inflación, tope de circulación, impuesto a ganancias y estado (beta/abierto) del casino y el trading
-      const n = (v, mn, mx) => Math.min(mx, Math.max(mn, Number(v) || 0)), set = { inflacion: n(b.inflacion, 0, 1000), tope: Math.floor(n(b.tope, 0, 1e12)), impGan: n(b.impGan, 0, 100), casino: b.casino === "abierto" ? "abierto" : "beta", trading: b.trading === "abierto" ? "abierto" : "beta", tiktokChat: b.tiktokChat === "abierto" ? "abierto" : "beta" };
+      const n = (v, mn, mx) => Math.min(mx, Math.max(mn, Number(v) || 0)), set = { inflacion: n(b.inflacion, 0, 1000), tope: Math.floor(n(b.tope, 0, 1e12)), impGan: n(b.impGan, 0, 100), casinoTes: n(b.casinoTes, 0, 100), casino: b.casino === "abierto" ? "abierto" : "beta", trading: b.trading === "abierto" ? "abierto" : "beta", tiktokChat: b.tiktokChat === "abierto" ? "abierto" : "beta" };
       await d.collection("config").updateOne({ _id: "economia" }, { $set: set }, { upsert: true }); await log("ecoSet", "Economía", set); break;
     }
     case "ecoMover": {
-      const m = Math.floor(Number(b.monto)); if (!(m > 0) || !["tes2res", "res2tes"].includes(b.dir)) return err("Monto inválido");
+      const m = Math.floor(Number(b.monto)); if (!(m > 0) || !DIRS.includes(b.dir)) return err("Monto inválido");
       const e = await traspaso(d, b.dir, m, a.id); if (e) return err(e); await log("ecoMover", b.dir, { monto: m }); break;
+    }
+    case "imgMigrar": { // guarda en el sitio las fotos que siguen siendo links de Discord (los que aún cargan); las vencidas se reportan
+      const col = d.collection("items"), l = await col.find({ img: { $regex: "^https://(cdn\\.discordapp\\.com|media\\.discordapp\\.net)/" } }).limit(25).toArray(); let ok = 0; const mal = [];
+      for (const it of l) { const f = await importarImagen(d, it.img); if (f.url) { await col.updateOne({ _id: it._id }, { $set: { img: f.url } }); ok++; } else { mal.push(it.name + (it.ubicacion ? " " + it.ubicacion : "")); await col.updateOne({ _id: it._id }, { $set: { imgVencida: true, img: "" } }); } }
+      await log("imgMigrar", "Fotos de Discord", { guardadas: ok, vencidas: mal.length }); return NextResponse.json({ ok: true, guardadas: ok, vencidas: mal.slice(0, 15), vencidasN: mal.length, quedan: await col.countDocuments({ img: { $regex: "^https://(cdn\\.discordapp\\.com|media\\.discordapp\\.net)/" } }) });
     }
     case "done": {
       const id = oid(b.id); if (!id) return err("ID inválido");

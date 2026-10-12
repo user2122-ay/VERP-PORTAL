@@ -4,7 +4,8 @@ import { SIMBOLOS, APUESTAS, TABLA } from "@/lib/casino";
 const $ = (n) => `$${Number(n || 0).toLocaleString("es")}`;
 const rnd = () => Math.floor(Math.random() * SIMBOLOS.length);
 // Tragamonedas animada: los rodillos giran, se detienen uno por uno y, si ganas, caen monedas.
-export default function Casino({ metodos: m0, imp, beta }) {
+export default function Casino({ metodos: m0, imp, beta, abierto: ab0 = true, max: mx0 = 5000 }) {
+  const [abierto, setAbierto] = useState(ab0), [mx, setMx] = useState(mx0);
   const [metodos, setMetodos] = useState(m0), [monto, setMonto] = useState(500), [pago, setPago] = useState("efectivo"), [dep, setDep] = useState("efectivo"), [rod, setRod] = useState([0, 1, 2]), [giro, setGiro] = useState([false, false, false]), [res, setRes] = useState(null), [lluvia, setLluvia] = useState(0), [busy, setBusy] = useState(false), [err, setErr] = useState(""), iv = useRef();
   useEffect(() => () => clearInterval(iv.current), []);
   const saldo = metodos.find((x) => x.k === pago)?.saldo ?? 0;
@@ -13,7 +14,7 @@ export default function Casino({ metodos: m0, imp, beta }) {
     iv.current = setInterval(() => setRod((r) => r.map((x, i) => (giro_ref.current[i] ? rnd() : x))), 70); giro_ref.current = [true, true, true];
     const [r] = await Promise.all([fetch("/api/casino", { method: "POST", body: JSON.stringify({ monto, pago, deposito: dep }) }).then(async (x) => ({ ok: x.ok, j: await x.json().catch(() => ({})) })), new Promise((ok) => setTimeout(ok, 1100))]);
     if (!r.ok) { clearInterval(iv.current); giro_ref.current = [false, false, false]; setGiro([false, false, false]); setErr(r.j.error || "Error"); setBusy(false); return; }
-    const j = r.j; setMetodos(j.metodos);
+    const j = r.j; setMetodos(j.metodos); setAbierto(j.abierto); setMx(j.max); if (monto > j.max && j.max >= 100) setMonto(Math.max(100, [...APUESTAS].reverse().find((a) => a <= j.max) || 100));
     for (let i = 0; i < 3; i++) { await new Promise((ok) => setTimeout(ok, i ? 550 : 0)); giro_ref.current[i] = false; setRod((x) => x.map((v, k) => (k === i ? j.reels[i] : v))); setGiro((g) => g.map((v, k) => (k === i ? false : v))); }
     clearInterval(iv.current); setRes(j); if (j.premio > 0) setLluvia((n) => n + 1); setBusy(false);
   }
@@ -35,10 +36,11 @@ export default function Casino({ metodos: m0, imp, beta }) {
       <div style={{ minHeight: 56, textAlign: "center", marginTop: 10 }}>
         {res && (res.premio > 0 ? <div><div style={{ fontSize: 22, fontWeight: 900, color: "#ffc83d" }}>¡GANASTE {$(res.premio)}! 🪙</div><div style={{ fontSize: 13, opacity: 0.85 }}>x{res.mult}{res.impuesto ? ` · impuesto a la ganancia ${$(res.impuesto)} · recibes ${$(res.neto)}` : ""}</div></div> : <div style={{ fontSize: 16, opacity: 0.85 }}>{res.sinFondos ? "La máquina no tiene fondos para pagar premios ahora. Perdiste la apuesta." : "Sin suerte esta vez. Sigue intentando…"}</div>)}
         {err && <div style={{ color: "#ff8a95", fontWeight: 700 }}>{err}</div>}</div>
-      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "center", margin: "6px 0" }}>{APUESTAS.map((a) => <button key={a} disabled={busy} onClick={() => setMonto(a)} style={{ background: monto === a ? "#ffc83d" : "#0006", color: monto === a ? "#3b0a1a" : "#fff", border: "2px solid #ffc83d", borderRadius: 99, padding: "6px 12px", fontWeight: 800, cursor: "pointer" }}>{$(a)}</button>)}</div>
-      <button onClick={jugar} disabled={busy || saldo < monto} style={{ width: "100%", marginTop: 8, padding: 16, fontSize: 20, fontWeight: 900, borderRadius: 14, border: 0, cursor: "pointer", background: "linear-gradient(180deg,#ffd85a,#e09a00)", color: "#3b0a1a", opacity: busy || saldo < monto ? 0.6 : 1 }}>{busy ? "Girando…" : `🎰 GIRAR · ${$(monto)}`}</button></div>
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "center", margin: "6px 0" }}>{APUESTAS.filter((a) => a <= Math.max(mx, 100)).map((a) => <button key={a} disabled={busy} onClick={() => setMonto(a)} style={{ background: monto === a ? "#ffc83d" : "#0006", color: monto === a ? "#3b0a1a" : "#fff", border: "2px solid #ffc83d", borderRadius: 99, padding: "6px 12px", fontWeight: 800, cursor: "pointer" }}>{$(a)}</button>)}</div>
+      {!abierto && <div style={{ background: "#7f1d1d", border: "2px solid #ef4444", borderRadius: 12, padding: 10, textAlign: "center", fontWeight: 800, marginTop: 8 }}>🔒 Casino cerrado por el momento: se quedó sin fondos. Vuelve cuando Administración le asigne más.</div>}
+      <button onClick={jugar} disabled={!abierto || busy || saldo < monto || monto > mx} style={{ width: "100%", marginTop: 8, padding: 16, fontSize: 20, fontWeight: 900, borderRadius: 14, border: 0, cursor: "pointer", background: "linear-gradient(180deg,#ffd85a,#e09a00)", color: "#3b0a1a", opacity: !abierto || busy || saldo < monto || monto > mx ? 0.6 : 1 }}>{busy ? "Girando…" : `🎰 GIRAR · ${$(monto)}`}</button></div>
     <div className="card" style={{ marginTop: 12 }}>
       <label className="mut">Pagar la apuesta con</label><select value={pago} onChange={(e) => setPago(e.target.value)}>{metodos.map((x) => <option key={x.k} value={x.k}>{x.label} · {$(x.saldo)}</option>)}</select>
       <label className="mut">Depositar los premios en</label><select value={dep} onChange={(e) => setDep(e.target.value)}>{metodos.map((x) => <option key={x.k} value={x.k}>{x.label} · {$(x.saldo)}</option>)}</select>
-      <div className="mut" style={{ fontSize: 12, marginTop: 8 }}>Premios: 🍒🍒🍒 x2 · 🔔🔔🔔 x4 · ⭐⭐⭐ x8 · 7️⃣7️⃣7️⃣ x20 · 💎💎💎 x50. Ganar es muy difícil. De la ganancia se paga {imp}% de impuesto al Estado. Apuesta de {$(APUESTAS[0])} a {$(APUESTAS.at(-1))}. Juega con responsabilidad.</div></div></div>);
+      <div className="mut" style={{ fontSize: 12, marginTop: 8 }}>Premios: 🍒🍒🍒 x2 · 🔔🔔🔔 x4 · ⭐⭐⭐ x8 · 7️⃣7️⃣7️⃣ x20 · 💎💎💎 x50. Ganar es muy difícil. De la ganancia se paga {imp}% de impuesto al Estado. Apuesta de {$(APUESTAS[0])} a {$(Math.max(mx, 100))} (lo que el fondo del casino puede pagar). Si pierdes, la mitad va a la Tesorería y la otra mitad al fondo del casino. Juega con responsabilidad.</div></div></div>);
 }
