@@ -247,3 +247,11 @@ lib/rol.js, lib/placa.js, components/CedulaCard.js, app/darkweb/*, app/delictivo
 - **Formato**: mensaje de **Componentes V2** (sin embed): dos cajones (contenedores) con color según la situación (verde dinero, rojo castigo/eliminación, azul administración, naranja artículos, morado servidor/ER:LC, rosa moderación de TikTok). El primer cajón lleva a la **derecha un logo que cambia**: la foto de Roblox del usuario afectado, la foto del artículo/casa, o el logo de VE:RP si no hay. Muestra acción, objetivo, quién lo hizo y su rango, razón, detalles y la hora.
 - **Moderación de VE TikTok**: cuando Fundación o Developer **borran un video, un comentario de otra persona o una cuenta**, queda en la auditoría de Administración y en el Discord (con el autor, el texto/descripción y el enlace).
 - **Webhook**: se lee de la variable `DISCORD_WEBHOOK_AUDITORIA` (Vercel). Si no existe usa el que me diste, que quedó escrito en `lib/auditoria.js`: **si el repositorio es público, cualquiera lo vería y podría mandar mensajes**; mejor ponlo en la variable y bórralo del archivo. Si Discord falla, la acción se hace igual.
+
+
+## Actualización 25 — Fotos del Mercado (guardar en BD solo Mercado)
+- Solo el **Mercado** guarda fotos en la base de datos (casas, autos, armas y demás artículos). TikTok y robos siguen con link normal; no se usa Cloudinary.
+- **Al guardar, la foto se publica donde va**: catálogo, inventarios de usuarios que ya compraron ese artículo y placas.
+- Botón **Guardar fotos de Discord en el sitio** reescrito: ya NO borra fotos. Trabaja con tiempo límite, guarda cada una al instante (reusa las ya descargadas) y las que no cargan quedan marcadas "⚠ Foto" en vez de quedar vacías. Pulsa varias veces hasta que "quedan" sea 0.
+- Nuevo botón **Foto** por artículo (link o imagen ya guardada; en casas puede aplicarse a todas las del mismo tipo sin foto) y panel **Artículos sin foto** con galería de imágenes guardadas sin usar, para rescatar las 25 que quedaron huérfanas.
+- El Mercado muestra "Sin foto" también cuando el link está vencido.
