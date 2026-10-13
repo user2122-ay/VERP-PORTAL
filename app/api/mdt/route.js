@@ -1,6 +1,7 @@
 import { encarcelar, vigilarCondenas } from "@/lib/jail";
 import { MEJORAS, DURACION, MAX_SEMANA, AVISO } from "@/lib/ministerio";
 import { tickAutomatico } from "@/lib/erlcauto";
+import { auditar } from "@/lib/auditoria";
 import { NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
 import { db } from "@/lib/db";
@@ -227,7 +228,7 @@ export async function POST(req) {
         await d.collection("notifs").insertOne({ uid: x.id, title: "Sueldo recibido", body: `El Ministerio del Interior te pagó ${money(s)} en ${k === "efectivo" ? "efectivo" : BANCOS[k].nombre}.`, at, read: false });
         pagados.push(nom); total += s;
       }
-      await d.collection("audit").insertOne({ by: u.id, byName: u.name, rank: u.ag.rango, act: "liberarSueldos", objetivo: `${depto} · ${rango}: ${pagados.length} de ${ags.length}`, razon: "Nómina semanal", detalle: { sueldo: s, total, sinFondos }, at });
+      await auditar(d, { by: u.id, byName: u.name, rank: u.ag.rango, act: "liberarSueldos", objetivo: `${depto} · ${rango}: ${pagados.length} de ${ags.length}`, razon: "Nómina semanal", detalle: { sueldo: s, total, sinFondos }, at });
       return NextResponse.json({ ok: true, pagados: pagados.length, miembros: ags.length, total, sinFondos });
     }
     case "negocioEstado": { // SOLO el Ministro: deja el negocio limpio (pago normal) o lo clausura
@@ -245,7 +246,7 @@ export async function POST(req) {
         await d.collection("notifs").insertOne({ uid: n.owner, title: "Negocio CLAUSURADO", body: `El Ministro del Interior clausuró ${NEGOCIOS[k].nombre}. Razón: ${razon}. Multa de reapertura: $${multa.toLocaleString("es")}. Págala desde Inventario → Negocios para reabrir, o deja el negocio.`, at, read: false });
         await enviarPush(n.owner, { title: "Negocio clausurado", body: NEGOCIOS[k].nombre, url: "/inventario?v=negocios" });
       } else return bad("Acción inválida");
-      await d.collection("audit").insertOne({ by: u.id, byName: u.name, rank: u.ag.rango, act: "negocio_" + b.estado, objetivo: NEGOCIOS[k].nombre, razon: razon || "Decisión del Ministro", detalle: b.estado === "clausurar" ? { multa } : undefined, at });
+      await auditar(d, { by: u.id, byName: u.name, rank: u.ag.rango, act: "negocio_" + b.estado, objetivo: NEGOCIOS[k].nombre, razon: razon || "Decisión del Ministro", detalle: b.estado === "clausurar" ? { multa } : undefined, at });
       return NextResponse.json({ ok: true });
     }
     case "mejoraComprar": { // SOLO el Ministro: compra mejoras con el dinero de la Tesorería (máx. 3 por semana de cada una; duran 7 días)
@@ -256,7 +257,7 @@ export async function POST(req) {
       const act = await col.find({ key: mj.key, vence: { $gt: at } }).sort({ vence: -1 }).limit(1).toArray(), base = act[0] ? +new Date(act[0].vence) : +at;
       if (!(await egresarTesoreria(d, mj.precio, `Tienda Ministerio: ${mj.nombre}`, u.id))) return bad("La Tesorería no tiene fondos suficientes");
       await col.insertOne({ key: mj.key, nombre: mj.nombre, precio: mj.precio, por: u.id, porName: yo, at, vence: new Date(base + DURACION) });
-      await d.collection("audit").insertOne({ by: u.id, byName: u.name, rank: u.ag.rango, act: "mejoraMinisterio", objetivo: mj.nombre, razon: "Tienda Ministerio", detalle: { precio: mj.precio }, at });
+      await auditar(d, { by: u.id, byName: u.name, rank: u.ag.rango, act: "mejoraMinisterio", objetivo: mj.nombre, razon: "Tienda Ministerio", detalle: { precio: mj.precio }, at });
       return NextResponse.json({ ok: true });
     }
     case "tasaSet": { // SOLO el Ministro: cambia el impuesto (ITBMS) de los objetos del Mercado
@@ -268,7 +269,7 @@ export async function POST(req) {
         const dueños = (await d.collection("negocios").find({ owner: { $ne: null } }).toArray()).map((n) => n.owner), t = nueva > antes ? "subió" : "bajó";
         if (dueños.length) await d.collection("notifs").insertMany([...new Set(dueños)].map((uid) => ({ uid, title: "Cambió el ITBMS", body: `El Ministro del Interior ${t} el ITBMS de ${Math.round(antes * 1000) / 10}% a ${p}% (${at.toLocaleDateString("es")}).`, at, read: false })));
       }
-      await d.collection("audit").insertOne({ by: u.id, byName: u.name, rank: u.ag.rango, act: "tasaITBMS", objetivo: `ITBMS ${p}%`, razon: "Decisión del Ministro", at });
+      await auditar(d, { by: u.id, byName: u.name, rank: u.ag.rango, act: "tasaITBMS", objetivo: `ITBMS ${p}%`, razon: "Decisión del Ministro", at });
       return NextResponse.json({ ok: true });
     }
     case "expNuevo": {

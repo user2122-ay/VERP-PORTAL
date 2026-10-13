@@ -20,6 +20,7 @@ import { NEGOCIO_DE } from "@/lib/negocios";
 import { licTipo, numeroLicencia } from "@/lib/licencia";
 import { COLORES_CASA } from "@/lib/catalogo";
 import { importarImagen, esDiscord } from "@/lib/imagen";
+import { auditar } from "@/lib/auditoria";
 const err = (m, s = 400) => NextResponse.json({ error: m }, { status: s });
 const CATS = ["Concesionario", "Propiedades", "Licencias", "Objetos", "Armas", "Herramientas", "Telefonía", "Tecnología"];
 const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), str = (s, n = 80) => String(s || "").trim().slice(0, n), up = (s, n = 40) => str(s, n).replace(/\s+/g, " ").toUpperCase();
@@ -45,7 +46,7 @@ export async function POST(req) {
   if (!canAdmin(a.rank) && !["roboOk", "roboNo", "apelOk", "apelNo", "trabajoOk", "trabajoNo"].includes(b.a)) return err("Tu rango solo puede revisar solicitudes", 403);
   // Toda acción administrativa (salvo marcar un reporte como resuelto) exige razón y queda en la colección "audit".
   if (!["done", "roboOk", "trabajoOk", "staffSet", "staffDel", "agenteSet", "agenteDel", "erlcTest", "erlcCmd", "erlcAuto", "apertura"].includes(b.a) && razon.length < 3) return err("La razón es obligatoria");
-  const log = (act, objetivo, detalle) => d.collection("audit").insertOne({ by: a.id, byName: a.name, rank: a.rank, act, objetivo, razon, detalle, at });
+  const origen = new URL(req.url).origin, log = (act, objetivo, detalle, extra = {}) => auditar(d, { by: a.id, byName: a.name, rank: a.rank, act, objetivo, razon, detalle, at }, { origen, t: b.uid ? t : null, ...extra });
   const t = b.uid ? await users.findOne({ id: str(b.uid, 30) }) : null, quien = t ? `${t.name} (${t.id})` : null;
   if (b.uid && !t) return err("Usuario no existe", 404);
   switch (b.a) {
@@ -83,7 +84,7 @@ export async function POST(req) {
       if (c.lugar) { if (!LUGARES[c.lugar]) return err("Lugar de nacimiento inválido"); set["cedula.lugar"] = c.lugar; antes.lugar = t.cedula.lugar; }
       if (c.nac) { const n = new Date(c.nac); if (isNaN(n)) return err("Fecha inválida"); set["cedula.nac"] = n; antes.nac = t.cedula.nac; }
       if (!Object.keys(set).length) return err("No hay cambios");
-      await users.updateOne({ id: t.id }, { $set: set }); await log("editCedula", quien, { antes, despues: set }); break;
+      await users.updateOne({ id: t.id }, { $set: set }); await log("editCedula", quien, { antes, despues: set }, { imagen: it.img }); break;
     }
     case "dinero": {
       const m = Math.floor(Number(b.monto)), sg = b.tipo === "quitar" ? -1 : 1, dest = b.destino || "efectivo"; if (!(m > 0) || m > 1e9) return err("Monto inválido");
@@ -103,7 +104,7 @@ export async function POST(req) {
       const pl = it.category === "Concesionario" ? await nuevaPlaca(d, { modelo: it.name, dueno: t.id, duenoN: nombreDe(t) }) : null;
       await users.updateOne({ id: t.id }, { $push: { inventory: { ...(casa ? { impProx: new Date(+at + 7 * 864e5), color: COLORES_CASA[0] } : {}), name: it.name, category: it.category, price: it.price, at, admin: true, sku: it.sku || null, tipo: it.tipo || null, ubicacion: it.ubicacion || null, img: it.img || null, placa: pl, vence: it.dias ? new Date(Date.now() + it.dias * 864e5) : null, licNum: licTipo(it) ? numeroLicencia(licTipo(it)) : null } } });
       await d.collection("notifs").insertOne({ uid: t.id, title: "Artículo recibido", body: `Un administrador agregó ${it.name} a tu inventario.`, at, read: false });
-      await log("invAgregar", quien, { item: it.name }); break;
+      await log("invAgregar", quien, { item: it.name }, { imagen: it.img }); break;
     }
     case "invQuitar": {
       const n = new Date(b.at); if (isNaN(n)) return err("Artículo inválido");
@@ -124,7 +125,7 @@ export async function POST(req) {
       if (cat === "Propiedades" && !str(b.ubicacion)) return err("Las propiedades necesitan ubicación (ej: Caracas 405)");
       const foto = await importarImagen(d, b.img); if (foto.error) return err(foto.error);
       const doc = { name: str(b.name), category: cat, negocio: NEGOCIO_DE[cat] || null, price, desc: str(b.desc, 400), brand: str(b.brand), year: str(b.year, 10), clase: str(b.clase, 30), ubicacion: str(b.ubicacion, 80), impuesto: Number.isFinite(imp) && imp > 0 ? imp : 0, img: foto.url, stock: b.stock ? Math.floor(Number(b.stock)) || -1 : -1 };
-      await d.collection("items").insertOne(doc); await log("addItem", doc.name, { price, category: cat }); break;
+      await d.collection("items").insertOne(doc); await log("addItem", doc.name, { price, category: cat }, { imagen: doc.img }); break;
     }
     case "cuentaQuitar": {
       const k = b.banco; if (!BANCOS[k] || !t.cuentas?.[k]) return err("No tiene esa tarjeta");
@@ -151,7 +152,7 @@ export async function POST(req) {
       if (!nums.length || nums.length > 500) return err("Escribe de 1 a 500 números de casa (puedes usar rangos: 401-420)");
       const col = d.collection("items"), ya = new Set((await col.find({ category: "Propiedades", tipo, region, numero: { $in: nums } }, { projection: { numero: 1 } }).toArray()).map((x) => x.numero)), nuevos = [...new Set(nums)].filter((n) => !ya.has(n));
       if (nuevos.length) await col.insertMany(nuevos.map((n) => ({ name: `Casa tipo ${tipo}`, category: "Propiedades", tipo, region, numero: n, ubicacion: `${region} ${n}`, price, impuesto: imp > 0 ? imp : 0, img: foto.url, desc: `Casa tipo ${tipo} en ${region}`, brand: "", year: "", clase: "", stock: 1 })));
-      await log("addCasas", `Tipo ${tipo} · ${region}`, { creadas: nuevos.length, repetidas: nums.length - nuevos.length, price }); break;
+      await log("addCasas", `Tipo ${tipo} · ${region}`, { creadas: nuevos.length, repetidas: nums.length - nuevos.length, price }, { imagen: foto.url }); break;
     }
     case "setPrice": {
       const id = oid(b.id); if (!id) return err("Datos inválidos"); const set = {};
@@ -161,7 +162,7 @@ export async function POST(req) {
     }
     case "delItem": {
       const id = oid(b.id), it = id && (await d.collection("items").findOneAndDelete({ _id: id })); if (!it) return err("Artículo no existe", 404);
-      await log("delItem", it.name, { price: it.price }); break;
+      await log("delItem", it.name, { price: it.price }, { imagen: it.img }); break;
     }
     case "ecoSet": { // inflación, tope de circulación, impuesto a ganancias y estado (beta/abierto) del casino y el trading
       const n = (v, mn, mx) => Math.min(mx, Math.max(mn, Number(v) || 0)), set = { inflacion: n(b.inflacion, 0, 1000), tope: Math.floor(n(b.tope, 0, 1e12)), impGan: n(b.impGan, 0, 100), casinoTes: n(b.casinoTes, 0, 100), casino: b.casino === "abierto" ? "abierto" : "beta", trading: b.trading === "abierto" ? "abierto" : "beta", tiktokChat: b.tiktokChat === "abierto" ? "abierto" : "beta" };
@@ -179,7 +180,7 @@ export async function POST(req) {
     case "done": {
       const id = oid(b.id); if (!id) return err("ID inválido");
       await d.collection("reports").updateOne({ _id: id }, { $set: { estado: "resuelto" } });
-      await d.collection("audit").insertOne({ by: a.id, byName: a.name, rank: a.rank, act: "reporte911", objetivo: String(id), razon: "Reporte resuelto", at }); break;
+      await auditar(d, { by: a.id, byName: a.name, rank: a.rank, act: "reporte911", objetivo: String(id), razon: "Reporte resuelto", at }); break;
     }
     case "staffSet": case "staffDel": { // solo el Developer asigna el staff de Administración
       if (!canStaff(a.rank)) return err("Solo Developer, Fundación y Asuntos Internos asignan staff", 403);

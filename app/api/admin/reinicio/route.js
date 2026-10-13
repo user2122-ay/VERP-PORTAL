@@ -1,3 +1,4 @@
+import { auditar } from "@/lib/auditoria";
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { adminUser } from "@/lib/admin";
@@ -13,6 +14,6 @@ export async function POST(req) {
   const b = await req.json().catch(() => ({}));
   if (String(b.frase || "").trim() !== "REINICIAR TODO") return bad('Escribe exactamente "REINICIAR TODO" para confirmar');
   const d = await db(), res = await reiniciarTodo(d, { conservarStaff: b.conservarStaff !== false });
-  await d.collection("audit").insertOne({ by: a.id, byName: a.name, rank: a.rank, act: "reiniciarBD", objetivo: "Base de datos completa", razon: "Reinicio total", detalle: res, at: new Date() });
+  await auditar(d, { by: a.id, byName: a.name, rank: a.rank, act: "reiniciarBD", objetivo: "Base de datos completa", razon: "Reinicio total", detalle: res, at: new Date() });
   return NextResponse.json({ ok: true, res });
 }

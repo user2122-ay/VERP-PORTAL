@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { apiUser } from "@/lib/auth";
 import { waListo, fmtTel } from "@/lib/redes";
 import { canReview, RANK_LABEL } from "@/lib/roles";
+import { auditar } from "@/lib/auditoria";
 import { validarLink, etiquetas, HANDLE, insignia, esFund, parId, tickRacha, rachaVista } from "@/lib/tikverp";
 import { ecoCfg } from "@/lib/reserva";
 export const dynamic = "force-dynamic";
@@ -15,6 +16,10 @@ async function cols() {
   const d = await db(), c = { d, per: d.collection("tv_perfiles"), po: d.collection("tv_posts"), li: d.collection("tv_likes"), co: d.collection("tv_com"), fo: d.collection("tv_follows"), so: d.collection("tv_sonidos"), ch: d.collection("tv_chats"), ms: d.collection("tv_msgs"), bl: d.collection("tv_blocks") };
   if (!listo) { listo = true; await Promise.all([c.per.createIndex({ handle: 1 }, { unique: true }), c.po.createIndex({ at: -1 }), c.po.createIndex({ uid: 1, at: -1 }), c.po.createIndex({ tags: 1 }), c.li.createIndex({ post: 1 }), c.co.createIndex({ post: 1, at: 1 }), c.fo.createIndex({ a: 1 }), c.fo.createIndex({ b: 1 }), c.so.createIndex({ usos: -1 }), c.ch.createIndex({ uids: 1, ult: -1 }), c.ms.createIndex({ chat: 1, at: 1 }), c.bl.createIndex({ a: 1 }), c.bl.createIndex({ b: 1 })]).catch(() => {}); }
   return c;
+}
+// Moderación (Fundación / Developer): queda en la auditoría de Administración y se manda al canal de Discord.
+async function modLog(c, u, req, yo, act, objetivo, detalle, uidObjetivo, imagen = null) {
+  try { const t = await c.d.collection("users").findOne({ id: uidObjetivo }, { projection: { cedula: 1 } }); await auditar(c.d, { by: u.id, byName: u.name, rank: u.rank, act, objetivo, razon: `Moderación de VE TikTok (@${yo?.handle || "?"})`, detalle }, { origen: new URL(req.url).origin, t, imagen }); } catch {}
 }
 const aviso = (d, uid, title, body) => d.collection("notifs").insertOne({ uid, title, body, at: new Date(), read: false });
 // Agrega autor, insignia y si yo di like / sigo al autor.
@@ -170,6 +175,7 @@ export async function POST(req) {
     await c.li.deleteMany({ uid });
     for (const f of await c.fo.find({ $or: [{ a: uid }, { b: uid }] }).toArray()) { if (f.a === uid) await c.per.updateOne({ _id: f.b }, { $inc: { seguidores: -1 } }); else await c.per.updateOne({ _id: f.a }, { $inc: { siguiendo: -1 } }); }
     await c.fo.deleteMany({ $or: [{ a: uid }, { b: uid }] }); await c.per.deleteOne({ _id: uid });
+    if (uid !== me) await modLog(c, u, req, yo, "tiktokEliminarCuenta", `Cuenta @${t.handle}`, { cuenta: "@" + t.handle, nombre: t.nombre, seguidores: t.seguidores || 0, publicaciones: ids.length }, uid, t.foto || null);
     if (uid !== me) await aviso(c.d, uid, "Cuenta de VE TikTok eliminada", "Un moderador (Fundación/Developer) eliminó tu cuenta de VE TikTok. Puedes crear otra.");
     return NextResponse.json({ ok: true, propia: uid === me });
   }
@@ -192,11 +198,14 @@ export async function POST(req) {
   if (b.accion === "borrarCom") {
     const cid = oid(b.cid), x = cid && (await c.co.findOne({ _id: cid, post: String(id) })); if (!x) return bad("No existe", 404);
     if (x.uid !== me && post.uid !== me && !canReview(u.rank)) return bad("No puedes borrar este comentario", 403);
-    await c.co.deleteOne({ _id: cid }); await c.po.updateOne({ _id: id }, { $inc: { comentarios: -1 } }); return NextResponse.json({ ok: true });
+    await c.co.deleteOne({ _id: cid }); await c.po.updateOne({ _id: id }, { $inc: { comentarios: -1 } });
+    if (x.uid !== me && post.uid !== me) await modLog(c, u, req, yo, "tiktokBorrarComentario", `Comentario de @${x.handle}`, { autor: "@" + x.handle, comentario: x.txt, "en el video de": "@" + post.handle }, x.uid);
+    return NextResponse.json({ ok: true });
   }
   if (b.accion === "borrar") {
     if (post.uid !== me && !esFund(u)) return bad("Solo el dueño del video puede borrarlo", 403);
     const nl = await c.li.countDocuments({ post: String(id) }); await c.po.deleteOne({ _id: id }); await c.li.deleteMany({ post: String(id) }); await c.co.deleteMany({ post: String(id) }); await c.per.updateOne({ _id: post.uid }, { $inc: { likes: -nl } });
+    if (post.uid !== me) await modLog(c, u, req, yo, "tiktokBorrarVideo", `Video de @${post.handle}`, { autor: "@" + post.handle, descripcion: post.desc || "(sin descripción)", enlace: post.url, likes: post.likes || 0, comentarios: post.comentarios || 0 }, post.uid, post.tipo === "foto" ? post.url : null);
     if (post.uid !== me) await aviso(c.d, post.uid, "Publicación eliminada en VE TikTok", "Un moderador (Fundación/Developer) eliminó una de tus publicaciones.");
     return NextResponse.json({ ok: true });
   }
