@@ -255,3 +255,5 @@ lib/rol.js, lib/placa.js, components/CedulaCard.js, app/darkweb/*, app/delictivo
 - Botón **Guardar fotos de Discord en el sitio** reescrito: ya NO borra fotos. Trabaja con tiempo límite, guarda cada una al instante (reusa las ya descargadas) y las que no cargan quedan marcadas "⚠ Foto" en vez de quedar vacías. Pulsa varias veces hasta que "quedan" sea 0.
 - Nuevo botón **Foto** por artículo (link o imagen ya guardada; en casas puede aplicarse a todas las del mismo tipo sin foto) y panel **Artículos sin foto** con galería de imágenes guardadas sin usar, para rescatar las 25 que quedaron huérfanas.
 - El Mercado muestra "Sin foto" también cuando el link está vencido.
+
+- (25b) Guardar fotos ahora funciona con cualquier link https (Discord, Google/ERLC, Imgur…), no solo Discord. El botón "Foto" de un artículo que ya tiene link guarda ESA imagen y la publica sin pedir otro link.

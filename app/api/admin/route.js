@@ -19,7 +19,7 @@ import { nombreDe } from "@/lib/rol";
 import { NEGOCIO_DE } from "@/lib/negocios";
 import { licTipo, numeroLicencia } from "@/lib/licencia";
 import { COLORES_CASA } from "@/lib/catalogo";
-import { importarImagen, esDiscord, migrarUrl } from "@/lib/imagen";
+import { importarImagen, esDiscord, esExterna, migrarUrl } from "@/lib/imagen";
 import { auditar } from "@/lib/auditoria";
 const err = (m, s = 400) => NextResponse.json({ error: m }, { status: s });
 const CATS = ["Concesionario", "Propiedades", "Licencias", "Objetos", "Armas", "Herramientas", "Telefonía", "Tecnología"];
@@ -173,13 +173,13 @@ export async function POST(req) {
       const e = await traspaso(d, b.dir, m, a.id); if (e) return err(e); await log("ecoMover", b.dir, { monto: m }); break;
     }
     case "imgMigrar": { // guarda en el sitio las fotos del Mercado que siguen siendo links de Discord y las PUBLICA donde van (catálogo, inventarios y placas). Nunca borra una foto: si el link ya venció la deja marcada para subirla de nuevo.
-      const col = d.collection("items"), RX = { $regex: "^https://(cdn\\.discordapp\\.com|media\\.discordapp\\.net)/" }, urls = [...new Set((await col.find({ img: RX }, { projection: { img: 1 } }).limit(60).toArray()).map((x) => x.img))], ini = Date.now(); let ok = 0, mal = 0;
+      const col = d.collection("items"), RX = { $regex: "^https?://" }, urls = [...new Set((await col.find({ img: RX }, { projection: { img: 1 } }).limit(60).toArray()).map((x) => x.img))], ini = Date.now(); let ok = 0, mal = 0;
       for (let k = 0; k < urls.length && Date.now() - ini < 7000; k += 4) await Promise.all(urls.slice(k, k + 4).map(async (u) => { if (await migrarUrl(d, u)) ok++; else { mal++; await col.updateMany({ img: u }, { $set: { imgVencida: true } }); } }));
       await log("imgMigrar", "Fotos del Mercado", { guardadas: ok, vencidas: mal }); return NextResponse.json({ ok: true, guardadas: ok, vencidas: mal, quedan: await col.countDocuments({ img: RX, imgVencida: { $ne: true } }) });
     }
     case "setImg": { // poner (o cambiar) la foto de un artículo: link de Discord o archivo. Se publica en el catálogo y en lo que ya compraron los usuarios.
       const id = oid(b.id), it = id && (await d.collection("items").findOne({ _id: id })); if (!it) return err("Artículo no existe", 404);
-      const f = b.usar && /^\/api\/img\/[a-f0-9]{20}$/.test(String(b.usar)) ? { url: String(b.usar) } : await importarImagen(d, b.img); if (f.error) return err(f.error); if (!f.url) return err("Pon el link de la foto o sube el archivo");
+      const f = !b.usar && !b.img && esExterna(it.img) ? await importarImagen(d, it.img) : b.usar && /^\/api\/img\/[a-f0-9]{20}$/.test(String(b.usar)) ? { url: String(b.usar) } : await importarImagen(d, b.img); if (f.error) return err(f.error); if (!f.url) return err("Pon el link de la foto o sube el archivo");
       const items = d.collection("items"), mismo = b.todos && it.category === "Propiedades" ? { category: "Propiedades", tipo: it.tipo, $or: [{ img: "" }, { img: null }, { imgVencida: true }, { img: it.img }] } : { _id: id };
       const r = await items.updateMany(mismo, { $set: { img: f.url }, $unset: { imgVencida: "" } });
       const objetivos = await items.find(mismo, { projection: { name: 1, category: 1, ubicacion: 1 } }).toArray();
