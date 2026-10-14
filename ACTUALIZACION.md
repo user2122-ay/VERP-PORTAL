@@ -268,3 +268,18 @@ lib/rol.js, lib/placa.js, components/CedulaCard.js, app/darkweb/*, app/delictivo
 
 - (26b) Cada juego del casino ahora es **su propia app en el teléfono**: Tragamonedas, Ruleta, Blackjack, Hipódromo y Dados 1 vs 1 (rutas `/casino/tragamonedas`, `/casino/ruleta`, `/casino/blackjack`, `/casino/hipodromo`, `/casino/dados`). `/casino` redirige al teléfono.
 - Sin emojis en el casino: símbolos del tragamonedas, palos de las cartas, dados, caballos y los logos de cada app son SVG propios (`components/Iconos.js`). Trading también usa un logo SVG.
+
+
+## Actualización 27 — Fuera de beta + comentarios de TikTok
+- **Todo fuera de beta:** Casino (5 juegos), Trading y Chat de VE TikTok quedan abiertos para todos (los del casino y trading piden tener teléfono). Se quitaron los selectores "Beta/Abierto" de Administración → Economía y las etiquetas BETA.
+- **VE TikTok:** se puede **responder a los comentarios** (botón "Responder"; las respuestas salen debajo del comentario principal) y dar **me gusta a los comentarios** (corazón con contador). Avisos para quien recibe la respuesta o el me gusta. Borrar un comentario principal borra sus respuestas.
+
+
+## Actualización 28 — Vivienda compartida (página "Hogar")
+- Nueva página **Hogar** (menú). El dueño de una casa **invita** a alguien (usuario de Roblox o cédula) como:
+  - **Familia:** gratis. Ve y saca todo lo que haya guardado en la casa (menos autos y la caja fuerte, que son del dueño) y usa la nevera.
+  - **Alquilino:** paga una **cuota semanal** que pone el dueño ($1 a $10.000). La primera semana se paga al aceptar; después se cobra sola cada 7 días y el dinero va al dueño. Solo ve y saca lo que él mismo guardó; sí puede meter comida a la nevera y comer.
+- Todos los ocupantes pueden **guardar objetos** en la casa (con la misma espera de 5 min y lugares de escondite) y **meter, sacar y comer** de la nevera del dueño (comer lo de otros también, es una casa compartida).
+- **Regulación (capacidad):** individual = 1 persona, matrimonial = 2, máximo 6 personas por casa contando al dueño. Tipo 0: 3 · Tipo 1: 4 · Tipo 2: 4 · Tipo 3: 3 (garaje) · Tipo 4: 6. Cada persona vive en una sola casa compartida. Máximo 15 objetos propios guardados por ocupante. Las invitaciones vencen en 3 días.
+- Si un alquilino debe más de 14 días de cuota, lo sacan solo. Al salir, ser expulsado o si Administración quita la casa, cada quien **recupera lo que guardó** (objetos y comida).
+- Archivos: `lib/hogar.js`, `app/api/hogar/route.js`, `app/hogar/*`; cobros en `lib/cobros.js`; aviso en `invQuitar` de admin.

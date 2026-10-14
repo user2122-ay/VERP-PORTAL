@@ -13,7 +13,7 @@ const oid = (s) => { try { return new ObjectId(String(s)); } catch { return null
 const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 let listo = false;
 async function cols() {
-  const d = await db(), c = { d, per: d.collection("tv_perfiles"), po: d.collection("tv_posts"), li: d.collection("tv_likes"), co: d.collection("tv_com"), fo: d.collection("tv_follows"), so: d.collection("tv_sonidos"), ch: d.collection("tv_chats"), ms: d.collection("tv_msgs"), bl: d.collection("tv_blocks") };
+  const d = await db(), c = { d, per: d.collection("tv_perfiles"), po: d.collection("tv_posts"), li: d.collection("tv_likes"), co: d.collection("tv_com"), fo: d.collection("tv_follows"), so: d.collection("tv_sonidos"), ch: d.collection("tv_chats"), ms: d.collection("tv_msgs"), bl: d.collection("tv_blocks"), cl: d.collection("tv_comlikes") };
   if (!listo) { listo = true; await Promise.all([c.per.createIndex({ handle: 1 }, { unique: true }), c.po.createIndex({ at: -1 }), c.po.createIndex({ uid: 1, at: -1 }), c.po.createIndex({ tags: 1 }), c.li.createIndex({ post: 1 }), c.co.createIndex({ post: 1, at: 1 }), c.fo.createIndex({ a: 1 }), c.fo.createIndex({ b: 1 }), c.so.createIndex({ usos: -1 }), c.ch.createIndex({ uids: 1, ult: -1 }), c.ms.createIndex({ chat: 1, at: 1 }), c.bl.createIndex({ a: 1 }), c.bl.createIndex({ b: 1 })]).catch(() => {}); }
   return c;
 }
@@ -29,8 +29,8 @@ async function armar(c, posts, me) {
   const likes = new Set((await c.li.find({ _id: { $in: posts.map((p) => `${p._id}:${me}`) } }).toArray()).map((x) => x._id)), sig = new Set((await c.fo.find({ a: me, b: { $in: uids } }).toArray()).map((x) => x.b));
   return posts.map((p) => ({ id: String(p._id), uid: p.uid, handle: p.handle, nombre: per[p.uid]?.nombre || "Cuenta no encontrada", foto: per[p.uid]?.foto || null, badge: fl[p.uid] || null, tipo: p.tipo, url: p.url, desc: p.desc, tags: p.tags || [], sonido: p.sonido || null, likes: p.likes || 0, comentarios: p.comentarios || 0, compartidos: p.compartidos || 0, at: p.at, liked: likes.has(`${p._id}:${me}`), sigue: sig.has(p.uid), mio: p.uid === me }));
 }
-// Chat: beta (solo Developer y Fundación) hasta que Administración → Economía lo abra.
-const chatOn = async (d, u) => esFund(u) || (await ecoCfg(d)).tiktokChat === "abierto";
+// El chat ya no está en beta: lo puede usar cualquiera.
+const chatOn = async () => true;
 // Bloqueos: yo = a quién bloqueé; ellos = quién me bloqueó.
 async function ocultos(c, me) { const l = await c.bl.find({ $or: [{ a: me }, { b: me }] }).toArray(); const yo = new Set(l.filter((x) => x.a === me).map((x) => x.b)), ellos = new Set(l.filter((x) => x.b === me).map((x) => x.a)); return { yo, ellos, todos: [...yo, ...ellos] }; }
 const yo_h = (x) => (x?.handleAt ? new Date(+new Date(x.handleAt) + 7 * 864e5).toISOString() : null);
@@ -64,8 +64,8 @@ export async function GET(req) {
   }
   if (m === "com") {
     const id = oid(p.get("id")); if (!id) return bad("Publicación inválida");
-    const l = await c.co.find({ post: String(id) }).sort({ at: 1 }).limit(150).toArray(), per = Object.fromEntries((await c.per.find({ _id: { $in: [...new Set(l.map((x) => x.uid))] } }).toArray()).map((x) => [x._id, x]));
-    return NextResponse.json({ l: l.map((x) => ({ id: String(x._id), uid: x.uid, handle: per[x.uid] ? per[x.uid].handle : "Cuenta no encontrada", borrada: !per[x.uid], foto: per[x.uid]?.foto || null, txt: x.txt, at: x.at, mio: x.uid === me })) });
+    const l = await c.co.find({ post: String(id) }).sort({ at: 1 }).limit(400).toArray(), per = Object.fromEntries((await c.per.find({ _id: { $in: [...new Set(l.map((x) => x.uid))] } }).toArray()).map((x) => [x._id, x])), mis = new Set((await c.cl.find({ _id: { $in: l.map((x) => `${x._id}:${me}`) } }).toArray()).map((x) => x._id));
+    return NextResponse.json({ l: l.map((x) => ({ id: String(x._id), uid: x.uid, handle: per[x.uid] ? per[x.uid].handle : "Cuenta no encontrada", borrada: !per[x.uid], foto: per[x.uid]?.foto || null, txt: x.txt, at: x.at, mio: x.uid === me, resp: x.resp || null, likes: x.likes || 0, liked: mis.has(`${x._id}:${me}`) })) });
   }
   if (m === "sonidos") { const q = String(p.get("q") || "").trim().slice(0, 30), l = await c.so.find(q ? { titulo: new RegExp(esc(q), "i") } : {}).sort({ usos: -1, at: -1 }).limit(40).toArray(); return NextResponse.json({ l: l.map((x) => ({ id: String(x._id), titulo: x.titulo, artista: x.artista, url: x.url, por: x.handle, usos: x.usos || 0 })) }); }
   if (m === "buscar") {
@@ -191,16 +191,27 @@ export async function POST(req) {
   if (b.accion === "comentar") {
     const txt = String(b.txt || "").trim().slice(0, 150); if (!txt) return bad("Escribe un comentario");
     if ((await c.co.countDocuments({ uid: me, at: { $gt: new Date(+at - 6e4) } })) >= 15) return bad("Vas muy rápido, espera un momento");
-    await c.co.insertOne({ post: String(id), uid: me, handle: yo.handle, txt, at }); await c.po.updateOne({ _id: id }, { $inc: { comentarios: 1 } });
-    if (post.uid !== me) await aviso(c.d, post.uid, "Nuevo comentario en VE TikTok", `@${yo.handle}: ${txt.slice(0, 80)}`);
+    let padre = null; if (b.resp) { const pid = oid(b.resp); padre = pid && (await c.co.findOne({ _id: pid, post: String(id) })); if (!padre) return bad("Ese comentario ya no existe", 404); }
+    const raiz = padre ? (padre.resp || String(padre._id)) : null; // las respuestas se agrupan bajo el comentario principal
+    await c.co.insertOne({ post: String(id), uid: me, handle: yo.handle, txt, at, likes: 0, ...(raiz ? { resp: raiz } : {}) }); await c.po.updateOne({ _id: id }, { $inc: { comentarios: 1 } });
+    if (padre && padre.uid !== me) await aviso(c.d, padre.uid, "Respondieron tu comentario en VE TikTok", `@${yo.handle}: ${txt.slice(0, 80)}`);
+    if (post.uid !== me && post.uid !== padre?.uid) await aviso(c.d, post.uid, "Nuevo comentario en VE TikTok", `@${yo.handle}: ${txt.slice(0, 80)}`);
     return NextResponse.json({ ok: true });
+  }
+  if (b.accion === "likeCom") { // me gusta en un comentario (toca de nuevo para quitarlo)
+    const cid = oid(b.cid), x = cid && (await c.co.findOne({ _id: cid, post: String(id) })); if (!x) return bad("No existe", 404); const k = `${cid}:${me}`; let on;
+    try { await c.cl.insertOne({ _id: k, com: String(cid), uid: me, at }); on = true; } catch (e) { if (e.code !== 11000) throw e; await c.cl.deleteOne({ _id: k }); on = false; }
+    await c.co.updateOne({ _id: cid }, { $inc: { likes: on ? 1 : -1 } });
+    if (on && x.uid !== me) await aviso(c.d, x.uid, "Le gustó tu comentario en VE TikTok", `A @${yo.handle} le gustó: ${x.txt.slice(0, 80)}`);
+    return NextResponse.json({ ok: true, liked: on, likes: Math.max(0, (x.likes || 0) + (on ? 1 : -1)) });
   }
   if (b.accion === "borrarCom") {
     const cid = oid(b.cid), x = cid && (await c.co.findOne({ _id: cid, post: String(id) })); if (!x) return bad("No existe", 404);
     if (x.uid !== me && post.uid !== me && !canReview(u.rank)) return bad("No puedes borrar este comentario", 403);
-    await c.co.deleteOne({ _id: cid }); await c.po.updateOne({ _id: id }, { $inc: { comentarios: -1 } });
+    const hijos = x.resp ? [] : await c.co.find({ post: String(id), resp: String(cid) }, { projection: { _id: 1 } }).toArray(), quitar = [cid, ...hijos.map((h) => h._id)]; // borrar un comentario principal borra sus respuestas
+    await c.co.deleteMany({ _id: { $in: quitar } }); await c.cl.deleteMany({ com: { $in: quitar.map(String) } }); await c.po.updateOne({ _id: id }, { $inc: { comentarios: -quitar.length } });
     if (x.uid !== me && post.uid !== me) await modLog(c, u, req, yo, "tiktokBorrarComentario", `Comentario de @${x.handle}`, { autor: "@" + x.handle, comentario: x.txt, "en el video de": "@" + post.handle }, x.uid);
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, quitados: quitar.length });
   }
   if (b.accion === "borrar") {
     if (post.uid !== me && !esFund(u)) return bad("Solo el dueño del video puede borrarlo", 403);

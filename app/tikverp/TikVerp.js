@@ -139,11 +139,19 @@ function Perfil({ h, acc, yoHandle, yoEn, recargar }) {
 
 // ---- Comentarios y compartir ----
 function Comentarios({ p, cerrar, acc }) {
-  const [l, setL] = useState([]), [t, setT] = useState(""), cargar = async () => setL((await api("m=com&id=" + p.id))?.l || []);
+  const [l, setL] = useState([]), [t, setT] = useState(""), [resp, setResp] = useState(null), cargar = async () => setL((await api("m=com&id=" + p.id))?.l || []);
   useEffect(() => { cargar(); }, []);
+  const raices = l.filter((c) => !c.resp), hijos = (id) => l.filter((c) => c.resp === id);
+  const like = async (c) => { setL((z) => z.map((x) => (x.id === c.id ? { ...x, liked: !x.liked, likes: Math.max(0, x.likes + (x.liked ? -1 : 1)) } : x))); const r = await post({ accion: "likeCom", id: p.id, cid: c.id }); if (!r) cargar(); };
+  const borrar = async (c) => { const r = await post({ accion: "borrarCom", id: p.id, cid: c.id }); cargar(); if (r) acc.upd(p.id, (x) => ({ ...x, comentarios: Math.max(0, x.comentarios - (r.quitados || 1)) })); };
+  const Fila = ({ c, hijo }) => <div style={{ display: "flex", gap: 8, padding: "6px 0", marginLeft: hijo ? 38 : 0 }}><Av src={c.foto} nombre={c.borrada ? "" : c.handle} size={hijo ? 24 : 30} /><div style={{ flex: 1, minWidth: 0 }}><b style={{ fontSize: 13, ...(c.borrada ? { color: "#9fb0d0" } : {}) }}>{c.borrada ? c.handle : "@" + c.handle}</b><div style={{ wordBreak: "break-word" }}>{c.txt}</div>
+    <button onClick={() => { setResp({ id: c.id, handle: c.handle }); }} style={{ background: "none", border: 0, color: "#9fb0d0", cursor: "pointer", fontSize: 12, padding: 0, marginTop: 2 }}>Responder</button></div>
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}><button onClick={() => like(c)} aria-label="Me gusta" style={{ background: "none", border: 0, color: c.liked ? "#ff2d55" : "#9fb0d0", cursor: "pointer", padding: 0 }}><Heart size={16} fill={c.liked ? "#ff2d55" : "none"} /></button><span style={{ fontSize: 11, color: "#9fb0d0" }}>{c.likes > 0 ? n(c.likes) : ""}</span></div>
+    {(c.mio || p.mio || acc.staff || acc.mod) && <button onClick={() => borrar(c)} style={{ background: "none", border: 0, color: "#9fb0d0", cursor: "pointer" }}><Trash2 size={14} /></button>}</div>;
   return (<><div className="tv-bk" onClick={cerrar} /><div className="tv-sheet"><div style={{ display: "flex", justifyContent: "space-between" }}><b>{n(l.length)} comentarios</b><button onClick={cerrar} style={{ background: "none", border: 0, color: "#fff", cursor: "pointer" }}><X size={20} /></button></div>
-    <div style={{ overflowY: "auto", flex: 1, minHeight: 120 }}>{l.map((c) => <div key={c.id} style={{ display: "flex", gap: 8, padding: "6px 0" }}><Av src={c.foto} nombre={c.borrada ? "" : c.handle} size={30} /><div style={{ flex: 1 }}><b style={{ fontSize: 13, ...(c.borrada ? { color: "#9fb0d0" } : {}) }}>{c.borrada ? c.handle : "@" + c.handle}</b><div style={{ wordBreak: "break-word" }}>{c.txt}</div></div>{(c.mio || p.mio || acc.staff || acc.mod) && <button onClick={async () => { await post({ accion: "borrarCom", id: p.id, cid: c.id }); cargar(); acc.upd(p.id, (x) => ({ ...x, comentarios: Math.max(0, x.comentarios - 1) })); }} style={{ background: "none", border: 0, color: "#9fb0d0", cursor: "pointer" }}><Trash2 size={14} /></button>}</div>)}{!l.length && <p style={{ color: "#9fb0d0" }}>Sé el primero en comentar.</p>}</div>
-    <form className="row2" onSubmit={async (e) => { e.preventDefault(); if (!t.trim()) return; const x = t; setT(""); if (await post({ accion: "comentar", id: p.id, txt: x })) { cargar(); acc.upd(p.id, (y) => ({ ...y, comentarios: y.comentarios + 1 })); } }}><input value={t} onChange={(e) => setT(e.target.value)} maxLength={150} placeholder="Añade un comentario..." style={{ margin: 0 }} /><button className="btn"><Send size={16} /></button></form></div></>);
+    <div style={{ overflowY: "auto", flex: 1, minHeight: 120 }}>{raices.map((c) => <div key={c.id}><Fila c={c} />{hijos(c.id).map((h) => <Fila key={h.id} c={h} hijo />)}</div>)}{!l.length && <p style={{ color: "#9fb0d0" }}>Sé el primero en comentar.</p>}</div>
+    {resp && <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 12, color: "#9fb0d0", padding: "4px 2px" }}><span>Respondiendo a @{resp.handle}</span><button onClick={() => setResp(null)} style={{ background: "none", border: 0, color: "#9fb0d0", cursor: "pointer" }}><X size={14} /></button></div>}
+    <form className="row2" onSubmit={async (e) => { e.preventDefault(); if (!t.trim()) return; const x = t, r = resp; setT(""); setResp(null); if (await post({ accion: "comentar", id: p.id, txt: x, resp: r?.id })) { cargar(); acc.upd(p.id, (y) => ({ ...y, comentarios: y.comentarios + 1 })); } }}><input value={t} onChange={(e) => setT(e.target.value)} maxLength={150} placeholder={resp ? `Responde a @${resp.handle}...` : "Añade un comentario..."} style={{ margin: 0 }} /><button className="btn"><Send size={16} /></button></form></div></>);
 }
 function Compartir({ p, cerrar, me, acc }) {
   const [cs, setCs] = useState([]); useEffect(() => { if (me.chat) api("m=chats").then((j) => setCs((j?.l || []).filter((x) => x.estado === "aceptado"))); }, []);
@@ -156,7 +164,7 @@ function Compartir({ p, cerrar, me, acc }) {
     {ok && <div style={{ color: "#34d399", wordBreak: "break-all" }}>{ok}</div>}</div></>);
 }
 
-// ---- Mensajes (beta: Developer y Fundación) ----
+// ---- Mensajes ----
 // Racha 🔥: cada día los dos deben enviarse un mensaje o un video; si un día falta alguno, se pierde.
 const Racha = ({ r, grande }) => !r ? null : <span title="Racha de días seguidos: los dos deben enviarse un mensaje o video cada día" style={{ display: "inline-flex", alignItems: "center", gap: 2, color: r.n ? (r.riesgo ? "#ffb020" : "#ff7a1a") : "#9fb0d0", fontWeight: 800, fontSize: grande ? 15 : 12 }}><Flame size={grande ? 17 : 13} fill={r.n ? (r.riesgo ? "#ffb02055" : "#ff7a1a55") : "none"} />{r.n}</span>;
 function Mensajes({ acc }) {

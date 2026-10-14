@@ -19,6 +19,8 @@ import { nombreDe } from "@/lib/rol";
 import { NEGOCIO_DE } from "@/lib/negocios";
 import { licTipo, numeroLicencia } from "@/lib/licencia";
 import { COLORES_CASA } from "@/lib/catalogo";
+import { disolverHogar } from "@/lib/hogar";
+import { casaRef } from "@/lib/mdt";
 import { importarImagen, esDiscord, esExterna, migrarUrl } from "@/lib/imagen";
 import { auditar } from "@/lib/auditoria";
 const err = (m, s = 400) => NextResponse.json({ error: m }, { status: s });
@@ -111,6 +113,7 @@ export async function POST(req) {
       const quitada = (t.inventory || []).find((i) => i.name === str(b.name, 120) && +new Date(i.at) === +n);
       const r = await users.updateOne({ id: t.id }, { $pull: { inventory: { name: str(b.name, 120), at: n } } }); if (!r.modifiedCount) return err("No se encontró ese artículo", 404);
       if (quitada?.category === "Propiedades" && quitada.ubicacion) await d.collection("items").updateOne({ category: "Propiedades", name: quitada.name, ubicacion: quitada.ubicacion, stock: 0 }, { $set: { stock: 1 } }); // la casa quitada vuelve a estar en venta
+      if (quitada?.category === "Propiedades") await disolverHogar(d, casaRef(quitada.name, quitada.at));
       await log("invQuitar", quien, { item: str(b.name, 120) }); break;
     }
     case "ck": {
@@ -164,8 +167,8 @@ export async function POST(req) {
       const id = oid(b.id), it = id && (await d.collection("items").findOneAndDelete({ _id: id })); if (!it) return err("Artículo no existe", 404);
       await log("delItem", it.name, { price: it.price }, { imagen: it.img }); break;
     }
-    case "ecoSet": { // inflación, tope de circulación, impuesto a ganancias y estado (beta/abierto) del casino y el trading
-      const n = (v, mn, mx) => Math.min(mx, Math.max(mn, Number(v) || 0)), set = { inflacion: n(b.inflacion, 0, 1000), tope: Math.floor(n(b.tope, 0, 1e12)), impGan: n(b.impGan, 0, 100), casinoTes: n(b.casinoTes, 0, 100), casino: b.casino === "abierto" ? "abierto" : "beta", trading: b.trading === "abierto" ? "abierto" : "beta", tiktokChat: b.tiktokChat === "abierto" ? "abierto" : "beta" };
+    case "ecoSet": { // inflación, tope de circulación, impuesto a ganancias y % del casino
+      const n = (v, mn, mx) => Math.min(mx, Math.max(mn, Number(v) || 0)), set = { inflacion: n(b.inflacion, 0, 1000), tope: Math.floor(n(b.tope, 0, 1e12)), impGan: n(b.impGan, 0, 100), casinoTes: n(b.casinoTes, 0, 100) };
       await d.collection("config").updateOne({ _id: "economia" }, { $set: set }, { upsert: true }); await log("ecoSet", "Economía", set); break;
     }
     case "ecoMover": {
