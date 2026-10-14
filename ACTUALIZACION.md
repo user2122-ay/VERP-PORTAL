@@ -265,3 +265,6 @@ lib/rol.js, lib/placa.js, components/CedulaCard.js, app/darkweb/*, app/delictivo
 - 🏇 **Hipódromo**: 6 caballos con cuotas distintas (favoritos pagan menos), carrera animada; el servidor decide el ganador.
 - Los tres usan la misma economía del casino: pagas con la cuenta que elijas y los premios van a la que elijas; si pierdes, parte va a la Tesorería y parte al fondo del casino; si ganas, el premio sale del fondo y se cobra el impuesto a las ganancias. Si el fondo no alcanza, el casino se cierra igual que con el tragamonedas.
 - Archivos: `lib/juegos.js`, `lib/mesa.js`, `app/api/casino/mesa/route.js`, `app/casino/Mesas.js`.
+
+- (26b) Cada juego del casino ahora es **su propia app en el teléfono**: Tragamonedas, Ruleta, Blackjack, Hipódromo y Dados 1 vs 1 (rutas `/casino/tragamonedas`, `/casino/ruleta`, `/casino/blackjack`, `/casino/hipodromo`, `/casino/dados`). `/casino` redirige al teléfono.
+- Sin emojis en el casino: símbolos del tragamonedas, palos de las cartas, dados, caballos y los logos de cada app son SVG propios (`components/Iconos.js`). Trading también usa un logo SVG.

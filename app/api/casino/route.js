@@ -13,7 +13,7 @@ const bad = (m, s = 400) => NextResponse.json({ error: m }, { status: s });
 export async function POST(req) {
   const u = await apiUser(); if (!u?.cedula) return bad("Sin sesión", 401); const d = await db();
   if (!tieneTelefono(u) || !(await appVisible(d, u, "casino"))) return bad("El casino no está disponible", 403);
-  const fondo = await saldoCasino(d); if (!casinoAbierto(fondo)) return bad("🔒 El casino está cerrado por el momento: se quedó sin fondos. Vuelve cuando Administración le asigne más.", 409);
+  const fondo = await saldoCasino(d); if (!casinoAbierto(fondo)) return bad("El casino está cerrado por el momento: se quedó sin fondos. Vuelve cuando Administración le asigne más.", 409);
   const b = await req.json().catch(() => ({})), monto = Math.floor(Number(b.monto)), mx = apuestaMax(fondo); if (!(monto >= MIN && monto <= mx)) return bad(`La apuesta va de $${MIN} a $${mx.toLocaleString("es")} (lo que el fondo del casino puede pagar)`);
   const pk = pagoKey(u, b.pago); if (!pk) return bad("Elige con qué pagar"); const us = d.collection("users"), ahora = Date.now();
   if (!(await us.updateOne({ id: u.id, $or: [{ casinoAt: { $lt: ahora - ESPERA } }, { casinoAt: { $exists: false } }] }, { $set: { casinoAt: ahora } })).modifiedCount) return bad("Espera unos segundos entre jugadas");

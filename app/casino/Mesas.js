@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { colorNum, rango, palo, COLORES } from "@/lib/juegos";
+import { Moneda, Palo, Caballo } from "@/components/Iconos";
 const $ = (n) => `$${Number(n || 0).toLocaleString("es")}`, FICHAS = [100, 250, 500, 1000, 2500, 5000];
 const api = async (b) => { const x = await fetch("/api/casino/mesa", { method: "POST", body: JSON.stringify(b) }), j = await x.json().catch(() => ({})); return { ok: x.ok, j }; };
 const CSS = `.mz{background:radial-gradient(circle at 50% 30%,#0f6b3a,#073d21);border:3px solid #ffc83d;border-radius:20px;padding:14px;box-shadow:0 0 24px #ffc83d44,inset 0 0 30px #0007;color:#fff}
@@ -9,13 +10,13 @@ const CSS = `.mz{background:radial-gradient(circle at 50% 30%,#0f6b3a,#073d21);b
 .mz-c.r{color:#d11}.mz-c.b{background:repeating-linear-gradient(45deg,#7a1230,#7a1230 6px,#9b1c3f 6px,#9b1c3f 12px);color:transparent;border:2px solid #fff}
 @keyframes mz-d{from{transform:translateY(-30px) rotate(-12deg);opacity:0}to{transform:none;opacity:1}}
 @keyframes mz-g{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
-.mz-h{position:absolute;font-size:28px;transform:scaleX(-1);transition:left .06s linear}.mz-h.run{animation:mz-g .18s infinite}`;
+.mz-h{position:absolute;transition:left .06s linear}`;
 function Pagos({ metodos, pago, setPago, dep, setDep }) {
   return (<div className="card" style={{ marginTop: 12 }}><label className="mut">Pagar la apuesta con</label><select value={pago} onChange={(e) => setPago(e.target.value)}>{metodos.map((x) => <option key={x.k} value={x.k}>{x.label} · {$(x.saldo)}</option>)}</select>
     <label className="mut">Depositar los premios en</label><select value={dep} onChange={(e) => setDep(e.target.value)}>{metodos.map((x) => <option key={x.k} value={x.k}>{x.label} · {$(x.saldo)}</option>)}</select></div>);
 }
-const Cerrado = ({ ab }) => !ab && <div style={{ background: "#7f1d1d", border: "2px solid #ef4444", borderRadius: 12, padding: 10, textAlign: "center", fontWeight: 800, margin: "8px 0" }}>🔒 Casino cerrado por el momento: se quedó sin fondos.</div>;
-const Resultado = ({ r }) => r && (r.profit > 0 ? <div style={{ textAlign: "center" }}><div style={{ fontSize: 22, fontWeight: 900, color: "#ffc83d" }}>¡GANASTE {$(r.profit)}! 🪙</div><div style={{ fontSize: 13, opacity: 0.85 }}>{r.impuesto ? `Impuesto ${$(r.impuesto)} · recibes ${$(r.neto)}` : `Recibes ${$(r.neto)}`}</div></div> : r.profit === 0 ? <div style={{ textAlign: "center", fontWeight: 800 }}>Empate: te devuelven {$(r.neto)}{r.sinFondos ? " (el casino no tenía fondos para pagar el premio)" : ""}</div> : <div style={{ textAlign: "center", fontWeight: 800, opacity: 0.9 }}>Perdiste {$(-r.profit)}</div>);
+const Cerrado = ({ ab }) => !ab && <div style={{ background: "#7f1d1d", border: "2px solid #ef4444", borderRadius: 12, padding: 10, textAlign: "center", fontWeight: 800, margin: "8px 0" }}>Casino cerrado por el momento: se quedó sin fondos.</div>;
+const Resultado = ({ r }) => r && (r.profit > 0 ? <div style={{ textAlign: "center" }}><div style={{ fontSize: 22, fontWeight: 900, color: "#ffc83d" }}>¡GANASTE {$(r.profit)}!</div><div style={{ fontSize: 13, opacity: 0.85 }}>{r.impuesto ? `Impuesto ${$(r.impuesto)} · recibes ${$(r.neto)}` : `Recibes ${$(r.neto)}`}</div></div> : r.profit === 0 ? <div style={{ textAlign: "center", fontWeight: 800 }}>Empate: te devuelven {$(r.neto)}{r.sinFondos ? " (el casino no tenía fondos para pagar el premio)" : ""}</div> : <div style={{ textAlign: "center", fontWeight: 800, opacity: 0.9 }}>Perdiste {$(-r.profit)}</div>);
 function useEstado(p) { const [e, setE] = useState({ metodos: p.metodos, abierto: p.abierto, max: p.max }); const [pago, setPago] = useState("efectivo"), [dep, setDep] = useState("efectivo"); return { e, setE, pago, setPago, dep, setDep }; }
 
 // ---------- RULETA ESPAÑOLA ----------
@@ -36,11 +37,11 @@ export function Ruleta(p) {
   const celda = (n) => <div key={n} className="mz-n" onClick={() => poner("num", n)} style={{ background: COL[colorNum(n)], position: "relative", gridColumn: n === 0 ? "1 / -1" : undefined }}>{n}{chip("num", n)}</div>;
   const ext = (t, v, txt, bg) => <div key={t + v} className="mz-n" onClick={() => poner(t, v)} style={{ background: bg || "#0006", position: "relative" }}>{txt}{chip(t, v)}</div>;
   return (<div style={{ maxWidth: 480, margin: "0 auto" }}><style>{CSS}</style>
-    <h2 style={{ textAlign: "center", margin: "0 0 4px" }}>🎡 Ruleta Española</h2>
+    <h2 style={{ textAlign: "center", margin: "0 0 4px" }}>Ruleta Española</h2>
     <div className="mz"><div style={{ position: "relative", width: 230, height: 230, margin: "0 auto 8px" }}>
-      <div style={{ position: "absolute", top: -8, left: "50%", transform: "translateX(-50%)", zIndex: 3, fontSize: 24 }}>🔻</div>
+      <div style={{ position: "absolute", top: -8, left: "50%", transform: "translateX(-50%)", zIndex: 3, width: 0, height: 0, borderLeft: "10px solid transparent", borderRight: "10px solid transparent", borderTop: "18px solid #ffc83d" }} />
       <div style={{ width: "100%", height: "100%", borderRadius: "50%", background: GRAD, border: "6px solid #ffc83d", boxShadow: "0 0 20px #000a", transition: gira ? "transform 4.6s cubic-bezier(.12,.6,.1,1)" : "none", transform: `rotate(${ang}deg)` }} />
-      <div style={{ position: "absolute", inset: "30%", borderRadius: "50%", background: "#073d21", border: "4px solid #ffc83d", display: "grid", placeItems: "center", fontSize: 30, fontWeight: 900, color: "#fff" }}>{res ? res.num : gira ? "…" : "🎡"}</div></div>
+      <div style={{ position: "absolute", inset: "30%", borderRadius: "50%", background: "#073d21", border: "4px solid #ffc83d", display: "grid", placeItems: "center", fontSize: 30, fontWeight: 900, color: "#fff" }}>{res ? res.num : gira ? "…" : "0"}</div></div>
       <div style={{ display: "flex", gap: 4, justifyContent: "center", flexWrap: "wrap", minHeight: 24 }}>{hist.map((n, i) => <span key={i} style={{ background: COL[colorNum(n)], borderRadius: 6, padding: "1px 7px", fontSize: 12, fontWeight: 800 }}>{n}</span>)}</div>
       <div style={{ minHeight: 48, margin: "6px 0" }}>{res && (<><div style={{ textAlign: "center", fontSize: 18, fontWeight: 900 }}>Salió <span style={{ color: colorNum(res.num) === "negro" ? "#ccc" : colorNum(res.num) === "rojo" ? "#ff6b6b" : "#4ade80" }}>{res.num} {colorNum(res.num)}</span></div><Resultado r={res} /></>)}{err && <div style={{ color: "#ff8a95", fontWeight: 700, textAlign: "center" }}>{err}</div>}</div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(6,1fr)", gap: 3 }}>{Array.from({ length: 37 }, (_, n) => celda(n))}</div>
@@ -58,15 +59,15 @@ export function Ruleta(p) {
 }
 
 // ---------- BLACKJACK ----------
-const PALOS = "♠♥♦♣", RN = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
-const Carta = ({ c, oculta }) => oculta ? <span className="mz-c b">?</span> : <span className={"mz-c " + (palo(c) === 1 || palo(c) === 2 ? "r" : "")}><span style={{ textAlign: "center", lineHeight: 1 }}>{RN[rango(c)]}<br /><span style={{ fontSize: 20 }}>{PALOS[palo(c)]}</span></span></span>;
+const RN = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
+const Carta = ({ c, oculta }) => oculta ? <span className="mz-c b">?</span> : <span className={"mz-c " + (palo(c) === 1 || palo(c) === 2 ? "r" : "")}><span style={{ textAlign: "center", lineHeight: 1 }}>{RN[rango(c)]}<br /><span style={{ display: "inline-block", marginTop: 2 }}><Palo p={palo(c)} size={22} /></span></span></span>;
 export function Blackjack(p) {
   const { e, setE, pago, setPago, dep, setDep } = useEstado(p), [monto, setMonto] = useState(500), [g, setG] = useState(null), [busy, setBusy] = useState(false), [err, setErr] = useState("");
   useEffect(() => { api({ a: "bj_estado" }).then((r) => { if (r.ok) { setG(r.j.juego); setE({ metodos: r.j.metodos, abierto: r.j.abierto, max: r.j.max }); } }); }, []);
   async function acc(a) { if (busy) return; setBusy(true); setErr(""); const r = await api({ a, monto, pago, deposito: dep }); setBusy(false); if (!r.ok) return setErr(r.j.error || "Error"); setG(r.j.juego); setE({ metodos: r.j.metodos, abierto: r.j.abierto, max: r.j.max }); }
   const jugando = g && !g.fin, saldo = e.metodos.find((x) => x.k === pago)?.saldo ?? 0;
   return (<div style={{ maxWidth: 480, margin: "0 auto" }}><style>{CSS}</style>
-    <h2 style={{ textAlign: "center", margin: "0 0 4px" }}>🃏 Blackjack</h2>
+    <h2 style={{ textAlign: "center", margin: "0 0 4px" }}>Blackjack</h2>
     <div className="mz" style={{ minHeight: 300 }}>
       <div style={{ opacity: 0.8, fontWeight: 800 }}>Casa {g ? (g.fin ? `· ${g.vc}` : "") : ""}</div><div style={{ minHeight: 84 }}>{g ? [...g.c.map((c, i) => <Carta key={i} c={c} />), ...(!g.fin ? [<Carta key="o" oculta />] : [])] : <span className="mut">Haz tu apuesta y reparte</span>}</div>
       <div style={{ opacity: 0.8, fontWeight: 800, marginTop: 8 }}>Tú {g ? `· ${g.vp}` : ""}{g?.doble ? " · doblada" : ""}</div><div style={{ minHeight: 84 }}>{g?.p.map((c, i) => <Carta key={i} c={c} />)}</div>
@@ -92,20 +93,20 @@ export function Hipodromo(p) {
   }
   const saldo = e.metodos.find((x) => x.k === pago)?.saldo ?? 0, ok = !corre && sel !== null && !res && e.abierto && saldo >= monto && monto <= e.max;
   return (<div style={{ maxWidth: 520, margin: "0 auto" }}><style>{CSS}</style>
-    <h2 style={{ textAlign: "center", margin: "0 0 4px" }}>🏇 Hipódromo VE:RP</h2>
+    <h2 style={{ textAlign: "center", margin: "0 0 4px" }}>Hipódromo VE:RP</h2>
     <div className="mz" style={{ background: "linear-gradient(180deg,#3d7a2a,#2a5a1c)" }}>
       <div style={{ position: "relative", background: "#c9a26a", borderRadius: 10, padding: "6px 0", border: "2px solid #7a5a2a" }}>
         {(card || []).map((c, i) => <div key={i} style={{ position: "relative", height: 42, borderBottom: i < 5 ? "1px dashed #7a5a2a88" : 0 }}>
           <span style={{ position: "absolute", left: 4, top: 12, fontSize: 11, fontWeight: 900, background: COLORES[i], borderRadius: 6, padding: "1px 6px", zIndex: 2 }}>{i + 1}</span>
-          <span className={"mz-h" + (corre ? " run" : "")} style={{ left: `${4 + pos[i] * 80}%`, top: 4, filter: `drop-shadow(0 0 3px ${COLORES[i]})`, zIndex: 3 }}>🐎</span>
-          <span style={{ position: "absolute", right: 6, top: 6, fontSize: 24 }}>{i === 0 ? "🏁" : ""}</span></div>)}
+          <span className="mz-h" style={{ left: `${4 + pos[i] * 80}%`, top: 4, zIndex: 3 }}><Caballo color={COLORES[i]} corre={corre} size={50} /></span>
+          </div>)}
         <div style={{ position: "absolute", right: "8%", top: 0, bottom: 0, width: 4, background: "repeating-linear-gradient(#fff 0 8px,#111 8px 16px)" }} /></div>
-      <div style={{ minHeight: 54, marginTop: 8 }}>{res && <><div style={{ textAlign: "center", fontWeight: 900 }}>🏆 Ganó #{res.ganador + 1} {card[res.ganador].n}{res.caballo === res.ganador ? " — ¡era tu caballo!" : ""}</div><Resultado r={res} /></>}{err && <div style={{ color: "#ff8a95", fontWeight: 700, textAlign: "center" }}>{err}</div>}</div>
+      <div style={{ minHeight: 54, marginTop: 8 }}>{res && <><div style={{ textAlign: "center", fontWeight: 900 }}>Ganó #{res.ganador + 1} {card[res.ganador].n}{res.caballo === res.ganador ? " — ¡era tu caballo!" : ""}</div><Resultado r={res} /></>}{err && <div style={{ color: "#ff8a95", fontWeight: 700, textAlign: "center" }}>{err}</div>}</div>
       <div style={{ display: "grid", gap: 4 }}>{(card || []).map((c, i) => <button key={i} disabled={corre || !!res} onClick={() => setSel(i)} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 10px", borderRadius: 10, cursor: "pointer", border: sel === i ? "2px solid #ffc83d" : "2px solid #ffffff33", background: sel === i ? "#ffc83d33" : "#0005", color: "#fff", fontWeight: 700 }}><span><span style={{ background: COLORES[i], borderRadius: 6, padding: "1px 7px", marginRight: 8 }}>{i + 1}</span>{c.n}</span><span>paga x{c.cuota}</span></button>)}</div>
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "center", margin: "10px 0 4px" }}>{FICHAS.filter((f) => f <= Math.max(e.max, 100)).map((f) => <button key={f} disabled={corre || !!res} onClick={() => setMonto(f)} style={{ background: monto === f ? "#ffc83d" : "#0006", color: monto === f ? "#222" : "#fff", border: "2px solid #ffc83d", borderRadius: 99, padding: "6px 12px", fontWeight: 800, cursor: "pointer" }}>{f}</button>)}</div>
       <Cerrado ab={e.abierto} />
       {res ? <button onClick={programa} style={{ width: "100%", padding: 14, fontSize: 18, fontWeight: 900, borderRadius: 14, border: 0, cursor: "pointer", background: "linear-gradient(180deg,#ffd85a,#e09a00)", color: "#3b0a1a" }}>Nueva carrera</button>
-        : <button onClick={correr} disabled={!ok} style={{ width: "100%", padding: 14, fontSize: 18, fontWeight: 900, borderRadius: 14, border: 0, cursor: "pointer", background: "linear-gradient(180deg,#ffd85a,#e09a00)", color: "#3b0a1a", opacity: ok ? 1 : 0.6 }}>{corre ? "¡Corriendo!…" : sel === null ? "Elige un caballo" : `🏇 APOSTAR ${$(monto)} al #${sel + 1}`}</button>}</div>
+        : <button onClick={correr} disabled={!ok} style={{ width: "100%", padding: 14, fontSize: 18, fontWeight: 900, borderRadius: 14, border: 0, cursor: "pointer", background: "linear-gradient(180deg,#ffd85a,#e09a00)", color: "#3b0a1a", opacity: ok ? 1 : 0.6 }}>{corre ? "¡Corriendo!…" : sel === null ? "Elige un caballo" : `APOSTAR ${$(monto)} al #${sel + 1}`}</button>}</div>
     <Pagos metodos={e.metodos} pago={pago} setPago={setPago} dep={dep} setDep={setDep} />
     <div className="mut" style={{ fontSize: 12, marginTop: 8 }}>Elige un caballo a ganador. Los favoritos pagan menos y los más difíciles pagan más. Si tu caballo gana cobras tu apuesta x la cuota; si no, la pierdes. De la ganancia se paga {p.imp}% de impuesto. Apuesta de $100 a {$(Math.max(e.max, 100))}.</div></div>);
 }

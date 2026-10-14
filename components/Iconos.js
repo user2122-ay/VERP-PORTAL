@@ -1,0 +1,39 @@
+// Íconos propios del casino (SVG, sin emojis): símbolos del tragamonedas, palos, dados, caballo y el logo de cada app del teléfono.
+const S = (p) => ({ width: p.size || 24, height: p.size || 24, viewBox: "0 0 24 24", style: p.style, className: p.className });
+export const Moneda = (p) => <svg {...S(p)}><circle cx="12" cy="12" r="10.5" fill="#f5b301" stroke="#b97d00" strokeWidth="1.5" /><circle cx="12" cy="12" r="7.5" fill="none" stroke="#ffe27a" strokeWidth="1.2" /><text x="12" y="16.4" textAnchor="middle" fontSize="11" fontWeight="900" fill="#8a5a00" fontFamily="Arial,sans-serif">$</text></svg>;
+// 0 cereza · 1 campana · 2 estrella · 3 siete · 4 diamante · 5 moneda
+export const Simbolo = ({ s, size = 56 }) => {
+  const P = { width: size, height: size, viewBox: "0 0 24 24" };
+  if (s === 0) return <svg {...P}><path d="M8 15c0-6 3-10 6-11M16 14c0-5-1-8-2-10" fill="none" stroke="#2f7d32" strokeWidth="1.6" strokeLinecap="round" /><path d="M14 4c2-1.5 5-1 6 1-2.5 1-5 .5-6-1z" fill="#43a047" /><circle cx="8" cy="17" r="4.6" fill="#d11a2a" /><circle cx="16.5" cy="16" r="4.6" fill="#e5253a" /><circle cx="6.6" cy="15.4" r="1.2" fill="#fff" opacity=".55" /><circle cx="15.2" cy="14.4" r="1.2" fill="#fff" opacity=".55" /></svg>;
+  if (s === 1) return <svg {...P}><path d="M12 2.5a1.6 1.6 0 0 1 1.6 1.6v.5A6.2 6.2 0 0 1 18.2 10.6v4l2 2.2v1H3.8v-1l2-2.2v-4A6.2 6.2 0 0 1 10.4 4.6v-.5A1.6 1.6 0 0 1 12 2.5z" fill="#f5b301" stroke="#b97d00" strokeWidth="1" /><circle cx="12" cy="20" r="2" fill="#b97d00" /><path d="M8 9.5a4 4 0 0 1 2-2.6" stroke="#fff" strokeWidth="1.4" fill="none" opacity=".7" strokeLinecap="round" /></svg>;
+  if (s === 2) return <svg {...P}><path d="M12 1.8l3 6.6 7.2.9-5.3 4.9 1.4 7.1L12 17.7l-6.3 3.6 1.4-7.1L1.8 9.3l7.2-.9z" fill="#ffd21f" stroke="#c98a00" strokeWidth="1" strokeLinejoin="round" /></svg>;
+  if (s === 3) return <svg {...P}><text x="12" y="20" textAnchor="middle" fontSize="24" fontWeight="900" fill="#e11d48" stroke="#7f0a24" strokeWidth=".8" fontFamily="Georgia,serif">7</text></svg>;
+  if (s === 4) return <svg {...P}><path d="M6 3.5h12l4 5.8L12 21 2 9.3z" fill="#38bdf8" stroke="#0369a1" strokeWidth="1" strokeLinejoin="round" /><path d="M2 9.3h20M9 3.5L7.5 9.3 12 21l4.5-11.7L15 3.5" fill="none" stroke="#e0f7ff" strokeWidth=".9" opacity=".8" /></svg>;
+  return <Moneda size={size} />;
+};
+const PALOS = {
+  0: <path d="M12 2C8 8 4 10.5 4 14.2a4 4 0 0 0 7 2.5L10 22h4l-1-5.3a4 4 0 0 0 7-2.5C20 10.5 16 8 12 2z" />,
+  1: <path d="M12 21.5s-8.5-5.6-8.5-11.4A4.6 4.6 0 0 1 12 7.6a4.6 4.6 0 0 1 8.5 2.5c0 5.8-8.5 11.4-8.5 11.4z" />,
+  2: <path d="M12 2l8 10-8 10-8-10z" />,
+  3: <g><circle cx="12" cy="7" r="4.3" /><circle cx="6.6" cy="14" r="4.3" /><circle cx="17.4" cy="14" r="4.3" /><path d="M10.8 13h2.4l1.6 9H9.2z" /></g>,
+};
+export const Palo = ({ p, size = 20 }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">{PALOS[p]}</svg>;
+const PIPS = { 1: [[12, 12]], 2: [[7, 7], [17, 17]], 3: [[7, 7], [12, 12], [17, 17]], 4: [[7, 7], [17, 7], [7, 17], [17, 17]], 5: [[7, 7], [17, 7], [12, 12], [7, 17], [17, 17]], 6: [[7, 7], [17, 7], [7, 12], [17, 12], [7, 17], [17, 17]] };
+export const Dado = ({ v = 1, size = 54, style }) => <svg width={size} height={size} viewBox="0 0 24 24" style={{ filter: "drop-shadow(0 2px 3px #0007)", ...style }}><rect x="1.5" y="1.5" width="21" height="21" rx="5" fill="#fafafa" stroke="#cfcfd8" />{(PIPS[v] || PIPS[1]).map(([x, y], i) => <circle key={i} cx={x} cy={y} r="2.1" fill="#16161d" />)}</svg>;
+// Caballo de perfil mirando a la derecha; color = casaca del jinete. corre=true mueve las patas.
+export const Caballo = ({ color = "#ef4444", corre, size = 44 }) => <svg width={size} height={size * 0.68} viewBox="0 0 48 32" style={{ overflow: "visible" }}>
+  <style>{`.cv-p{transform-box:fill-box;transform-origin:50% 0}.cv-r .a{animation:cv-a .22s infinite alternate}.cv-r .b{animation:cv-b .22s infinite alternate}@keyframes cv-a{from{transform:rotate(-28deg)}to{transform:rotate(28deg)}}@keyframes cv-b{from{transform:rotate(28deg)}to{transform:rotate(-28deg)}}`}</style>
+  <g className={corre ? "cv-r" : ""}>
+    <path d="M12 12Q3 13 3 25" fill="none" stroke="#3b2414" strokeWidth="3" strokeLinecap="round" />
+    <g stroke="#6b4423" strokeWidth="3" strokeLinecap="round"><line className="cv-p a" x1="15" y1="19" x2="12" y2="30" /><line className="cv-p b" x1="19" y1="20" x2="19" y2="30" /><line className="cv-p b" x1="29" y1="20" x2="31" y2="30" /><line className="cv-p a" x1="33" y1="19" x2="37" y2="29" /></g>
+    <ellipse cx="23" cy="16" rx="13" ry="6.3" fill="#8a5a2e" /><path d="M31 13l7-9 5 3-5 11z" fill="#8a5a2e" /><ellipse cx="43" cy="6.5" rx="5" ry="3" transform="rotate(25 43 6.5)" fill="#7a4d26" /><path d="M32 10l5-6" stroke="#3b2414" strokeWidth="2.2" strokeLinecap="round" /><circle cx="43.5" cy="5.6" r=".9" fill="#111" />
+    <path d="M18 11.5h9l-1 4h-7z" fill="#222" opacity=".35" /><circle cx="23" cy="8.2" r="3" fill={color} stroke="#fff" strokeWidth=".8" /><path d="M19.5 11.5c1-2 5-2 7 0l-1 4h-5z" fill={color} />
+  </g></svg>;
+// ---- Logos de las apps del teléfono ----
+const L = { width: 96, height: 96, viewBox: "0 0 64 64" };
+const sombra = (c) => ({ filter: `drop-shadow(0 0 10px ${c}99)` });
+export const LogoSlot = () => <svg {...L} style={sombra("#ffc83d")}><rect x="6" y="10" width="52" height="44" rx="9" fill="#7a1230" stroke="#ffc83d" strokeWidth="3" /><rect x="12" y="19" width="40" height="22" rx="4" fill="#0b0b12" />{[0, 1, 2].map((i) => <rect key={i} x={14 + i * 13} y="21" width="11" height="18" rx="2" fill="#f4f4fa" />)}<text x="19.5" y="35" textAnchor="middle" fontSize="13" fontWeight="900" fill="#e11d48" fontFamily="Georgia,serif">7</text><text x="32.5" y="35" textAnchor="middle" fontSize="13" fontWeight="900" fill="#e11d48" fontFamily="Georgia,serif">7</text><text x="45.5" y="35" textAnchor="middle" fontSize="13" fontWeight="900" fill="#e11d48" fontFamily="Georgia,serif">7</text><circle cx="32" cy="48" r="3" fill="#ffc83d" /></svg>;
+export const LogoRuleta = () => <svg {...L} style={sombra("#22c55e")}><circle cx="32" cy="32" r="28" fill="#6b3f1d" stroke="#ffc83d" strokeWidth="2.5" /><circle cx="32" cy="32" r="22" fill="none" stroke="#c81e1e" strokeWidth="14" /><circle cx="32" cy="32" r="22" fill="none" stroke="#111" strokeWidth="14" strokeDasharray="5.76 5.76" /><circle cx="32" cy="32" r="12" fill="#0a8a3c" stroke="#ffc83d" strokeWidth="2" /><circle cx="32" cy="32" r="3.5" fill="#ffc83d" /><circle cx="32" cy="12" r="2.6" fill="#fff" /></svg>;
+export const LogoBJ = () => <svg {...L} style={sombra("#3b82f6")}><g transform="rotate(-14 24 34)"><rect x="9" y="12" width="28" height="40" rx="4" fill="#fff" stroke="#ccc" /><text x="14" y="26" fontSize="12" fontWeight="900" fill="#111" fontFamily="Georgia,serif">A</text><g color="#111" transform="translate(15 28) scale(.8)"><Palo p={0} size={24} /></g></g><g transform="rotate(12 42 34)"><rect x="28" y="12" width="28" height="40" rx="4" fill="#fff" stroke="#ccc" /><text x="33" y="26" fontSize="12" fontWeight="900" fill="#d11" fontFamily="Georgia,serif">K</text><g color="#d11" transform="translate(34 28) scale(.8)"><Palo p={1} size={24} /></g></g></svg>;
+export const LogoHip = () => <svg {...L} style={sombra("#f59e0b")}><rect x="4" y="14" width="56" height="36" rx="8" fill="#3d7a2a" stroke="#c9a26a" strokeWidth="3" /><rect x="8" y="30" width="48" height="2" fill="#fff" opacity=".35" /><rect x="50" y="16" width="3" height="32" fill="#fff" /><g transform="translate(10 20)"><Caballo color="#ef4444" size={40} /></g><path d="M52 10l8 4-8 4z" fill="#ef4444" /><rect x="51.5" y="8" width="1.6" height="12" fill="#ddd" /></svg>;
+export const LogoDados = () => <svg {...L} style={sombra("#a855f7")}><g transform="rotate(-12 22 40)"><Dado v={5} size={34} style={{ filter: "none" }} /></g><g transform="translate(26 22) rotate(14 17 17)"><Dado v={3} size={34} style={{ filter: "none" }} /></g></svg>;

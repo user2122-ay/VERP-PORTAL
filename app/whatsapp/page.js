@@ -4,6 +4,7 @@ import Link from "next/link";
 import { needUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { appVisible } from "@/lib/reserva";
+import { LogoSlot, LogoRuleta, LogoBJ, LogoHip, LogoDados } from "@/components/Iconos";
 import { CHIP_PRECIO, tieneTelefono, WA, esDesechable } from "@/lib/redes";
 export const dynamic = "force-dynamic";
 const Falta = ({ t, p }) => <div className="card" style={{ maxWidth: 420, margin: "0 auto" }}><b>{t}</b><p className="mut">{p}</p><a className="btn" href="/mercado?c=Telefon%C3%ADa">Ir al Mercado</a></div>;
@@ -18,6 +19,6 @@ export default async function P({ searchParams }) {
     <div style={{ display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap", marginTop: 20 }}>
       <Link href="/tikverp" className="card" style={T}><img src="/tikverp-logo.png" alt="VE TikTok" style={{ height: 96, filter: "drop-shadow(0 0 10px #2f8cffaa)" }} /><b style={{ fontSize: 20 }}>VE TikTok</b></Link>
       <Link href="/whatsapp?app=wa" className="card" style={T}><Logo /><b style={{ fontSize: 20 }}>{WA}</b></Link>
-      {cas && <Link href="/casino" className="card" style={T}><span style={{ fontSize: 76, filter: "drop-shadow(0 0 10px #ffc83daa)" }}>🎰</span><b style={{ fontSize: 20 }}>Casino</b></Link>}
-      {tra && <Link href="/trading" className="card" style={T}><span style={{ fontSize: 76, filter: "drop-shadow(0 0 10px #22c55eaa)" }}>📈</span><b style={{ fontSize: 20 }}>Trading</b></Link>}</div></Shell>);
+      {cas && [["tragamonedas", "Tragamonedas", <LogoSlot />], ["ruleta", "Ruleta", <LogoRuleta />], ["blackjack", "Blackjack", <LogoBJ />], ["hipodromo", "Hipódromo", <LogoHip />], ["dados", "Dados", <LogoDados />]].map(([k, n, l]) => <Link key={k} href={"/casino/" + k} className="card" style={T}>{l}<b style={{ fontSize: 20 }}>{n}</b></Link>)}
+      {tra && <Link href="/trading" className="card" style={T}><svg viewBox="0 0 64 64" width="96" height="96" style={{ filter: "drop-shadow(0 0 10px #22c55eaa)" }}><rect x="6" y="8" width="52" height="48" rx="9" fill="#0f2a1c" stroke="#22c55e" strokeWidth="3" /><path d="M13 44l11-12 8 7 15-19" fill="none" stroke="#22c55e" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" /><path d="M40 20h7v7" fill="none" stroke="#22c55e" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" /></svg><b style={{ fontSize: 20 }}>Trading</b></Link>}</div></Shell>);
 }

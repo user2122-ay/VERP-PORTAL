@@ -15,7 +15,7 @@ export async function POST(req) {
   const u = await apiUser(); if (!u?.cedula) return bad("Sin sesión", 401); const d = await db();
   if (!tieneTelefono(u) || !(await appVisible(d, u, "casino"))) return bad("El casino no está disponible", 403);
   const b = await req.json().catch(() => ({})), fondo = await saldoCasino(d), mx = apuestaMax(fondo), abierto = casinoAbierto(fondo), out = async (x) => NextResponse.json({ ok: true, ...x, ...(await estadoCasino(d, u.id)) });
-  const cierre = "🔒 El casino está cerrado por el momento: se quedó sin fondos. Vuelve cuando Administración le asigne más.";
+  const cierre = "El casino está cerrado por el momento: se quedó sin fondos. Vuelve cuando Administración le asigne más.";
   const bj = d.collection("bj"), hip = d.collection("hipodromo");
   const vista = (g) => ({ p: g.p, c: g.fin ? g.c : [g.c[0]], vp: valorMano(g.p).total, vc: g.fin ? valorMano(g.c).total : null, fin: g.fin, monto: g.monto, doble: !!g.doble, res: g.res || null, puedeDoblar: !g.fin && g.p.length === 2 && !g.doble && g.monto * 2 <= mx });
   async function cerrarBJ(g, premio) { // resuelve y paga una sola vez
