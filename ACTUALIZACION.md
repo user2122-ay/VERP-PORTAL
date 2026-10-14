@@ -257,3 +257,11 @@ lib/rol.js, lib/placa.js, components/CedulaCard.js, app/darkweb/*, app/delictivo
 - El Mercado muestra "Sin foto" también cuando el link está vencido.
 
 - (25b) Guardar fotos ahora funciona con cualquier link https (Discord, Google/ERLC, Imgur…), no solo Discord. El botón "Foto" de un artículo que ya tiene link guarda ESA imagen y la publica sin pedir otro link.
+
+
+## Actualización 26 — 3 juegos nuevos en el Casino
+- 🎡 **Ruleta española** (0-36, un cero): número 35 a 1, docenas/columnas 2 a 1, rojo/negro, par/impar, 1-18/19-36 1 a 1. Varias apuestas por giro, rueda animada.
+- 🃏 **Blackjack**: pedir, plantarse y doblar; la casa se planta en 17; blackjack paga 3 a 2. La mano queda guardada si sales y vuelves.
+- 🏇 **Hipódromo**: 6 caballos con cuotas distintas (favoritos pagan menos), carrera animada; el servidor decide el ganador.
+- Los tres usan la misma economía del casino: pagas con la cuenta que elijas y los premios van a la que elijas; si pierdes, parte va a la Tesorería y parte al fondo del casino; si ganas, el premio sale del fondo y se cobra el impuesto a las ganancias. Si el fondo no alcanza, el casino se cierra igual que con el tragamonedas.
+- Archivos: `lib/juegos.js`, `lib/mesa.js`, `app/api/casino/mesa/route.js`, `app/casino/Mesas.js`.
