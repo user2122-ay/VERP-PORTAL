@@ -61,7 +61,7 @@ export function Ruleta(p) {
 // ---------- BLACKJACK ----------
 const RN = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
 const Carta = ({ c, oculta }) => oculta ? <span className="mz-c b">?</span> : <span className={"mz-c " + (palo(c) === 1 || palo(c) === 2 ? "r" : "")}><span style={{ textAlign: "center", lineHeight: 1 }}>{RN[rango(c)]}<br /><span style={{ display: "inline-block", marginTop: 2 }}><Palo p={palo(c)} size={22} /></span></span></span>;
-export function Blackjack(p) {
+function BlackjackCasa(p) {
   const { e, setE, pago, setPago, dep, setDep } = useEstado(p), [monto, setMonto] = useState(500), [g, setG] = useState(null), [busy, setBusy] = useState(false), [err, setErr] = useState("");
   useEffect(() => { api({ a: "bj_estado" }).then((r) => { if (r.ok) { setG(r.j.juego); setE({ metodos: r.j.metodos, abierto: r.j.abierto, max: r.j.max }); } }); }, []);
   async function acc(a) { if (busy) return; setBusy(true); setErr(""); const r = await api({ a, monto, pago, deposito: dep }); setBusy(false); if (!r.ok) return setErr(r.j.error || "Error"); setG(r.j.juego); setE({ metodos: r.j.metodos, abierto: r.j.abierto, max: r.j.max }); }
@@ -79,6 +79,45 @@ export function Blackjack(p) {
         <button onClick={() => acc("bj_start")} disabled={!e.abierto || busy || saldo < monto || monto > e.max} style={{ width: "100%", padding: 14, fontSize: 18, fontWeight: 900, borderRadius: 14, border: 0, cursor: "pointer", background: "linear-gradient(180deg,#ffd85a,#e09a00)", color: "#3b0a1a", opacity: !e.abierto || busy || saldo < monto || monto > e.max ? 0.6 : 1 }}>{g?.fin ? "Otra mano" : "Repartir"} · {$(monto)}</button></>}</div>
     <Pagos metodos={e.metodos} pago={pago} setPago={setPago} dep={dep} setDep={setDep} />
     <div className="mut" style={{ fontSize: 12, marginTop: 8 }}>Acércate a 21 sin pasarte. La casa se planta en 17. Blackjack (21 con dos cartas) paga 3 a 2; ganar paga 1 a 1; empate devuelve tu apuesta. “Doblar” duplica la apuesta y recibes una sola carta. De la ganancia se paga {p.imp}% de impuesto. Apuesta de $100 a {$(Math.max(e.max, 100))}.</div></div>);
+}
+
+// ---------- BLACKJACK EN SALA (1 contra 1) ----------
+const ST = { background: "#0006", color: "#fff", border: "2px solid #ffc83d", borderRadius: 99, padding: "6px 12px", fontWeight: 800, cursor: "pointer" };
+function SalaBJ(p) {
+  const [d, setD] = useState(null), [pago, setPago] = useState("efectivo"), [dep, setDep] = useState("efectivo"), [monto, setMonto] = useState(500), [para, setPara] = useState(""), [err, setErr] = useState(""), [busy, setBusy] = useState(false);
+  const cargar = async () => { const r = await fetch("/api/bjsala", { cache: "no-store" }); if (r.ok) setD(await r.json()); };
+  useEffect(() => { cargar(); const t = setInterval(cargar, 3000); return () => clearInterval(t); }, []);
+  const acc = async (b) => { if (busy) return; setBusy(true); setErr(""); const r = await fetch("/api/bjsala", { method: "POST", body: JSON.stringify({ pago, deposito: dep, ...b }) }), j = await r.json().catch(() => ({})); setBusy(false); if (!r.ok) return setErr(j.error || "Error"); if (j.msg) alert(j.msg); if (b.accion === "crear") setPara(""); await cargar(); };
+  if (!d) return <p className="mut" style={{ textAlign: "center" }}>Cargando...</p>;
+  const s = d.activa;
+  if (s) {
+    const fin = s.estado === "terminada";
+    return (<div style={{ maxWidth: 480, margin: "0 auto" }}><style>{CSS}</style><h2 style={{ textAlign: "center", margin: "0 0 4px" }}>Sala de Blackjack · {$(s.monto)}</h2>
+      <div className="mz" style={{ minHeight: 300 }}>
+        <div style={{ opacity: 0.8, fontWeight: 800 }}>{s.rival} {fin ? `· ${s.suTotal}` : s.suyoFin ? "· plantado" : "· jugando"}</div>
+        <div style={{ minHeight: 84 }}>{fin ? s.suyas.map((c, i) => <Carta key={i} c={c} />) : Array.from({ length: s.suyasN }, (_, i) => <Carta key={i} oculta />)}</div>
+        <div style={{ opacity: 0.8, fontWeight: 800, marginTop: 8 }}>Tú · {s.miTotal}{s.miFin && !fin ? " · plantado" : ""}</div><div style={{ minHeight: 84 }}>{s.mias.map((c, i) => <Carta key={i} c={c} />)}</div>
+        {fin && <div style={{ marginTop: 8, textAlign: "center" }}>{s.empate ? <div style={{ fontSize: 20, fontWeight: 900 }}>Empate: se devolvieron las apuestas</div> : s.gane ? <><div style={{ fontSize: 22, fontWeight: 900, color: "#ffc83d" }}>¡GANASTE!</div><div style={{ fontSize: 13, opacity: 0.85 }}>Impuesto {$(s.imp)} · recibes {$(s.neto)}</div></> : <div style={{ fontSize: 20, fontWeight: 900, color: "#ff8a95" }}>Perdiste {$(s.monto)}</div>}</div>}
+        {err && <div style={{ color: "#ff8a95", fontWeight: 700, textAlign: "center" }}>{err}</div>}
+        {!fin && (s.miFin ? <div style={{ textAlign: "center", marginTop: 10, opacity: 0.9 }}>Esperando a que {s.rival} termine su mano...</div> : <div style={{ display: "flex", gap: 8, marginTop: 10 }}><button className="btn" style={{ flex: 1 }} disabled={busy} onClick={() => acc({ accion: "pedir", id: s.id })}>Pedir</button><button className="btn g" style={{ flex: 1 }} disabled={busy} onClick={() => acc({ accion: "plantarse", id: s.id })}>Plantarse</button></div>)}
+        {fin && <button className="btn" style={{ width: "100%", marginTop: 10 }} onClick={async () => { await acc({ accion: "visto", id: s.id }); }}>Volver a las salas</button>}</div>
+      <div className="mut" style={{ fontSize: 12, marginTop: 8 }}>Los dos juegan a la vez y no ven las cartas del otro hasta el final. Gana quien quede más cerca de 21 sin pasarse; Blackjack natural le gana a cualquier otro 21. Si alguien pasa 3 minutos sin jugar, su mano se planta sola.</div></div>);
+  }
+  const metodos = d.metodos, saldo = metodos.find((x) => x.k === pago)?.saldo ?? 0;
+  return (<div style={{ maxWidth: 480, margin: "0 auto" }}><style>{CSS}</style><h2 style={{ textAlign: "center", margin: "0 0 4px" }}>Sala 1 vs 1</h2>
+    <div className="mz"><b>Crear una sala</b><div className="mut" style={{ color: "#fff", opacity: 0.85, fontSize: 13 }}>Tú contra otro jugador. Los dos ponen la misma apuesta y el ganador se lleva el pozo.</div>
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "center", margin: "10px 0 4px" }}>{FICHAS.map((f) => <button key={f} onClick={() => setMonto(f)} style={{ ...ST, background: monto === f ? "#ffc83d" : "#0006", color: monto === f ? "#222" : "#fff" }}>{f}</button>)}</div>
+      <input type="number" min="100" max="100000" value={monto} onChange={(e) => setMonto(Number(e.target.value))} /><input value={para} onChange={(e) => setPara(e.target.value)} placeholder="Invitar a (usuario de Roblox o cédula) — opcional" autoCapitalize="none" />
+      {err && <div style={{ color: "#ff8a95", fontWeight: 700, textAlign: "center" }}>{err}</div>}
+      <button onClick={() => acc({ accion: "crear", monto, para })} disabled={busy || saldo < monto} style={{ width: "100%", padding: 14, fontSize: 18, fontWeight: 900, borderRadius: 14, border: 0, cursor: "pointer", background: "linear-gradient(180deg,#ffd85a,#e09a00)", color: "#3b0a1a", opacity: busy || saldo < monto ? 0.6 : 1 }}>{para ? "Crear sala e invitar" : "Crear sala abierta"} · {$(monto)}</button></div>
+    <Pagos metodos={metodos} pago={pago} setPago={setPago} dep={dep} setDep={setDep} />
+    <div className="card" style={{ marginTop: 12 }}><b>Salas disponibles</b>{d.abiertas.length ? d.abiertas.map((r) => <div key={r.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, padding: "8px 0", borderTop: "1px solid var(--bd)" }}><span>{r.mio ? "Tu sala" : r.de}<div className="mut">{$(r.monto)}{r.paraMi ? " · te invitó" : r.para ? ` · invitado: ${r.para}` : " · abierta"}</div></span>{r.mio ? <button className="btn g" disabled={busy} onClick={() => acc({ accion: "cancelar", id: r.id })}>Cancelar</button> : <button className="btn" disabled={busy || metodos.find((x) => x.k === pago)?.saldo < r.monto} onClick={() => acc({ accion: "unirse", id: r.id })}>Entrar · {$(r.monto)}</button>}</div>) : <div className="mut">No hay salas abiertas. Crea una.</div>}</div>
+    {d.historial.length > 0 && <div className="card"><b>Últimas partidas</b>{d.historial.map((h) => <div key={h.id} style={{ display: "flex", justifyContent: "space-between", padding: "5px 0", borderTop: "1px solid var(--bd)" }}><span className="mut">vs {h.rival} · {$(h.monto)}</span><b style={{ color: h.empate ? undefined : h.gane ? "var(--ok)" : "var(--bad)" }}>{h.empate ? "Empate" : h.gane ? `+${$(h.neto - h.monto)}` : `-${$(h.monto)}`}</b></div>)}</div>}</div>);
+}
+export function Blackjack(p) {
+  const [modo, setModo] = useState("casa");
+  return (<div><div style={{ display: "flex", gap: 8, justifyContent: "center", marginBottom: 10 }}><button className={"btn " + (modo === "casa" ? "" : "g")} onClick={() => setModo("casa")}>Jugar con la casa</button><button className={"btn " + (modo === "sala" ? "" : "g")} onClick={() => setModo("sala")}>Sala 1 vs 1</button></div>
+    {modo === "casa" ? <BlackjackCasa {...p} /> : <SalaBJ {...p} />}</div>);
 }
 
 // ---------- HIPÓDROMO ----------

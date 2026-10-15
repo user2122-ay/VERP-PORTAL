@@ -283,3 +283,9 @@ lib/rol.js, lib/placa.js, components/CedulaCard.js, app/darkweb/*, app/delictivo
 - **Regulación (capacidad):** individual = 1 persona, matrimonial = 2, máximo 6 personas por casa contando al dueño. Tipo 0: 3 · Tipo 1: 4 · Tipo 2: 4 · Tipo 3: 3 (garaje) · Tipo 4: 6. Cada persona vive en una sola casa compartida. Máximo 15 objetos propios guardados por ocupante. Las invitaciones vencen en 3 días.
 - Si un alquilino debe más de 14 días de cuota, lo sacan solo. Al salir, ser expulsado o si Administración quita la casa, cada quien **recupera lo que guardó** (objetos y comida).
 - Archivos: `lib/hogar.js`, `app/api/hogar/route.js`, `app/hogar/*`; cobros en `lib/cobros.js`; aviso en `invQuitar` de admin.
+
+## Actualización 29 — Blackjack: casa o sala 1 contra 1
+- **Casino → Blackjack** ahora tiene dos modos: **Jugar con la casa** (como estaba) y **Sala 1 vs 1**.
+- **Sala 1 vs 1**: el creador elige la apuesta y puede **invitar** a otro jugador por su usuario de Roblox o cédula (le llega una notificación) o dejar la sala **abierta** para que entre cualquiera. El otro entra poniendo la misma apuesta. Los dos reciben 2 cartas del mismo mazo y juegan a la vez (Pedir / Plantarse) **sin ver las cartas del otro** hasta el final. Gana el que quede más cerca de 21 sin pasarse; Blackjack natural gana a cualquier otro 21; si empatan o se pasan los dos, se devuelven las apuestas. El ganador se lleva el pozo menos el **impuesto a las ganancias** (el mismo del casino).
+- Si nadie entra en 30 minutos, se devuelve la apuesta. Si alguien pasa 3 minutos sin jugar, su mano se planta sola. Máximo 3 salas abiertas por jugador y una partida en juego a la vez.
+- Archivos nuevos: `lib/salasbj.js`, `app/api/bjsala/route.js` (colección `bj_salas`); la interfaz está en `app/casino/Mesas.js`.
