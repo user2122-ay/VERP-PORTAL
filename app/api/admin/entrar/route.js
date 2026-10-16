@@ -6,7 +6,7 @@ import { canReview } from "@/lib/roles";
 const bad = (m, s = 400) => NextResponse.json({ error: m }, { status: s });
 // Inicio de sesión de ADMINISTRACIÓN: pide la placa de STAFF (independiente de la MDT). 5 fallos bloquean 5 minutos.
 export async function POST(req) {
-  const u = await apiUser(); if (!u || !canReview(u.rank)) return bad("Sin permiso", 403);
+  const u = await apiUser(); if (!u || !(canReview(u.rank) || u.rank === "AUXILIAR_APERTURA")) return bad("Sin permiso", 403);
   const esperada = placaStaff(u); if (!esperada) return bad("No tienes placa asignada. Pídele a Fundación o Asuntos Internos que te la asigne.", 403);
   const b = await req.json().catch(() => ({})), f = u.adminFail, at = new Date(), us = (await db()).collection("users");
   if (f?.n >= 5 && Date.now() - +new Date(f.at) < 3e5) return bad("Demasiados intentos. Espera 5 minutos", 429);

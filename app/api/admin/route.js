@@ -3,7 +3,7 @@ import { ObjectId } from "mongodb";
 import { db } from "@/lib/db";
 import { adminUser, reviewUser } from "@/lib/admin";
 import { aplicarCK } from "@/lib/ck";
-import { canAdmin, canStaff, FUND_ONLY } from "@/lib/roles";
+import { canAdmin, canStaff, canApertura, FUND_ONLY } from "@/lib/roles";
 import { pasaTope, traspaso, DIRS } from "@/lib/reserva";
 import { erlcComando } from "@/lib/erlc";
 import { configAuto, REGLAS } from "@/lib/erlcauto";
@@ -45,14 +45,15 @@ export async function POST(req) {
   const b = await req.json(), d = await db(), users = d.collection("users"), at = new Date();
   const razon = str(b.razon, 300);
   if (["ecoSet", "ecoMover"].includes(b.a) && !FUND_ONLY.includes(a.rank)) return err("Solo Developer y Fundación", 403);
-  if (!canAdmin(a.rank) && !["roboOk", "roboNo", "apelOk", "apelNo", "trabajoOk", "trabajoNo"].includes(b.a)) return err("Tu rango solo puede revisar solicitudes", 403);
+  if (a.rank === "AUXILIAR_APERTURA" ? b.a !== "apertura" : !canAdmin(a.rank) && !["roboOk", "roboNo", "apelOk", "apelNo", "trabajoOk", "trabajoNo"].includes(b.a)) return err(a.rank === "AUXILIAR_APERTURA" ? "Tu rango solo puede hacer aperturas" : "Tu rango solo puede revisar solicitudes", 403);
   // Toda acción administrativa (salvo marcar un reporte como resuelto) exige razón y queda en la colección "audit".
   if (!["done", "roboOk", "trabajoOk", "staffSet", "staffDel", "agenteSet", "agenteDel", "erlcTest", "erlcCmd", "erlcAuto", "apertura"].includes(b.a) && razon.length < 3) return err("La razón es obligatoria");
   const origen = new URL(req.url).origin, log = (act, objetivo, detalle, extra = {}) => auditar(d, { by: a.id, byName: a.name, rank: a.rank, act, objetivo, razon, detalle, at }, { origen, t: b.uid ? t : null, ...extra });
   const t = b.uid ? await users.findOne({ id: str(b.uid, 30) }) : null, quien = t ? `${t.name} (${t.id})` : null;
   if (b.uid && !t) return err("Usuario no existe", 404);
   switch (b.a) {
-    case "apertura": { // votación / abrir / cerrar el servidor: se envía por el webhook de Discord (solo Developer, Fundación, Junta Directiva y Asuntos Internos)
+    case "apertura": { // votación / abrir / cerrar el servidor: se envía por el webhook de Discord (solo Developer, Fundación, Junta Directiva y Auxiliar Apertura)
+      if (!canApertura(a.rank)) return err("Solo Developer, Fundación, Junta Directiva y Auxiliar Apertura pueden hacer aperturas", 403);
       if (!aperturaListo()) return err("Falta la variable DISCORD_WEBHOOK_APERTURA en Vercel (la URL del webhook del canal de aperturas)");
       const tipo = ["votacion", "abrir", "cerrar"].includes(b.tipo) ? b.tipo : null; if (!tipo) return err("Acción inválida");
       const prev = await d.collection("config").findOne({ _id: "apertura" }); if (prev && Date.now() - +new Date(prev.at) < 15000) return err("Espera unos segundos antes de enviar otro mensaje");
@@ -197,9 +198,11 @@ export async function POST(req) {
     }
     case "staffSet": case "staffDel": { // solo el Developer asigna el staff de Administración
       if (!canStaff(a.rank)) return err("Solo Developer, Fundación y Asuntos Internos asignan staff", 403);
-      if (b.a === "staffDel") { if (!t) return err("Falta el usuario"); if (t.dev) return err("No se puede quitar al Developer", 403); await users.updateOne({ id: t.id }, { $unset: { staff: "", staffPlaca: "" } }); await log("staffDel", quien, {}); break; }
+      if (b.a === "staffDel") { if (!t) return err("Falta el usuario"); if (t.dev) return err("No se puede quitar al Developer", 403); if (t.staff === "AUXILIAR_APERTURA" && !FUND_ONLY.includes(a.rank)) return err("Solo Fundación puede quitar el rango Auxiliar Apertura", 403); await users.updateOne({ id: t.id }, { $unset: { staff: "", staffPlaca: "" } }); await log("staffDel", quien, {}); break; }
       const x = await users.findOne({ name: new RegExp("^" + esc(str(b.username, 40)) + "$", "i") }); if (!x) return err("Esa persona debe iniciar sesión en el portal una vez primero");
-      const rk = ["JUNTA_DIRECTIVA", "FUNDACION", "ASUNTOS_INTERNOS", "MODERACION"].includes(b.rango) ? b.rango : null; if (!rk) return err("Rango inválido");
+      const rk = ["JUNTA_DIRECTIVA", "FUNDACION", "ASUNTOS_INTERNOS", "MODERACION", "AUXILIAR_APERTURA"].includes(b.rango) ? b.rango : null; if (!rk) return err("Rango inválido");
+      if (rk === "AUXILIAR_APERTURA" && !FUND_ONLY.includes(a.rank)) return err("Solo Fundación (o el Developer) puede dar el rango Auxiliar Apertura", 403);
+      if (x.staff === "AUXILIAR_APERTURA" && !FUND_ONLY.includes(a.rank)) return err("Solo Fundación puede cambiar el rango Auxiliar Apertura", 403);
       if (x.dev) return err("Ese usuario es Developer", 403); const placa = up(b.placa, 20); if (!placa) return err("La placa es obligatoria: sin ella no podrá entrar a Administración");
       if (await users.findOne({ staffPlaca: placa, id: { $ne: x.id } })) return err("Esa placa ya la tiene otro integrante del staff");
       await users.updateOne({ id: x.id }, { $set: { staff: rk, staffPlaca: placa }, $unset: { adminSesion: "" } }); await d.collection("notifs").insertOne({ uid: x.id, title: "Ahora eres staff", body: "Te asignaron un rango en Administración. Entra por el menú y escribe tu placa.", at, read: false }); await log("staffSet", `${x.name} (${x.id})`, { rango: rk }); break;

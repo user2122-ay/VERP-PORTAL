@@ -15,7 +15,7 @@ import { ecoCfg, masa, snapshot, serie, movDias, saldoCasino } from "@/lib/reser
 import { apuestaMax, casinoAbierto } from "@/lib/casino";
 export const dynamic = "force-dynamic";
 export default async function P() {
-  const u = await needUser(), rank = await staffRank(u); if (!canReview(rank)) redirect("/");
+  const u = await needUser(), rank = await staffRank(u); if (!canReview(rank) && rank !== "AUXILIAR_APERTURA") redirect("/");
   if (u.dev && !u.staffPlaca) await (await db()).collection("users").updateOne({ id: u.id }, { $set: { staffPlaca: "DEV-001" } }); // al Developer se le asigna la placa de Staff DEV-001 automáticamente
   if (!adminFresca(u)) return <Shell user={{ ...u, rank }}><AdminAcceso nombre={nombreDe(u)} rango={RANK_LABEL[rank] || rank} /></Shell>;
   const d = await db(); await sembrar(d); await autoMigrar(d);
