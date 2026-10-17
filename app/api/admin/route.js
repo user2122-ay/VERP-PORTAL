@@ -47,7 +47,7 @@ export async function POST(req) {
   if (["ecoSet", "ecoMover"].includes(b.a) && !FUND_ONLY.includes(a.rank)) return err("Solo Developer y Fundación", 403);
   if (a.rank === "AUXILIAR_APERTURA" ? b.a !== "apertura" : !canAdmin(a.rank) && ![ "roboOk", "roboNo", "apelOk", "apelNo", "trabajoOk", "trabajoNo", ...(a.auxApertura ? ["apertura"] : [])].includes(b.a)) return err(a.rank === "AUXILIAR_APERTURA" ? "Tu rango solo puede hacer aperturas" : "Tu rango solo puede revisar solicitudes", 403);
   // Toda acción administrativa (salvo marcar un reporte como resuelto) exige razón y queda en la colección "audit".
-  if (!["done", "roboOk", "trabajoOk", "staffSet", "staffDel", "agenteSet", "agenteDel", "erlcTest", "erlcCmd", "erlcAuto", "apertura"].includes(b.a) && razon.length < 3) return err("La razón es obligatoria");
+  if (!["done", "roboOk", "trabajoOk", "staffSet", "staffDel", "auxApSet", "auxApDel", "agenteSet", "agenteDel", "erlcTest", "erlcCmd", "erlcAuto", "apertura"].includes(b.a) && razon.length < 3) return err("La razón es obligatoria");
   const origen = new URL(req.url).origin, log = (act, objetivo, detalle, extra = {}) => auditar(d, { by: a.id, byName: a.name, rank: a.rank, act, objetivo, razon, detalle, at }, { origen, t: b.uid ? t : null, ...extra });
   const t = b.uid ? await users.findOne({ id: str(b.uid, 30) }) : null, quien = t ? `${t.name} (${t.id})` : null;
   if (b.uid && !t) return err("Usuario no existe", 404);
