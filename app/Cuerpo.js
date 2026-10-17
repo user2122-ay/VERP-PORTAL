@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 // Sistema del cuerpo: tu avatar de Roblox con anillos de comida y agua. Se ve cada vez peor mientras no comes ni bebes.
-const H = { comida: 2.5, agua: 2.5 }, niv = (e, h, ahora) => Math.min(100, Math.max(0, Math.min(100, e.n) - ((ahora - +new Date(e.t)) / 36e5) * (100 / h)));
+const H = { comida: 2.5, agua: 2.5 }, niv = (e, h, ahora) => Math.min(100, Math.max(0, Math.min(100, e.n) - (Math.max(0, ahora - +new Date(e.t)) / 36e5) * (100 / h)));
 const tiempo = (p, h) => { const m = Math.floor((p / 100) * h * 60); return `${Math.floor(m / 60)} h ${m % 60} min`; };
 function Anillo({ p, color, icono, nombre }) {
   const r = 44, c = 2 * Math.PI * r, col = p < 25 ? "#ff4d5e" : color;
