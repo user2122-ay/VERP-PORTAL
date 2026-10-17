@@ -309,3 +309,15 @@ lib/rol.js, lib/placa.js, components/CedulaCard.js, app/darkweb/*, app/delictivo
 - Chat: responde dudas de banco, mercado, casas, hogar, comida/agua, casino, trading, TikTok, trabajos, multas, 911, etc. (base en `lib/asistente.js`). Con `ANTHROPIC_API_KEY` (y opcional `ASISTENTE_MODEL`) usa IA con esa misma base y tus datos; sin clave usa respuestas propias.
 - Memoria: avisa de hambre/sed, avisos sin leer, multas, invitaciones de hogar e impuestos próximos; anota cosas ("recuerda que…", "qué recuerdas", "olvida 1"); guarda el historial (colección `asistente`).
 - Beta: solo Developer. Administración → Economía → "Asistente" lo abre a todos; abierto, también ayuda en inicio de sesión y registro.
+
+### (32b) Asistente: mascota oficial, paseo e inactividad
+- Usa la imagen de la comunidad (`public/asistente.png`, fondo transparente). Si se borra, vuelve al dibujo propio.
+- Pasea sola por la pantalla (saltitos al caminar) mientras el chat está cerrado. Con el chat abierto se acomoda abajo a la derecha.
+- Si pasas 45 s sin tocar nada, te lanza cosas (papelitos, estrellas, gotas, corazones) hasta 4 veces y te dice algo; al volver a interactuar se calma. Los objetos no bloquean clics.
+- Botón "Dejarlo quieto" en el chat (se recuerda en el navegador); también respeta "reducir movimiento" del dispositivo.
+- IA: ya soporta `ANTHROPIC_API_KEY` en el hosting (ver Actualización 32).
+
+### (32c) Asistente sin IA
+- Se quitó la llamada a IA: ya no hace falta `ANTHROPIC_API_KEY` ni se gasta nada. Todo responde con la base propia.
+- `lib/asistente.js` ahora tiene ~45 temas (comida y agua, CK, nevera, banco, mercado, licencias, autos, casas, hogar, casino y cada juego, trading, TikTok, teléfono, trabajos, multas, MDT, 911, cédula, negocios, Dark Web, delictivo, registro, login, staff, apertura, impuestos…), detecta plurales y frases, y charla básica (hola, gracias, qué puedes hacer).
+- Para enseñarle algo nuevo: añade una línea en `BASE` → `[tema, [palabras clave], respuesta, enlace]`.
