@@ -303,3 +303,9 @@ lib/rol.js, lib/placa.js, components/CedulaCard.js, app/darkweb/*, app/delictivo
 - Se quitó "Auxiliar Apertura" de la lista de rangos al asignar staff; quitarle el rango a alguien ya no le borra la placa si tiene la responsabilidad.
 
 - (31b) Asignar o quitar la responsabilidad Auxiliar Apertura ya no pide razón (igual que asignar staff); sigue quedando en la auditoría.
+
+## Actualización 32 — Asistente (mascota en pantalla, beta)
+- Mascota original azul con animación pseudo-3D (flota, parpadea, saluda, te sigue con la mirada) en todas las pantallas. Si pones tu imagen en `public/asistente.png` se usa en lugar del dibujo.
+- Chat: responde dudas de banco, mercado, casas, hogar, comida/agua, casino, trading, TikTok, trabajos, multas, 911, etc. (base en `lib/asistente.js`). Con `ANTHROPIC_API_KEY` (y opcional `ASISTENTE_MODEL`) usa IA con esa misma base y tus datos; sin clave usa respuestas propias.
+- Memoria: avisa de hambre/sed, avisos sin leer, multas, invitaciones de hogar e impuestos próximos; anota cosas ("recuerda que…", "qué recuerdas", "olvida 1"); guarda el historial (colección `asistente`).
+- Beta: solo Developer. Administración → Economía → "Asistente" lo abre a todos; abierto, también ayuda en inicio de sesión y registro.
