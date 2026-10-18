@@ -321,3 +321,9 @@ lib/rol.js, lib/placa.js, components/CedulaCard.js, app/darkweb/*, app/delictivo
 - Se quitó la llamada a IA: ya no hace falta `ANTHROPIC_API_KEY` ni se gasta nada. Todo responde con la base propia.
 - `lib/asistente.js` ahora tiene ~45 temas (comida y agua, CK, nevera, banco, mercado, licencias, autos, casas, hogar, casino y cada juego, trading, TikTok, teléfono, trabajos, multas, MDT, 911, cédula, negocios, Dark Web, delictivo, registro, login, staff, apertura, impuestos…), detecta plurales y frases, y charla básica (hola, gracias, qué puedes hacer).
 - Para enseñarle algo nuevo: añade una línea en `BASE` → `[tema, [palabras clave], respuesta, enlace]`.
+
+### (32d) Asistente: cuerpo completo, colores por tema y modo staff
+- Mascota de cuerpo completo (`public/asistente.png`, fondo transparente); pasea y se acomoda con el nuevo alto.
+- Colores del chat: ahora usan las variables del portal (`--tx`, `--card`, `--bg`, `--bd`, `--ac`): en tema oscuro/azul las letras son blancas y en tema claro son negras. Antes usaban una variable que no existe y salían negras sobre fondo oscuro.
+- Reconoce el rango de staff (Developer, Fundación, Asuntos Internos, Junta Directiva, Moderador, Auxiliar Apertura): muestra su rango en el chat, avisa en el globo de lo pendiente (solicitudes de trabajo, apelaciones de CK, robos de autos y, para administradores, reportes 911) y responde cómo hacer sus tareas (aprobar trabajos, apelaciones, robos, dar dinero, mercado, auditoría, agentes MDT, ER:LC, apertura, economía, staff, reiniciar) solo si su rango tiene ese permiso.
+- Comandos: "pendientes del staff", "qué puedo hacer" (resume sus permisos). El asistente guía y enlaza a Administración; las acciones se siguen haciendo allí (con razón y auditoría).
