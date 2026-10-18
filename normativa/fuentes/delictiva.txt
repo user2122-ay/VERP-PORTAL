@@ -1,0 +1,772 @@
+
+Venezuela Community	
+InicioInformaciónNormativaMembresíasGaleria Oficial
+Normativa Delictiva
+
+Normativa Delictiva – Actividades delictivas
+Art. 1. Permiso condicionado y calidad obligatoria para rol delictivo
+
+El rol delictivo es una modalidad de juego que requiere permiso y un alto estándar de calidad.
+
+1.1 Definición
+
+El rol delictivo abarca todas las actividades ilegales (robos, narco, pandillas, etc.). Solo pueden realizarlo jugadores que cumplan con los requisitos establecidos por la administración.
+
+
+1.2 Requisitos Obligatorios
+
+Contar con permiso condicionado otorgado por el Staff.
+
+Demostrar calidad y madurez en el roleplay previo como civil.
+
+Tener un backstory coherente y bien desarrollado para el personaje delictivo.
+
+Mantener un rol de alta calidad, con planificación, respeto a las normas y buena interacción.
+
+
+1.3 Principios Generales
+
+El rol delictivo no es un permiso para hacer lo que se quiera.
+
+Debe realizarse con responsabilidad, inmersión y respeto a las demás personas del servidor.
+
+La calidad del roleplay es obligatoria.
+
+
+1.4 Sanciones
+
+Incumplir los estándares de calidad o las condiciones del permiso es una falta grave. El Staff puede revocar el permiso en cualquier momento y aplicar sanciones que van desde amonestación hasta expulsión temporal o definitiva.
+
+Art. 2. Prohibición absoluta de delitos graves – Prohibido estrictamente
+
+Ciertos delitos se encuentran estrictamente prohibidos en el servidor, incluso dentro del rol delictivo.
+
+2.1 Definición
+
+Se consideran delitos graves aquellas acciones que van en contra de las normas básicas de convivencia, inmersión y respeto del servidor.
+
+
+2.2 Delitos Prohibidos
+
+Violaciones o cualquier contenido de índole sexual no consentido.
+
+Tortura extrema o roleo excesivamente gore.
+
+Asesinatos masivos indiscriminados (Mass Killing).
+
+Secuestros prolongados sin motivo RP válido y sin dar oportunidad de interacción.
+
+Cualquier acto que implique pedofilia, racismo, homofobia o discriminación grave.
+
+Terrorismo o atentados que afecten masivamente al servidor.
+
+
+2.3 Principios Generales
+
+El rol delictivo debe ser divertido e inmersivo, pero nunca cruzar límites que afecten la experiencia de otros jugadores o la integridad de la comunidad.
+
+La calidad y el respeto siempre están por encima de la intensidad del rol.
+
+
+2.4 Sanciones
+
+La realización de cualquier delito grave es una falta extremadamente grave. La sanción habitual es la expulsión permanente del servidor y Discord, sin derecho a apelación.
+
+Art. 3. Registro De organizaciones criminales – Obliglatorio
+
+Todas las organizaciones criminales deben estar debidamente registradas ante la administración del servidor.
+
+3.1 Definición
+
+Una organización criminal es un grupo estructurado de jugadores que realiza actividades delictivas de forma regular (pandillas, carteles, mafias, etc.).
+
+
+3.2 Requisitos de Registro
+
+Toda organización criminal debe presentar una solicitud formal al Staff mediante ticket con el siguiente formato:
+
+Solicitud de Registro de Organización Criminal
+
+Nombre de la Organización:
+
+Nombre del Líder Principal:
+
+Usuario de Roblox del Líder:
+
+Usuario de Discord del Líder:
+
+Número de Miembros Actuales:
+
+Backstory / Historia de la Organización:
+
+Tipo de Actividades Principales:
+
+Motivo por el que desean crear la organización:
+
+
+3.3 Obligaciones
+
+Mantener un roleplay de calidad y coherente.
+
+Actualizar la información de la organización cuando haya cambios importantes.
+
+Respetar todas las normas de rol delictivo.
+
+
+3.4 Prohibiciones
+
+Operar una organización criminal sin registro oficial.
+
+Usar nombres ofensivos o que hagan referencia a grupos reales prohibidos.
+
+Reclutamiento masivo sin control de calidad.
+
+
+3.5 Sanciones
+
+Operar sin registro o incumplir las normas es una falta grave. Las sanciones pueden incluir la disolución del grupo y sanciones a sus miembros.
+
+Art. 4. Límite simultáneo de organizaciones
+
+Se establece un límite máximo de organizaciones criminales activas para mantener el orden y la calidad del roleplay delictivo.
+
+4.1 Definición
+
+El límite simultáneo se refiere al número máximo de organizaciones criminales que pueden estar operativas al mismo tiempo en el servidor.
+
+
+4.2 Límite Establecido
+
+Solo se permitirá un máximo de X organizaciones criminales activas simultáneamente (el número exacto será definido por la administración según el tamaño del servidor).
+
+Una vez alcanzado el límite, las nuevas solicitudes quedarán en lista de espera hasta que se libere un espacio.
+
+Cada organización debe mantener un mínimo de actividad para no ser disuelta.
+
+
+4.3 Restricciones por Jugador
+
+Un jugador solo puede pertenecer a una (1) organización criminal al mismo tiempo.
+
+No se permite formar parte de varias organizaciones criminales simultáneamente.
+
+
+4.4 Principios Generales
+
+El límite busca evitar saturación del rol delictivo y promover calidad en lugar de cantidad.
+
+Las organizaciones deben competir de forma justa y realista dentro del servidor.
+
+
+4.5 Sanciones
+
+Pertenecer a más de una organización criminal es una falta grave.
+
+Crear o intentar operar una organización sin cumplir el límite establecido puede resultar en disolución inmediata y sanciones a sus miembros.
+
+Art. 5. Requisitos mínimos para robos a tiendas y comercios - Obligatorio
+
+Los robos a tiendas y comercios deben cumplir con requisitos mínimos para garantizar calidad y realismo. (+20 Puntos por robo exitoso)
+
+5.1 Requisitos Obligatorios
+
+Mínimo 2 personas para realizar el robo (incluyendo conductor).
+
+Deben utilizar máscaras o elementos que oculten la identidad (Opcional).
+
+Se debe rolear la planificación y preparación previa del robo.
+
+Es obligatorio dar interacción verbal a los civiles presentes (amenazas, órdenes, etc.).
+
+Debe usarse el comando /me para describir acciones importantes.
+
+Entre un robo y otro, ya sea al mismo jugador o en la misma zona, deberá existir un lapso mínimo de 15 minutos fuera de rol (OOC).
+
+
+5.2 Reglas Durante el Robo
+
+No se permite robar en menos de 4-5 minutos de interacción real.
+
+Deben respetar el FearRP de los civiles y empleados.
+
+Solo se permite llevar armas blancas o de fuego pequeñas (pistolas). Rifles o armas largas están prohibidos en robos a comercios pequeños.
+
+Se debe huir de forma realista una vez activada la alarma o llegada de la policía.
+
+Maximo de botin de: 4,000$
+
+
+5.3 Prohibiciones
+
+Robar solo (solo raiding).
+
+Robar sin interacción con los civiles.
+
+Usar vehículos o armas demasiado llamativas o irrealistas.
+
+Matar o herir gravemente sin motivo justificado.
+
+Negociar mas dinero con la policia dinero (Se sobre entiende que el dinero que robas es del cajero)
+
+
+5.4 Principios Generales
+
+Los robos deben ser roleados con planificación, tensión e inmersión.
+
+El objetivo es crear una escena divertida y realista para todos los involucrados.
+
+
+5.5 Sanciones
+
+Incumplir los requisitos mínimos se considera FailRP. Las sanciones pueden ir desde una advertencia hasta expulsión temporal, dependiendo de la gravedad y reiteración.
+
+Art. 6. Protocolo para atracos a entidades financieras - Obligatorio
+
+Los atracos a bancos y entidades financieras son operaciones de alto riesgo que requieren un protocolo estricto. (+100 Puntos por robo exitoso)
+
+6.1 Requisitos Mínimos
+
+Mínimo 4 personas participando activamente en el atraco.
+
+Debe existir una planificación previa y clara (reuniones IC).
+
+Todos los participantes deben usar máscaras o elementos que oculten su identidad.
+
+Es obligatorio contar con al menos un conductor y un vigilante.
+
+
+6.2 Durante el Atraco
+
+Se debe dar interacción clara y prolongada a los rehenes y empleados.
+
+El tiempo mínimo de roleo dentro de la entidad es de 8 minutos.
+
+Solo se permite el uso de armas acordes al rol (no se permiten armas excesivamente pesadas sin justificación).
+
+Debe rolearse el uso de herramientas (c4, taladros, etc.) de forma realista. (Obtenidas mediante roles IC anteriores)
+
+Se debe respetar el FearRP de todos los civiles involucrados.
+
+
+6.3 Prohibiciones
+
+Atracar con menos de 4 personas o sin planificación.
+
+Matar rehenes o empleados sin una razón RP extrema y justificada.
+
+Usar vehículos o armas irrealistas.
+
+Salir corriendo inmediatamente después de obtener el dinero sin roleo adecuado.
+
+Negociar mas dinero con la policia dinero (Se sobre entiende que el dinero que robas es de la boveda)
+
+
+6.4 Principios Generales
+
+Los atracos a entidades financieras son eventos de alto nivel que deben ofrecer una experiencia inmersiva tanto para los delincuentes como para las víctimas y la policía.
+
+La calidad del roleplay es más importante que el botín obtenido.
+
+Botín maximo de: 40.000$ 
+
+Maximo de robos al banco cada 6 Dias
+
+
+6.5 Sanciones
+
+Incumplir el protocolo es una falta grave.
+
+Las sanciones pueden ir desde amonestación hasta expulsión temporal o definitiva del servidor, especialmente si se genera FailRP o RDM.
+
+Art. 7. Condiciones para tiroteos masivos y guerras - Obligatorio
+
+Los tiroteos masivos y las guerras entre organizaciones son eventos de alto riesgo que requieren condiciones estrictas.
+
+7.1 Definición
+
+Se consideran tiroteos masivos o guerras cualquier confrontación armada que involucre a más de 6 personas o se extienda por un período prolongado.
+
+
+7.2 Condiciones Obligatorias
+
+Debe existir una razón RP fuerte y previa (traición, disputa territorial, venganza justificada, etc.).
+
+Ambas partes deben haber tenido interacción RP significativa antes del conflicto.
+
+Se debe notificar al Staff con antelación cuando se planee un tiroteo masivo o guerra.
+
+Todos los participantes deben respetar el FearRP y evitar el Powergaming.
+
+El uso de armas debe ser coherente con el lore y equipamiento de cada organización.
+
+
+7.3 Prohibiciones
+
+Iniciar tiroteos masivos o guerras sin motivo RP válido.
+
+Realizar "war" por rencores OOC o trivialidades.
+
+Usar vehículos o tácticas irrealistas durante el conflicto.
+
+Matar indiscriminadamente sin dar oportunidad de rendición o interacción.
+
+
+7.4 Principios Generales
+
+Las guerras y tiroteos masivos deben ser el resultado lógico de una historia RP bien construida.
+
+La calidad, el realismo y el respeto a los demás jugadores son prioritarios.
+
+
+7.5 Sanciones
+
+Incumplir las condiciones para tiroteos masivos y guerras es una falta muy grave. Las sanciones pueden incluir expulsión temporal o definitiva de los involucrados.
+
+Art. 8. Condiciones para secuestros - Obligatorio
+
+Los secuestros son acciones de alto riesgo que deben cumplir estrictas condiciones de roleplay. (+60 Puntos por secuestro y negociaciones exitosas)
+
+8.1 Requisitos Mínimos
+
+Mínimo 2 personas participando en el secuestro (incluyendo conductor).
+
+Debe existir una razón RP válida y previa (deuda, venganza, información, rescate, etc.).
+
+El secuestrado debe recibir interacción constante y oportunidad de rolear.
+
+Se debe rolear el traslado y la retención del rehén de forma realista.
+
+
+8.2 Durante el Secuestro
+
+Tiempo mínimo de roleo: 10 minutos antes de cualquier exigencia o resolución.
+
+Se debe respetar el FearRP del rehén en todo momento.
+
+No se permite torturar o dañar gravemente al rehén sin motivo RP extremo y justificado.
+
+El secuestrado debe tener oportunidad de intentar escapar o negociar.
+
+
+8.3 Prohibiciones
+
+Secuestrar sin motivo RP válido o por simple diversión.
+
+Abandonar al rehén sin resolución RP.
+
+Usar el secuestro para hacer FailRP o Powergaming.
+
+
+8.4 Principios Generales
+
+El secuestro es una mecánica narrativa de alto impacto que debe beneficiar la historia de todos los involucrados.
+
+La calidad del roleplay y el respeto al FearRP son obligatorios.
+
+
+8.5 Sanciones
+
+Incumplir las condiciones para secuestros es una falta grave. Las sanciones pueden ir desde amonestación hasta expulsión temporal o definitiva.
+
+Art. 9. Uso de armas ilegales 
+
+El uso de armas ilegales está permitido únicamente bajo condiciones estrictas dentro del rol delictivo.
+
+9.1 Definición
+
+Las armas ilegales son aquellas que no pueden ser adquiridas legalmente (fusiles de asalto, subfusiles, escopetas recortadas, etc.).
+
+
+9.2 Requisitos para su Uso
+
+Solo pueden ser utilizadas por miembros de organizaciones criminales registradas.
+
+Deben tener una justificación RP coherente (defensa territorial, operaciones específicas, etc.).
+
+Su porte debe estar oculto o justificado según la situación.
+
+Solo se permite su uso en escenarios de alto riesgo con interacción RP previa.
+
+El arma larga debe mantenerse en el maletero del vehiculo mientras no este en uso.
+
+
+9.3 Prohibiciones
+
+Portar o usar armas ilegales como civil común sin pertenecer a una organización aprobada.
+
+Usarlas en robos a tiendas pequeñas o situaciones de bajo perfil.
+
+Mostrar armas ilegales de forma abierta en zonas públicas sin motivo RP.
+
+Usarlas para RDM, FailRP o intimidación gratuita.
+
+
+9.4 Principios Generales
+
+El uso de armas ilegales debe ser una decisión estratégica y coherente con el rol delictivo.
+
+Su empleo debe contribuir a crear escenas de calidad y tensión realista.
+
+
+9.5 Sanciones
+
+El uso indebido de armas ilegales es una falta grave. Las sanciones pueden ir desde confiscación permanente hasta expulsión temporal o definitiva del servidor.
+
+Art. 10. Puntos de producción y distribución en narcotráfico - Importante
+
+El narcotráfico es una actividad delictiva que requiere control y realismo en sus puntos de producción y distribución.
+
+10.1 Definición
+
+Los puntos de producción y distribución son ubicaciones donde se cultiva, procesa, almacena o vende droga dentro del roleplay.
+
+
+10.2 Requisitos
+
+Todos los puntos de producción y distribución deben ser aprobados previamente por el Staff.
+
+Deben contar con una justificación RP coherente y backstory del lugar.
+
+Solo organizaciones criminales registradas pueden operar estos puntos.
+
+Se debe mantener roleplay activo y realista en dichas ubicaciones.
+
+
+10.3 Prohibiciones
+
+Crear o usar puntos de producción/distribución sin aprobación del Staff.
+
+Operar en zonas públicas o cercanas a áreas seguras.
+
+Usar estos puntos para hacer FailRP o Powergaming.
+
+Realizar ventas masivas o poco realistas sin interacción adecuada.
+
+
+10.4 Principios Generales
+
+El narcotráfico debe ser roleado con planificación, riesgo y consecuencias realistas.
+
+Se utilizaran objetos como envases de aceite para referenciar como punto de produccion.
+
+La calidad del roleplay es más importante que la cantidad de producto.
+
+
+10.5 Sanciones
+
+Incumplir las normas de puntos de producción y distribución es una falta grave. Las sanciones pueden incluir la destrucción del punto, confiscación y sanciones a los miembros de la organización.
+
+Art. 11. Territorios reclamados - Importante
+
+Los territorios reclamados son zonas controladas por organizaciones criminales para desarrollar sus actividades.
+
+11.1 Definición
+
+Un territorio reclamado es un área específica del mapa que una organización declara como suya y en la que ejerce control RP.
+
+
+11.2 Requisitos para Reclamar
+
+Solo organizaciones criminales registradas pueden reclamar territorios.
+
+Debe presentarse una solicitud formal al Staff con justificación RP.
+
+El territorio debe tener un backstory coherente y ser defendible.
+
+Solo se permite reclamar un máximo de 1 territorio por organización.
+
+
+11.3 Reglas de Control
+
+Se debe mantener presencia y actividad RP constante en el territorio.
+
+Otras organizaciones pueden desafiar el control mediante conflictos RP justificados.
+
+Está permitido cobrar "impuestos" o proteger negocios dentro del territorio de forma realista.
+
+Las disputas territoriales deben notificarse al Staff.
+
+
+11.4 Prohibiciones
+
+Reclamar territorios sin aprobación del Staff.
+
+Reclamar zonas seguras, hospitales, comisarías o áreas gubernamentales.
+
+Usar el territorio para hacer FailRP o RDM constante.
+
+Abandonar un territorio sin notificar y justificar RP.
+
+
+11.5 Sanciones
+
+Incumplir las normas de territorios reclamados es una falta grave.
+
+Las sanciones pueden incluir la pérdida del territorio y sanciones a los miembros de la organización.
+
+Art. 12. Territorios reclamados - Prohibido
+
+El CK (muerte permanente) por deudas, traiciones o venganzas solo se permite tras:
+
+Rol previo mínimo de 3 interacciones significativas
+
+Advertencias claras y escaladas
+
+Justificación narrativa fuerte
+
+Art. 13. sicariatos y asesinatos - Importante
+
+Todo sicariato requiere:
+
+Encargo IC documentado (mensaje, llamada grabada)
+
+Pago previo o acordado
+
+Rol de vigilancia, seguimiento y ejecución
+
+Evidencia mínima para que sea investigable
+
+Art. 14. Lavado de dinero exclusivamente mediante negocios legales - Considera
+
+El lavado de dinero solo podrá realizarse a través de negocios legales registrados.
+
+14.1 Definición
+
+El lavado de dinero es el proceso mediante el cual se integra dinero obtenido de actividades ilegales al sistema económico legal.
+
+
+14.2 Requisitos Obligatorios
+
+El lavado de dinero solo se permite a través de negocios legales registrados (empresas, tiendas, restaurantes, etc.).
+
+La organización debe poseer o tener acuerdo RP con el negocio utilizado.
+
+Se debe rolear el proceso de forma realista y progresiva (inversiones, compras, ventas, etc.).
+
+El Staff puede solicitar pruebas del proceso de lavado en cualquier momento.
+
+
+14.3 Prohibiciones
+
+Lavar dinero mediante métodos irrealistas o sin base en un negocio legal.
+
+Usar civiles ajenos o negocios sin su consentimiento RP.
+
+Lavar grandes cantidades de dinero de forma rápida y sin justificación.
+
+Usar el lavado de dinero para justificar FailRP o Powergaming.
+
+
+14.4 Principios Generales
+
+El lavado de dinero debe ser una actividad estratégica y de alto riesgo que forme parte de la historia de la organización.
+
+La calidad y el realismo son más importantes que la velocidad del proceso.
+
+
+14.5 Sanciones
+
+Incumplir las normas de lavado de dinero es una falta grave. Las sanciones pueden incluir la confiscación de bienes, pérdida de dinero y sanciones disciplinarias a los involucrados.
+
+Art. 15. Protección limitada a personal EMS - Importante
+
+Está prohibido atacar, secuestrar o matar a paramédicos EMS mientras:
+
+Estén en servicio activo (uniforme, luces encendidas)
+
+Atendiendo heridos Excepción: flagrancia extrema (EMS colaborando con criminales)
+
+Art. 16. Declaración para guerras entre bandas - Obligatorio
+
+Toda guerra entre organizaciones debe anunciarse públicamente IC (entorno) con:
+
+Motivo claro
+
+Zonas afectadas
+
+Duración aproximada Máximo 12 participantes por bando en enfrentamientos principales
+
+Art. 17. Requisitos elevados para robos a furgones blindados y convoyes - Considera
+
+Los robos a furgones blindados y convoyes son operaciones de alto nivel que requieren requisitos elevados. (+80 Puntos por robo exitoso)
+
+17.1 Requisitos Mínimos
+
+Mínimo 5 personas participando activamente.
+
+Debe existir una planificación previa detallada y notificada al Staff.
+
+Todos los participantes deben contar con roles definidos (conductor, francotirador, asaltantes, etc.).
+
+Se requiere equipamiento adecuado (armas de mayor calibre, explosivos, vehículos de escape, etc.).
+
+
+17.2 Durante el Robo
+
+Tiempo mínimo de roleo: 12 minutos de interacción intensa.
+
+Se debe respetar el FearRP de guardias y civiles.
+
+La huida debe ser roleada de forma realista y estratégica.
+
+Está permitido el uso de armas más potentes debido a la naturaleza del objetivo.
+
+
+17.3 Prohibiciones
+
+Realizar el robo con menos de 5 personas o sin planificación.
+
+Usar tácticas suicidas o irrealistas.
+
+Matar indiscriminadamente a guardias o civiles sin justificación extrema.
+
+Abandonar el roleo a mitad del evento.
+
+
+17.4 Principios Generales
+
+Los robos a furgones blindados y convoyes son eventos de máxima dificultad.
+
+La calidad del roleplay, la coordinación y el realismo deben ser prioritarios.
+
+
+17.5 Sanciones
+
+Incumplir los requisitos elevados es una falta muy grave. Las sanciones pueden ir desde amonestación hasta expulsión temporal o definitiva de los involucrados.
+
+Art. 18. Base roleable por organización - Importante
+
+Toda banda o mafia debe poseer y mantener al menos una base física roleada:
+
+Casa, almacén, club nocturno, taller
+
+Visible y defendible IC
+
+Punto de reuniones, almacenamiento y planificación
+
+Art. 19. NIVELES DE LOS GRUPOS - Importante
+
+Las organizaciones criminales se clasifican en tres niveles según su tamaño, influencia y capacidad operativa.
+
+19.1 Nivel 0 - Delictivo Individual
+
+Descripción: Persona delictiva que trabaja por su cuenta.
+
+Actividades permitidas: Robos a tiendas, asaltos menores.
+
+Armas permitidas: Armas blancas, pistolas y revólveres.
+
+
+19.2 Nivel 1 - Pandilla (0-1400 Pts)
+
+Descripción: Grupos pequeños y locales con poca estructura.
+
+Máximo de miembros: 8
+
+Actividades permitidas: Robos a tiendas, asaltos menores, extorsión local.
+
+Armas permitidas: Armas blancas, pistolas y revólveres.
+
+Territorios: Solo 1 territorio pequeño.
+
+
+19.3 Nivel 2 - Banda (1400-3000 Pts)
+
+Descripción: Grupos medianos con mejor organización y presencia.
+
+Máximo de miembros: 15
+
+Actividades permitidas: Robos a comercios medianos, secuestros, venta de droga a mediana escala, asaltos a furgones blindados pequeños.
+
+Armas permitidas: Pistolas, subfusiles, escopetas.
+
+Territorios: Hasta 2 territorios medianos.
+
+
+19.4 Nivel 3 - Cartel (3000-MAX Pts)
+
+Descripción: Organizaciones grandes, altamente estructuradas y con gran influencia.
+
+Máximo de miembros: Sin límite (con aprobación del Staff)
+
+Actividades permitidas: Narcotráfico a gran escala, robos a entidades financieras, control territorial extenso, corrupción y lavado de dinero.
+
+Armas permitidas: Todo tipo de armamento (incluyendo rifles de asalto y armas pesadas con justificación RP).
+
+Territorios: Hasta 4 territorios grandes.
+
+
+19.5 Reglas Generales
+
+El nivel de la organización debe ser aprobado por el Staff.
+
+Los ascensos de nivel requieren demostración de calidad RP y actividad sostenida.
+
+Los líderes son responsables del cumplimiento de las normas por parte de todos sus miembros.
+
+
+19.6 Sanciones
+
+Incumplir las limitaciones según el nivel de la organización es una falta grave. Esto puede resultar en pérdida de nivel, disolución del grupo o sanciones a sus miembros.
+
+
+Vida Ciudadana
+
+
+Departamentos y Trabajos
+
+
+Vida Criminal
+
+Disposiciones Finales y Autoridad de la Normativa
+Venezuela Community
+
+Venezuela Community se reserva el derecho absoluto y exclusivo de establecer, interpretar, modificar y actualizar la presente Normativa en cualquier momento.
+
+Cualquier cambio o actualización será comunicado con antelación razonable a través de los canales oficiales de comunicaciones del servidor (principalmente anuncios en Discord, mensajes pinned o canales dedicados). La fecha de la última actualización aparecerá siempre al inicio de cada sección o documento para garantizar transparencia.
+
+El objetivo de estas modificaciones es mantener la integridad del roleplay, cerrar posibles vacíos interpretativos, corregir desequilibrios y prevenir cualquier intento de aprovechamiento o abuso por parte de los usuarios.
+
+Al ingresar a la comunidad y aceptar participar en el servidor (mediante verificación, lectura de reglas o uso continuado de los servicios), el usuario reconoce y acepta íntegramente la Normativa vigente en ese momento, así como su carácter vinculante y obligatorio. Esta aceptación implica que:
+
+No podrá invocar desconocimiento de las reglas.
+
+No podrá contradecir, cuestionar públicamente la validez o incumplir deliberadamente la Normativa.
+
+Acepta que cualquier violación será sancionada de acuerdo con los niveles establecidos (advertencia, kick, ban temporal, ban permanente, wipe de personaje, etc.), sin perjuicio de otras medidas que el equipo administrativo considere necesarias para proteger la comunidad.
+
+Las decisiones del equipo de moderación y administración son finales e inapelables en cuanto a la interpretación y aplicación de la Normativa, salvo el procedimiento de apelación expresamente previsto en las reglas correspondientes.
+
+Si en algún momento un usuario no está de acuerdo con la Normativa vigente o con alguna de sus actualizaciones, la única opción disponible es cesar inmediatamente su participación en la comunidad y retirarse del servidor de forma voluntaria. La permanencia implica aceptación plena y sin reservas de todas las disposiciones.
+
+Venezuela Community no es solo un servidor: es un espacio construido con esfuerzo colectivo. Respetar estas bases es la forma más directa de contribuir a que siga siendo un lugar de roleplay serio, justo y familiar para todos.
+
+
+
+COMUNIDAD
+Servidor Discord
+
+Emergency Response: Liberty County
+
+
+RECURSOS
+Términos de Discord
+Seguridad Discord
+Términos de Roblox
+
+Privacidad Roblox
+
+
+
+LEGAL
+Términos y Condiciones
+
+Política de Privacidad
+
+Política de Cookies
+
+
+© 2026 VENEZUELA COMMUNITY. Todos los derechos reservados.
+
+No estamos afiliados con Roblox Corporation, Discord Inc, o Emergency Response: Liberty County.
+

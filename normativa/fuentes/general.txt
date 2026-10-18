@@ -1,0 +1,1404 @@
+
+Venezuela Community	
+InicioInformaciónNormativaMembresíasGaleria Oficial
+Conoce Nuestra Normativa
+En Venezuela Community no jugamos a ser un servidor cualquiera: jugamos a ser familia. Y como en toda familia que se respeta, hay reglas claras que nos permiten convivir, divertirnos y crecer juntos sin que nadie se sienta pisoteado.
+Esta normativa no es un muro para castigar, es el mapa que todos seguimos para que el roleplay sea completamente inmersivo, justo y emocionante.
+
+Normativa General de Roleplay – Principios Fundamentales
+Art. 1. El Roleplay debe ser siempre inmersivo
+
+El Roleplay en esta comunidad debe ser siempre inmersivo.
+
+Todo participante se compromete a actuar y comportarse dentro del servidor como lo haría su personaje en el universo de Emergency Response: Liberty County, manteniendo en todo momento la coherencia con la realidad ficticia del juego.
+
+1.1 Definición de Roleplay Inmersivo
+
+Se entiende por roleplay inmersivo aquel en el que:
+
+El jugador actúa exclusivamente como su personaje, dejando de lado su identidad real.
+
+Se mantiene una coherencia narrativa constante con el entorno, las leyes, los procedimientos y la lógica del mundo de Liberty County.
+
+Se evita cualquier elemento que rompa la suspensión de la incredulidad de los demás jugadores.
+
+
+1.2 Conductas que favorecen la inmersión
+
+Utilizar un lenguaje acorde al personaje (edad, profesión, personalidad y situación).
+
+Respetar los procedimientos policiales, médicos, civiles y legales propios del rol.
+
+Mantener acciones lógicas y realistas dentro del contexto (ejemplo: no correr a 200 km/h por la ciudad en un vehículo civil sin motivo justificado).
+
+Describir acciones con claridad cuando sea necesario (usando el chat cercano o /me).
+
+Resolver conflictos de forma natural y progresiva, dando oportunidad de interacción a los demás jugadores.
+
+
+1.3 Conductas que rompen la inmersión (Prohibidas)
+
+Hablar de temas fuera de personaje (OOC) en el chat de voz o cercano, salvo en casos excepcionales y usando el canal correspondiente.
+
+Realizar acciones imposibles o ilógicas (ej: saltar desde un helicóptero sin paracaídas y sobrevivir, o revivir mágicamente).
+
+Usar conocimiento que el personaje no posee (metagaming).
+
+Abusar de mecánicas del juego de forma no realista (powergaming).
+
+Romper el rol para hacer bromas, memes o comportamientos tóxicos fuera de contexto.
+
+
+1.4 Excepciones
+
+Solo se permiten breves comentarios OOC cuando sea estrictamente necesario para resolver problemas técnicos o de coordinación, y siempre deben hacerse de forma clara y mínima (preferiblemente en el chat de Discord o usando “-/OOC” en el juego).
+
+Art. 2. In Character (IC) vs Out of Character (OOC)
+
+La correcta separación entre In Character (IC) y Out of Character (OOC) es fundamental para mantener la inmersión y el buen funcionamiento de la comunidad. Todo miembro debe comprender y respetar esta distinción en todo momento.
+
+2.1 Definiciones
+
+In Character (IC): Todo lo que hace, dice, sabe o siente el personaje dentro del universo de Liberty County. Incluye acciones, diálogos, decisiones, emociones y conocimiento que el personaje ha adquirido durante su rol.
+
+Out of Character (OOC): Todo lo relacionado con el jugador real fuera del rol. Incluye opiniones personales, información del mundo real, problemas técnicos, bromas fuera de contexto, coordinaciones administrativas, etc.
+
+
+2.2 Principios Generales
+
+Separación Obligatoria: Nunca se debe mezclar información, acciones o conflictos IC con OOC, ni viceversa.
+
+Respeto a la Cuarta Pared: El jugador debe actuar como si su personaje no tuviera conocimiento de que está dentro de un juego.
+
+No llevar conflictos OOC al IC ni conflictos IC al OOC (revenge, hate, etc.).
+
+
+2.3 Normas Específicas
+
+Está permitido y recomendado:
+
+Usar el formato -/OOC en el chat del juego para comentarios breves fuera de rol.
+
+Utilizar canales específicos de Discord marcados como OOC para coordinaciones, reportes o conversaciones personales.
+
+Hablar OOC en voz solo cuando sea necesario y siempre de forma breve y clara.
+
+Está estrictamente prohibido:
+
+Hablar OOC en canales IC (chat cercano, voz cercana, radio policial, etc.) sin usar el formato adecuado.
+
+Usar información OOC en beneficio del personaje (Metagaming). Ejemplos:
+
+Usar el nombre real de un jugador que no ha sido revelado IC.
+
+Conocer ubicaciones o hechos que el personaje no ha presenciado.
+
+Usar Discord para coordinar acciones delictivas o policiales en lugar de hacerlo dentro del rol.
+
+Llevar rencores, venganzas o toxicidad del IC al OOC (o viceversa).
+
+Revelar información sensible OOC dentro del rol (ej: “te estoy grabando”, “esto es un stream”, “soy amigo del admin”, etc.).
+
+Interrumpir escenas de roleplay con comentarios OOC innecesarios.
+
+
+2.4 Excepciones
+
+Se permite la comunicación OOC en los siguientes casos:
+
+Problemas técnicos graves que impidan continuar el roleplay.
+
+Necesidad de coordinación urgente con el Staff.
+
+Reporte de infracciones graves (debe hacerse preferiblemente por ticket o canal privado).
+
+En estos casos, la comunicación debe ser clara, breve y respetuosa, y se debe volver al IC tan pronto como sea posible.
+
+Art. 3. Metagaming (MG) – Prohibido estrictamente
+
+El Metagaming es una de las infracciones más graves contra la inmersión en el roleplay. Consiste en utilizar información obtenida fuera de personaje (OOC) para beneficiar o influir en las acciones del personaje (IC).
+
+3.1 Definición
+
+Se considera Metagaming cualquier acción en la que el jugador hace que su personaje actúe basándose en conocimiento que este no ha adquirido de forma legítima dentro del rol.
+
+
+3.2 Ejemplos de Metagaming (Prohibidos)
+
+Usar el nombre real o apodo OOC de otro jugador cuando el personaje no lo conoce.
+
+Conocer la ubicación exacta de una persona o vehículo sin haberla visto o recibido información IC (ej. mirar el mapa de Discord o streams).
+
+Saber que alguien es policía, criminal, médico, etc., sin haberlo descubierto dentro del roleplay.
+
+Utilizar información de conversaciones de Discord, Teamspeak u otros canales OOC para tomar decisiones IC.
+
+Seguir o perseguir a un jugador porque sabes que está cometiendo un delito en otro servidor o en un stream, sin haberlo presenciado IC.
+
+Recordar rostros o placas de vehículos de sesiones anteriores sin justificación IC.
+
+Usar la lista de jugadores en línea para saber quién está conectado y actuar en consecuencia.
+
+
+3.3 Principios Generales
+
+Tu personaje solo puede actuar con la información que ha obtenido dentro del universo del juego a través de sus sentidos y experiencias.
+
+El conocimiento del jugador y el conocimiento del personaje deben estar separados.
+
+Toda información relevante debe transmitirse dentro del roleplay (radio, conversación presencial, notas, etc.).
+
+
+3.4 Conductas Recomendadas
+
+Si necesitas información, obténla de forma natural dentro del rol.
+
+Si no estás seguro de si algo es metagaming, pregúntale al Staff antes de actuar.
+
+Cuando recibas información IC, actúa de forma coherente con la personalidad y situación de tu personaje.
+
+
+3.5 Sanciones
+
+El Metagaming se considera una falta grave. Dependiendo de la intención y el impacto en otros jugadores, podrá ser sancionado desde una amonestación hasta la expulsión temporal o definitiva de la comunidad.
+
+Art. 4. Powergaming (PG) – Prohibido estrictamente
+
+El Powergaming es el uso abusivo o irrealista de las mecánicas del juego. Consiste en forzar situaciones o acciones que rompen la inmersión y perjudican el roleplay de los demás.
+
+4.1 Definición
+
+Se considera Powergaming cualquier acción que otorga ventajas irreales al personaje o impone resultados sobre otros jugadores sin darles oportunidad de responder de forma coherente.
+
+
+4.2 Ejemplos Prohibidos
+
+Realizar acciones imposibles o invencibles (godmoding).
+
+Forzar detenciones, golpes o muertes sin permitir reacción del otro jugador.
+
+Abusar de vehículos o armas de forma irrealista (velocidades extremas constantes, maniobras imposibles).
+
+Ignorar heridas graves o consecuencias lógicas de las acciones.
+
+
+4.3 Principios Generales
+
+Todas las acciones deben ser lógicas y realistas dentro del contexto del juego.
+
+Se debe dar oportunidad de respuesta en situaciones de conflicto.
+
+El roleplay tiene prioridad sobre “ganar” una escena.
+
+
+4.4 Sanciones
+
+El Powergaming es una falta grave. Las sanciones pueden ir desde una advertencia hasta la expulsión temporal o definitiva, según la gravedad y reiteración.
+
+Art. 5. Fail Roleplay (FailRP) – Prohibido 
+
+El Fail Roleplay (FailRP) ocurre cuando un jugador realiza acciones que rompen gravemente la lógica, el sentido común o la inmersión del roleplay.
+
+5.1 Definición
+
+Se considera FailRP cualquier comportamiento que no encaja con la realidad del universo de Liberty County o que daña la experiencia inmersiva de los demás jugadores.
+
+
+5.2 Ejemplos Prohibidos
+
+Realizar acciones ilógicas o absurdas (ej: conducir en contramano a alta velocidad sin motivo, robar un banco solo o atacar a un grupo de policías armado con un cuchillo).
+
+Ignorar completamente el contexto de la situación (ej: continuar roleando normalmente después de un accidente grave sin buscar ayuda médica).
+
+Comportamientos que no corresponden al personaje (un civil actuando como un SWAT entrenado).
+
+Romper escenas importantes con bromas o acciones fuera de contexto.
+
+Revivir o continuar actuando después de una muerte sin justificación RP.
+
+
+5.3 Principios Generales
+
+Todas las acciones deben ser coherentes, lógicas y realistas.
+
+El jugador debe actuar siempre según lo que haría su personaje en esa situación.
+
+
+5.4 Sanciones
+
+El FailRP es una falta grave. Las sanciones pueden ir desde una advertencia hasta la expulsión temporal o definitiva, dependiendo de la gravedad y la reiteración.
+
+Art. 6. Random Deathmatch (RDM) – Prohibido
+
+El Random Deathmatch (RDM) consiste en matar o atacar a otros jugadores sin ninguna razón válida de roleplay.
+
+6.1 Definición
+
+Se considera RDM cualquier acto de violencia (disparos, golpes, atropellos, explosiones, etc.) realizado sin justificación previa dentro del roleplay o sin interacción coherente con la víctima.
+
+
+6.2 Ejemplos Prohibidos
+
+Matar a un jugador al azar sin motivo RP.
+
+Atacar a alguien solo porque te miró, te siguió o te cayó mal.
+
+Iniciar tiroteos sin razón de rol (robos, venganzas, detenciones, etc.).
+
+Atropellar personas sin motivo justificado.
+
+Matar por venganza OOC o por frustración personal.
+
+
+6.3 Principios Generales
+
+Toda acción violenta debe tener una razón lógica y coherente dentro del roleplay.
+
+Se debe priorizar la interacción y el desarrollo de la escena antes de recurrir a la violencia.
+
+Los conflictos deben escalar de forma natural y progresiva.
+
+
+6.4 Sanciones
+
+El RDM es una falta grave. Las sanciones pueden ir desde una advertencia hasta la expulsión temporal o definitiva, dependiendo de la gravedad, el número de víctimas y la reiteración.
+
+Art. 7. Vehicle Deathmatch (VDM) – Prohibido 
+
+El Vehicle Deathmatch (VDM) consiste en usar vehículos de forma intencionada para dañar, atropellar o matar a otros jugadores sin justificación de roleplay.
+
+7.1 Definición
+
+Se considera VDM cualquier uso de un vehículo como arma para atacar o matar sin motivo válido dentro del roleplay.
+
+
+7.2 Ejemplos Prohibidos
+
+Atropellar intencionalmente a jugadores sin razón RP.
+
+Usar vehículos para embestir o bloquear de forma agresiva sin contexto.
+
+Intentar matar o herir a alguien conduciendo de manera suicida o kamikaze.
+
+Perseguir y atropellar repetidamente a un jugador sin motivo de rol.
+
+Usar helicópteros o barcos para impactar contra personas sin justificación.
+
+
+7.3 Principios Generales
+
+Los vehículos deben usarse de forma realista y coherente con el roleplay.
+
+Toda acción con vehículos debe tener una razón lógica dentro de la escena.
+
+Se prioriza la seguridad vial y el respeto a los peatones dentro del rol.
+
+
+7.4 Sanciones
+
+El VDM es una falta grave. Las sanciones pueden ir desde una advertencia hasta la expulsión temporal o definitiva, según la gravedad, el número de víctimas y la reiteración.
+
+Art. 8. Avatar Realista 
+
+El avatar del jugador debe mantener un aspecto realista y acorde.
+
+8.1 Definición
+
+Se entiende por avatar realista aquel que representa de forma creíble a un ser humano dentro del contexto realista del servidor.
+
+
+8.2 Requisitos Obligatorios
+
+El avatar debe tener proporciones cuadradas (hombres). Para mujeres no es necesario el cuerpo cuadrado pero debe de tener proporciones realistas.
+
+Se permite ropa civil, ropa de gala, médica o laboral acorde al rol.
+
+No se permiten caras o cuerpos exagerados, meme, anime, animales o personajes fantásticos.
+
+La ropa no debe ser extremadamente provocativa, obscena o inapropiada.
+
+El avatar debe ser visible y no puede usar accesorios que oculten completamente el rostro sin motivo RP.
+
+El avatar no puede llevar accesorios tacticos o militares.
+
+
+8.3 Principios Generales
+
+El avatar es la representación visual de tu personaje.
+
+Debe ayudar a mantener la inmersión y no distraer o romper el roleplay de los demás.
+
+Los cambios de avatar deben ser coherentes con la historia de tu personaje.
+
+
+8.4 Sanciones
+
+El uso de avatar no realista es una falta media. Se dará un tiempo para corregirlo. La reiteración puede conllevar sanciones más graves, hasta expulsión temporal.
+
+Art. 9. Forzar Roleplay – Prohibido 
+
+El Forzar Roleplay consiste en imponer acciones, situaciones o interacciones a otros jugadores sin su consentimiento o sin darles oportunidad de participar de forma natural.
+
+9.1 Definición
+
+Se considera Forzar Roleplay cualquier intento de obligar a otro jugador a entrar en una escena de rol en contra de su voluntad o sin una interacción lógica previa.
+
+
+9.2 Ejemplos Prohibidos
+
+Secuestrar o detener a un jugador sin motivo RP previo ni interacción.
+
+Iniciar un roleplay romántico, sexual o violento sin consentimiento del otro jugador.
+
+Forzar a alguien a seguir una escena cuando claramente está intentando evitarla o salir de ella.
+
+Imponer resultados o acciones sobre otros personajes sin darles oportunidad de responder.
+
+Continuar una escena cuando el otro jugador ha indicado OOC que no desea participar.
+
+
+9.3 Principios Generales
+
+El roleplay debe ser consentido y cooperativo. 
+
+Se debe respetar la voluntad de los demás jugadores en todo momento.
+
+Toda interacción importante debe desarrollarse de forma natural y progresiva.
+
+
+9.4 Sanciones
+
+Forzar Roleplay es una falta grave. Las sanciones pueden ir desde una advertencia hasta la expulsión temporal o definitiva, según la gravedad y la reiteración.
+
+Art. 10. Evadir Roleplay – Prohibido 
+
+El Evadir Roleplay consiste en evitar intencionalmente las consecuencias o interacciones lógicas del roleplay.
+
+10.1 Definición
+
+Se considera Evadir Roleplay cualquier acción que busca esquivar la responsabilidad, los procedimientos o las interacciones obligatorias dentro del rol.
+
+
+10.2 Ejemplos Prohibidos
+
+No portar el Documento Nacional de Identidad (DNI) sin justificación RP. Se permite solo si el jugador presenta grabaciones que demuestren que lo dejó en casa u otro lugar como acción previa de rol.
+
+No proporcionar la información correcta de tu personaje mediante el comando /do durante un procedimiento policial con la intención de registrar datos falsos.
+
+Huir o desconectarse para evitar consecuencias RP.
+
+Negarse a interactuar en escenas obligatorias (robos, detenciones, etc.).
+
+Fingir no entender o no escuchar para evitar el desarrollo del roleplay.
+
+Es imposible realizar llamadas !mod para parar roles activos.
+
+
+10.3 Principios Generales
+
+Todo jugador debe aceptar las consecuencias lógicas de sus acciones dentro del roleplay.
+
+La cooperación es esencial para mantener una experiencia justa e inmersiva.
+
+
+10.4 Sanciones
+
+Evadir Roleplay es una falta grave. Las sanciones pueden ir desde una advertencia hasta la expulsión temporal o definitiva, según la gravedad y la reiteración.
+
+Art. 11. Realismo Vehicular (Bad Driving – BD) - (Anexo: Uso del Vehiculo)
+
+La Conducción Realista exige que todos los vehículos se conduzcan de forma coherente y segura dentro del universo de Liberty County.
+
+11.1 Definición
+
+Se considera Bad Driving (BD) cualquier forma de conducción irrealista, peligrosa o que rompa la inmersión, sin justificación de roleplay.
+
+
+11.2 Ejemplos Prohibidos
+
+Conducir a velocidades extremas de forma constante en zonas urbanas sin motivo RP.
+
+Conducir con un vehiculo sedan, coupe, deportivo o que no cumpla con requisitos 4x4 (todoterreno) por caminos rocosos o elevaciones de tierra que no son aptos para vehiculos regulares.
+
+Realizar maniobras imposibles o acrobáticas (derrapes excesivos, saltos, giros de 180° sin control).
+
+Ignorar completamente las normas de tránsito de manera habitual (semáforos, stop, carriles, etc.).
+
+Conducir en contramano, por aceras o fuera de la carretera sin motivo justificado.
+
+Usar vehículos para bloquear caminos o rampear de forma constante.
+
+Conducir en reversa durante distancias largas o a alta velocidad.
+
+
+11.3 Principios Generales
+
+Los vehículos deben conducirse como lo haría una persona normal en la vida real.
+
+Se permite conducción agresiva solo cuando tenga una razón válida de roleplay (persecuciones, emergencias, etc.).
+
+La seguridad y el realismo tienen prioridad.
+
+
+ANEXO: USO DEL VEHICULO
+11.4 Normas Adicionales sobre Vehículos
+
+No podra descender del vehiculo a mas de 20 KPH / 10 MPH. Fuerzas especiales policiales entrenados solo podran descender del vehiculo en un rango de 20-60 KPH / 10-40 MPH.
+
+Las placas vehiculares deben seguir el formato realista AAA-###. Para autos sin placa se debe de rolear la accion de retirar la placa.
+
+Las placas vehiculares no pueden tener nombres o siglas que invoquen ofensas.
+
+El blindaje vehicular está estrictamente prohibido.
+
+Molestar a otros jugadores cerrandoles el paso o bugeando el vehiculo
+
+Los colores de los vehículos no pueden ser irrealistas o extremadamente chillones.
+
+El robo de vehículos oficiales (Policía, EMS y Bomberos) está prohibido.
+
+El uso de vehículos eléctricos está reservado exclusivamente para miembros con membresía activa.
+
+
+Restricciones durante persecuciones:
+
+Durante persecuciones policiales se presentan diversos problemas que son inevitables en el universo de ER:LC, por esto mismo se dictan las siguientes restricciones:
+
+Durante codigos PIT el civil conductor debe entender y reconocer que su vehiculo por cada pit pierde "vida util". por lo que ir a altas velocidades luego de 4 codigos pit es considerado irrealista.
+
+Si su vehiculo luego de un codigo PIT colisiona fuertemente con algun objeto inmovil, otro vehiculo o patrulla debe de considerar que ya no podra seguir conduciendolo.
+
+Si su vehiculo se prende fuego por causa de un codigo PIT debe considerar que usted queda sin el derecho de rolear heridas por quemadura buscando atrasar o interrumpir el rol.
+
+
+11.5 Sanciones
+
+El Bad Driving es una falta media a grave. Las sanciones pueden ir desde una advertencia hasta expulsión temporal, dependiendo de la peligrosidad, el daño causado y la reiteración. Las infracciones a las normas adicionales de vehículos también aplican estas sanciones.
+
+Art. 12. Uso Correcto de /me y /do - Importante
+
+/me: describe acciones físicas visibles o no visibles del personaje.
+
+/do: describe entorno, estados o situaciones externas. Prohibido usarlos para mentir, forzar resultados o alterar la realidad de la escena.
+
+Art. 13. Roleo de Acciones No Visibles - Importante
+
+El Roleo de Acciones No Visibles es obligatorio para mantener la inmersión en acciones que el juego no muestra de forma automática.
+
+13.1 Definición
+
+Se refiere a todas aquellas acciones que no son visibles para otros jugadores mediante animaciones o mecánicas del juego. Estas deben ser descritas correctamente usando comandos como /me o chat cercano.
+
+
+13.2 Ejemplos Obligatorios
+
+Buscar objetos en bolsillos, mochilas o vehículos.
+
+Sacar o guardar armas, dinero, drogas u objetos pequeños.
+
+Susurrar, hablar en voz baja o pasar información discretamente.
+
+Realizar acciones ocultas (revisar un documento, manipular algo bajo la mesa, etc.).
+
+Cualquier interacción que no sea evidente para los demás jugadores.
+
+
+13.3 Principios Generales
+
+Todas las acciones no visibles deben ser roleadas de forma clara y detallada.
+
+Esto permite que los demás jugadores puedan reaccionar de manera coherente.
+
+El uso correcto de /me y /do ayuda a mantener la inmersión y evita confusiones.
+
+
+13.4 Sanciones
+
+No rolear acciones no visibles es una falta media.
+
+La reiteración puede considerarse FailRP y aumentar la gravedad de la sanción.
+
+Art. 14. PI / Rol de Interpretación (Character Consistency) - Considera
+
+El Rol de Interpretación exige que cada jugador mantenga la coherencia y personalidad de su personaje en todo momento.
+
+14.1 Definición
+
+Se entiende por Character Consistency la obligación de actuar siempre según la historia, personalidad, edad, profesión y valores establecidos de tu personaje, sin cambios bruscos o incoherentes.
+
+
+14.2 Ejemplos Prohibidos
+
+Cambiar radicalmente la personalidad del personaje sin razón RP (ej: un criminal pacífico que de repente se vuelve extremadamente violento).
+
+Actuar de forma opuesta a la historia o background del personaje.
+
+Usar conocimiento o habilidades que no corresponden al personaje (un civil actuando como experto en tácticas SWAT).
+
+Olvidar eventos importantes ocurridos en el roleplay del personaje.
+
+Romper el carácter para hacer bromas o comportamientos que no encajan con su rol.
+
+
+14.3 Principios Generales
+
+Tu personaje debe ser consistente y creíble en todo momento.
+
+Los cambios en la personalidad o historia deben desarrollarse de forma progresiva y justificada dentro del roleplay.
+
+La interpretación de calidad es uno de los pilares del roleplay inmersivo.
+
+
+14.4 Sanciones
+
+La falta de consistencia en el personaje es una falta media.
+
+La reiteración o casos graves pueden considerarse FailRP y recibir sanciones más severas, hasta expulsión temporal.
+
+
+ANEXO: (PI  - Provocación Innecesaria)
+
+Se considera provocación innecesaria cualquier acción, comentario o comportamiento cuyo único objetivo sea molestar, alterar o generar conflicto sin propósito RP válido.
+
+Prohibiciones
+
+Provocar de forma repetitiva o gratuita a otros jugadores.
+
+Usar insultos, burlas o actitudes tóxicas fuera de un contexto RP justificado.
+
+Buscar conflicto solo por diversión o para generar drama OOC.
+
+Provocar a nuevos jugadores o a aquellos que claramente no desean interactuar.
+
+Art. 15. No Valorar la Vida del Personaje (FearRP) - Importante
+
+El FearRP (Fear Roleplay) exige que los jugadores valoren la vida de su personaje de forma realista en situaciones de peligro.
+
+15.1 Definición
+
+Se considera falta de FearRP actuar sin temor a la muerte o a sufrir graves consecuencias cuando la situación claramente lo justifica.
+
+
+15.2 Ejemplos Prohibidos
+
+No rendirse o huir cuando estás apuntado con un arma a corta distancia.
+
+Continuar atacando o resistiendo en situaciones donde la vida del personaje está en claro peligro.
+
+No mostrar miedo o preocupación ante amenazas creíbles (armas, superioridad numérica, etc.).
+
+Actuar de forma suicida o temeraria sin justificación de rol.
+
+Ignorar heridas graves y seguir combatiendo como si nada.
+
+
+15.3 Principios Generales
+
+Tu personaje debe valorar su vida de forma lógica y realista.
+
+En situaciones de alto riesgo, se debe priorizar la supervivencia y actuar con miedo o precaución.
+
+El FearRP ayuda a crear escenas más inmersivas y justas.
+
+
+15.4 Sanciones
+
+La falta de FearRP es una falta grave. Las sanciones pueden ir desde una advertencia hasta expulsión temporal o definitiva, según la gravedad, el impacto en otros jugadores y la reiteración.
+
+Art. 16. Tiempo de Respawn - Importante
+
+El Tiempo de Respawn regula el período que debe esperar un jugador después de morir antes de volver a entrar en el servidor.
+
+16.1 Definición
+
+Se establece un tiempo mínimo de espera tras la muerte del personaje para respetar las consecuencias de los eventos y evitar el regreso inmediato a la escena.
+
+
+16.2 Requisitos Obligatorios
+
+Debes esperar 5 minutos desde el momento en que la escena termina luego de tu muerte antes de volver a respawnear.
+
+Durante este tiempo no puedes volver a la escena nuevamente ni observar la escena.
+
+No puedes regresar al lugar donde moriste ni interactuar con los jugadores involucrados en el incidente (New Life Rule).
+
+
+16.3 Principios Generales
+
+El tiempo de respawn permite que las escenas continúen de forma natural y respeta las consecuencias de las acciones.
+
+Tu personaje debe olvidar todo lo ocurrido en su vida anterior hasta el momento de la muerte.
+
+
+16.4 Sanciones
+
+Incumplir el tiempo de respawn o regresar antes de tiempo es una falta grave. Las sanciones pueden ir desde una advertencia hasta expulsión temporal o definitiva, dependiendo de la reiteración y el impacto causado.
+
+Art. 17. Character Kill (CK) - Considera
+
+El Character Kill (CK) es la muerte permanente de un personaje dentro del servidor.
+
+17.1 Definición
+
+Se considera Character Kill la eliminación definitiva de un personaje, lo que impide al jugador volver a usarlo en el servidor. Esta medida solo se aplica en casos excepcionales y justificados.
+
+
+17.2 Requisitos y Procedimiento
+
+El CK debe ser solicitado al Staff o aprobado por este.
+
+Solo se permite cuando la situación RP lo justifique de forma extrema (muerte confirmada y sin posibilidad de revivir).
+
+Requiere acuerdo entre las partes involucradas o decisión del Staff en casos graves.
+
+Tras un CK aprobado, el jugador deberá crear un nuevo personaje.
+
+Posterior a un CK el jugador debera tener una vida ciudadana regular durante 7 dias.
+
+
+17.3 Principios Generales
+
+El CK es una herramienta narrativa seria y no debe usarse de forma abusiva o por venganza.
+
+Debe respetarse siempre el FearRP y las consecuencias lógicas del roleplay.
+
+No es permitido utilizar el CK para evitar o saltarse normativas IC/OOC.
+
+No se permite utilizar el CK multiples veces (Mas de 2 veces en un mes).
+
+No se permite forzar un CK sin aprobación del Staff.
+
+
+17.4 Sanciones
+
+Realizar un CK sin autorización o abusar de esta mecánica es una falta grave. Las sanciones pueden ir desde una advertencia hasta expulsión temporal o definitiva.
+
+Art. 18. Zonas Seguras 
+
+Las Zonas Seguras son áreas específicas del servidor donde se prohíbe cualquier tipo de violencia o acción disruptiva para proteger la inmersión y la experiencia de los jugadores.
+
+18.1 Definición
+
+Las Zonas Seguras son lugares designados donde no se permite combatir, robar, secuestrar, disparar, arrestar ni realizar acciones violentas o de alto riesgo. En caso que el rol haya iniciado fuera de alguna zona segura y por alguna situación se trasladan a alguna de estas el rol podrá continuar en esta.
+
+
+18.2 Zonas Seguras Principales
+
+Hospital y sus alrededores.
+
+Estacion de bomberos.
+
+Comisaría principal y dependencias policiales.
+
+Ayuntamiento y edificios gubernamentales.
+
+Spawn / Zona de llegada de nuevos jugadores.
+
+Otras zonas que el Staff marque explícitamente como seguras.
+
+
+18.3 Reglas en Zonas Seguras
+
+Está prohibido todo tipo de violencia (física, verbal agresiva o con armas).
+
+No se permiten robos, detenciones ni persecuciones dentro o cerca de estas zonas.
+
+Se debe mantener un roleplay calmado y respetuoso.
+
+No se permite entrar a zonas seguras con la intencion de huir de alguna escena.
+
+Se prohíbe en su totalidad el permanecer en las zonas seguras con la intención de seguir, perseguir o atacar a otros usuarios cuando dejen estas áreas.
+
+
+18.4 Sanciones
+
+Incumplir las reglas de Zonas Seguras es una falta grave. Las sanciones pueden ir desde una advertencia hasta expulsión temporal o definitiva, especialmente si afecta a nuevos jugadores o personal médico/policial.
+
+Art. 19. Team Kill (TK) - Importante
+
+El Team Kill (TK) consiste en matar, herir o atacar intencionalmente a miembros de tu mismo equipo o facción sin justificación de roleplay.
+
+19.1 Definición
+
+Se considera Team Kill cualquier acto de violencia (disparos, golpes, atropellos, explosiones, etc.) realizado contra compañeros de equipo, facción o aliados sin motivo válido dentro del roleplay.
+
+
+19.2 Ejemplos Prohibidos
+
+Disparar o golpear a un compañero policía, médico o de la misma banda sin razón RP.
+
+Atacar a miembros de tu facción por frustración, broma o error.
+
+Provocar daño accidental sin rolearlo ni asumir las consecuencias.
+
+Matar a aliados durante una operación coordinada sin justificación narrativa.
+
+Usar vehículos o armas contra tu propio equipo de forma intencionada.
+
+
+19.3 Principios Generales
+
+Se debe cuidar y proteger a los miembros de tu equipo o facción.
+
+Cualquier conflicto interno debe desarrollarse de forma coherente y justificada dentro del roleplay.
+
+Los errores accidentales deben rolearse y resolverse de manera madura.
+
+
+19.4 Sanciones
+
+El Team Kill es una falta grave. Las sanciones pueden ir desde una advertencia hasta expulsión temporal o definitiva, dependiendo de la intención, el daño causado y la reiteración.
+
+Art. 20. Meta Kill (MK) - Importante
+
+El Meta Kill (MK) consiste en matar o atacar a otro jugador utilizando información obtenida fuera del roleplay (metagaming).
+
+20.1 Definición
+
+Se considera Meta Kill cualquier acto de violencia realizado contra un jugador basándose en conocimiento OOC (fuera de personaje) en lugar de información adquirida legítimamente dentro del roleplay.
+
+
+20.2 Ejemplos Prohibidos
+
+Matar a alguien porque viste su nombre o stream fuera del servidor.
+
+Atacar o emboscar a un jugador usando información de Discord, amigos o listas de jugadores.
+
+Localizar y matar a una persona basándote en su ubicación OOC o en sesiones anteriores.
+
+Vengar una muerte anterior usando conocimiento de otra sesión o servidor.
+
+Matar a alguien solo porque sabes que es enemigo en la vida real o en otro contexto OOC.
+
+
+20.3 Principios Generales
+
+Toda acción violenta debe basarse exclusivamente en información obtenida dentro del roleplay.
+
+El conocimiento del jugador y el conocimiento del personaje deben permanecer completamente separados.
+
+Cualquier muerte debe tener una justificación clara y lógica dentro de la narrativa.
+
+
+20.4 Sanciones
+
+El Meta Kill es una falta muy grave. Las sanciones pueden ir desde una advertencia hasta expulsión temporal o definitiva, dependiendo de la intención y el impacto en la comunidad.
+
+Art. 21. Entornos / No Rolear Entorno (NRE)
+
+El No Rolear Entorno (NRE) ocurre cuando un jugador ignora o no interactúa con el entorno que le rodea de forma realista.
+
+21.1 Definición
+
+Se considera NRE no describir ni reaccionar de manera coherente ante elementos del entorno, clima, objetos, edificios o situaciones que afectan directamente al roleplay.
+
+
+21.2 Ejemplos Prohibidos
+
+Ignorar la lluvia, la nieve o condiciones climáticas extremas (no usar ropa adecuada, no correr a cubierto, etc.).
+
+No rolear correctamente el interior de un edificio, vehículo o zona (ej: entrar a un banco sin describir acciones lógicas).
+
+Ignorar barricadas, puertas cerradas, luces apagadas u obstáculos del entorno.
+
+No interactuar con objetos del escenario (sillas, mesas, computadoras, etc.) cuando la escena lo requiere.
+
+Actuar como si el entorno no existiera en situaciones de alto riesgo (ej: esconderse detrás de una pared inexistente).
+
+
+21.3 Principios Generales
+
+El jugador debe observar e interactuar con el entorno de forma inmersiva.
+
+Usar comandos como /me o /do ayuda a describir cómo el personaje percibe y reacciona al entorno.
+
+Esto enriquece la escena y permite que otros jugadores respondan de manera coherente.
+
+Falsificación de entorno: Está prohibido redactar entornos falsos o manipularlos con el fin de obtener beneficios o desinformar a la policía. Esto será considerado una falta grave y conlleva a una sanción severa. 
+
+
+21.4 Sanciones
+
+El No Rolear Entorno es una falta media. La reiteración puede considerarse FailRP y aumentar la gravedad de la sanción.
+
+Art. 22. Roleo de Heridas / No Rolear Heridas (NRH) - Importante
+
+El Roleo de Heridas obliga a los jugadores a interpretar de forma realista cualquier lesión recibida durante el roleplay.
+
+22.1 Definición
+
+Se considera No Rolear Heridas (NRH) actuar como si no hubiera recibido daño alguno después de sufrir heridas graves (disparos, golpes, accidentes, etc.).
+
+
+22.2 Ejemplos Prohibidos
+
+Recibir varios disparos y continuar corriendo o combatiendo normalmente.
+
+Ignorar heridas visibles (sangrado, fracturas, inconsciencia) y seguir roleando sin consecuencias.
+
+Negarse a recibir atención médica después de una lesión grave.
+
+Recuperarse de heridas serias en pocos minutos sin justificación RP.
+
+No cojear, no mostrar dolor o no actuar debilitado tras recibir daño.
+
+Autolesiones o suicidio: Realizar autolesiones o actos suicidas sin un desarrollo RP profundo, coherente y justificado. Estas acciones deben ser roleadas con seriedad y realismo.
+
+Comunicación en estado de inconsciencia: Hablar, gritar o transmitir información mientras el personaje está inconsciente o gravemente herido.
+
+Realismo en rol de choque: No rolear correctamente los efectos de un accidente vehicular (latigazo cervical, conmoción, dolor, imposibilidad de moverse con normalidad).
+
+Se deberá permanecer un mínimo de 5 minutos en cama de hospital, como simulación del proceso médico de recuperación y estabilización del personaje.
+
+No rolear el uso correcto de chaleco antibalas (los chalecos reducen daño pero no lo eliminan por completo) (Debe ser visible el chaleco).
+
+
+22.3 Principios Generales
+
+Todas las heridas deben ser roleadas de forma coherente y realista.
+
+El jugador debe actuar según la gravedad de la lesión recibida.
+
+En caso de ausencia total de personal EMS en servicio, los ciudadanos podrán trasladar a los personajes heridos hacia los puntos de atención hospitalaria disponibles dentro del rol.
+
+Durante el traslado, el jugador herido no podrá realizar ninguna acción hasta que se encuentre correctamente acostado en una cama de hospital.
+
+Se recomienda usar comandos /me o /do para describir el estado de las heridas.
+
+
+22.4 Sanciones
+
+El No Rolear Heridas (NRH) es una falta grave. Las sanciones pueden ir desde una advertencia hasta expulsión temporal o definitiva, dependiendo de la gravedad y la reiteración.
+
+Art. 23. BunnyJump (BJ) / ZigZag Abuse (ZZA) - Prohibido
+
+El ZigZag Abuse (ZZA) consiste en abusar del movimiento zigzagueante de forma excesiva e irrealista para evitar recibir daño durante persecuciones o tiroteos.
+
+23.1 Definición
+
+Se considera ZigZag Abuse cualquier movimiento exagerado y repetitivo (correr en zigzag constante) con el objetivo de explotar las mecánicas del juego y dificultar artificialmente que te disparen o te alcancen.
+
+BunnyJump (BJ): Saltar repetidamente para moverse más rápido de lo normal.
+
+
+23.2 Ejemplos Prohibidos
+
+Correr en zigzag de forma constante y extrema durante persecuciones a pie.
+
+Combinar zigzag con saltos repetitivos (bunny hopping) para evitar balas.
+
+Usar movimientos abusivos para escapar de detenciones o tiroteos sin justificación RP.
+
+Realizar zigzagueos exagerados incluso cuando el personaje está herido o cansado.
+
+Saltar multiples veces para conseguir ventaja o abusar de algun bug.
+
+Saltar para aprovecharse del entorno.
+
+Abusar de este movimiento de forma habitual sin rol coherente.
+
+
+23.3 Principios Generales
+
+Los movimientos deben ser realistas y coherentes con la situación del personaje.
+
+Se permite correr o esquivar de forma natural, pero no explotar mecánicas de movimiento de manera abusiva.
+
+El roleplay y el FearRP deben prevalecer sobre intentar “ganar” mediante mecánicas.
+
+
+23.4 Sanciones
+
+El ZigZag Abuse es una falta media a grave. Las sanciones pueden ir desde una advertencia hasta expulsión temporal, dependiendo de la reiteración y el impacto en otros jugadores.
+
+Art. 24. Bug Abuse (BA) - Lag Abuse (LA) - Prohibido
+
+El Bug Abuse y Lag Abuse consisten en explotar fallos del juego o la conexión para obtener ventajas injustas o romper la inmersión.
+
+24.1 Definición
+
+Bug Abuse (BA): Utilizar errores, glitches o mecánicas no intencionadas del juego en beneficio propio.
+
+Lag Abuse (LA): Explotar la mala conexión o provocar lag de forma intencionada para evitar consecuencias o ganar ventaja.
+
+
+24.2 Ejemplos Prohibidos
+
+Usar glitches para atravesar paredes, duplicar objetos, o entrar en zonas inaccesibles.
+
+Utilizar la camara libre o tercera camara para ver mas alla de lo posible.
+
+Explotar bugs de vehículos (volar, atravesar map, etc.).
+
+Desconectarse intencionalmente durante una persecución, detención o tiroteo para evitar la muerte o arresto.
+
+Moverse o actuar durante picos de lag para esquivar balas o acciones.
+
+Abusar de cualquier fallo conocido del juego que rompa el balance o la lógica RP.
+
+
+24.3 Principios Generales
+
+Se debe jugar de forma limpia y reportar los bugs al Staff en lugar de explotarlos.
+
+El lag no justifica acciones abusivas.
+
+La integridad del servidor y el roleplay están por encima de cualquier beneficio personal.
+
+
+24.4 Sanciones
+
+El Bug Abuse y Lag Abuse son faltas graves. Las sanciones pueden ir desde una advertencia hasta expulsión temporal o definitiva, dependiendo de la gravedad, el beneficio obtenido y la reiteración.
+
+Art. 25. Discriminación y Lenguaje Ofensivo - Prohibido
+
+La comunidad mantiene una política de tolerancia cero hacia la discriminación y el lenguaje ofensivo.
+
+25.1 Definición
+
+Se considera discriminación o lenguaje ofensivo cualquier comentario, insulto, broma o comportamiento que ataque, humille o discrimine a una persona por su raza, género, orientación sexual, religión, nacionalidad, discapacidad o cualquier otra característica personal. Esto aplica dentro y fuera de rol
+
+
+25.2 Ejemplos Prohibidos
+
+Uso de insultos racistas, xenófobos, homofóbicos, sexistas o de cualquier tipo.
+
+Comentarios despectivos sobre el aspecto físico, religión o identidad de otros jugadores.
+
+Bromas ofensivas que afecten a grupos vulnerables.
+
+Acoso o hate speech dirigido hacia cualquier miembro de la comunidad.
+
+Cualquier contenido discriminatorio en voz, chat o Discord.
+
+
+Se exige respeto absoluto hacia todos los miembros de la comunidad. El roleplay no justifica el uso de lenguaje ofensivo o discriminatorio. Todos los jugadores tienen derecho a un ambiente seguro y acogedor.
+
+
+25.3 Sanciones
+
+La discriminación y el lenguaje ofensivo son faltas muy graves. Las sanciones van desde amonestación inmediata hasta expulsión permanente del servidor y Discord, sin posibilidad de apelación en casos graves.
+
+Art. 26. Canales de Voz “Chill” y “Play” - Considera
+
+En los canales de voz denominados “chill” o “play”, los usuarios pueden expresarse con mayor libertad, siempre respetando las normas básicas del servidor. Prohibido:
+
+Sexualizar a otros usuarios.
+
+Mencionar o insultar familiares/terceros de forma personal.
+
+Insultar o desacreditar al servidor. Los moderadores presentes en estos canales actúan bajo las mismas normas; no pueden amenazar sanciones sin incumplimiento claro. 
+
+Art. 27. Roles +17 y +18 - Considera
+
+Se permiten roles con contenido maduro (+17) en contextos de relaciones sentimentales, bodas, interacciones románticas, siempre que sean consensuados y discretos. Roles explícitamente +18 (contenido sexual gráfico) solo se permiten en privado (DMs o canales cerrados) y deben ser desenlazados de la comunidad donde no se promueven estas actitudes. Cualquier rol no consensuado o público será sancionado gravemente.
+
+Art. 28. Ventajas de las membresias - Considera
+
+Las Ventajas de las membresias son beneficios adicionales otorgados a los jugadores que adquieren membresía VIP o Booster. Estas ventajas son de carácter cosmético y de calidad de vida.
+
+28.1 Definición
+
+Las de las membresias incluyen mejoras como vehículos exclusivos, uniformes especiales, dinero inicial, prioridad en cola y otros beneficios, pero no otorgan superioridad en el roleplay.
+
+
+28.2 Uso Permitido
+
+Utilizar vehículos, ropa y accesorios (Membresia) dentro del roleplay siempre que sea coherente con el personaje.
+
+Disfrutar de beneficios de calidad de vida (prioridad en cola, dinero extra, etc.).
+
+Mostrar el rango en Discord y en el servidor.
+
+Gozar de los beneficios pautados en las membresias
+
+Exigir prioridad en tickets
+
+
+28.3 Restricciones y Prohibiciones
+
+No se permite usar ventajas para obtener beneficio injusto en roleplay (ej: usar vehículos blindados o excesivamente superiores en robos o persecuciones).
+
+Está prohibido usar las ventajas para hacer FailRP, Powergaming o VDM.
+
+Las ventajas no eximen de cumplir ninguna norma de la comunidad.
+
+Abusar de los beneficios para trollear o molestar a otros jugadores está prohibido.
+
+Los beneficios son unicos e intransferibles
+
+Cualquier intento de abuso, duplicación o estafa con pases será sancionado con ban permanente. 
+
+
+28.4 Principios Generales
+
+Las ventajas son un apoyo para mejorar la experiencia, no una herramienta para tener ventaja sobre otros jugadores. Todos los miembros, independientemente de su rango, deben respetar las normas de roleplay por igual.
+
+
+28.5 Sanciones
+
+El mal uso de ventajas es una falta media a grave. Las sanciones pueden ir desde una advertencia hasta la revocación temporal de beneficios o expulsión, según la gravedad.
+
+Art. 29. Ayudas en soporte - Soporte
+
+Las ayudas en soporte son las solicitudes de asistencia que realizan los jugadores al Staff.
+
+29.1 Definición
+
+Las ayudas en soporte son tickets o mensajes dirigidos al equipo de Staff para resolver problemas técnicos, dudas o reportes dentro del servidor.
+
+
+29.2 Uso Correcto
+
+Utiliza el canal o sistema de tickets correspondiente.
+
+Sé claro, educado y proporciona toda la información necesaria (capturas, videos, descripción del problema).
+
+Espera tu turno. No abuses abriendo múltiples tickets por el mismo problema.
+
+Solo usa el soporte para temas importantes (bugs, reportes de faltas graves, problemas técnicos, etc.).
+
+
+29.3 Prohibiciones
+
+No se permite spamear tickets o mensajes al Staff.
+
+Está prohibido usar el soporte para bromas, trollear o temas sin importancia.
+
+No se permite insultar, exigir o faltar el respeto al Staff en los tickets.
+
+Queda prohibido abrir tickets para temas que ya estén explicados en la normativa.
+
+Se prohíbe estrictamente el usar amenazas de reporte como medio de intimidación o presión hacia otros jugadores.
+
+
+29.4 Principios Generales
+
+El soporte existe para ayudar a mantener un buen ambiente y solucionar problemas reales.
+
+La paciencia y el respeto son obligatorios en toda interacción con el Staff.
+
+
+29.5 Sanciones
+
+El abuso del sistema de soporte o faltar el respeto al Staff es una falta media a grave. Las sanciones pueden ir desde una advertencia hasta expulsión temporal o definitiva.
+
+Art. 30. AA (Admin Abuse) - Soporte
+
+El Admin Abuse es el uso indebido o abusivo de los poderes administrativos por parte del Staff.
+
+30.1 Definición
+
+Se considera Admin Abuse cualquier acción en la que un miembro del Staff utilice sus privilegios administrativos de forma injusta, personal o que perjudique la experiencia de los jugadores.
+
+
+30.2 Ejemplos Prohibidos
+
+Usar comandos de Staff para beneficio personal (dinero, vehículos, items, etc.).
+
+Teletransportar, revivir o ayudar a amigos o a sí mismo durante situaciones de roleplay.
+
+Aplicar sanciones sin motivo válido o por motivos personales (rencores, favoritismos).
+
+Revelar información administrativa o usar conocimiento de Staff en el roleplay.
+
+Abusar de poderes para trollear, molestar o interferir negativamente en escenas de jugadores.
+
+Modificar el servidor o situaciones RP de forma arbitraria sin justificación.
+
+
+30.3 Principios Generales
+
+Los miembros del Staff deben actuar con imparcialidad, responsabilidad y transparencia.
+
+Los poderes administrativos solo deben usarse para ayudar al correcto funcionamiento del servidor y apoyar el roleplay.
+
+Cualquier acción administrativa debe priorizar el bienestar de la comunidad.
+
+
+30.4 Sanciones
+
+El Admin Abuse es una falta extremadamente grave. Puede conllevar desde la suspensión inmediata del cargo hasta la expulsión permanente del Staff y de la comunidad.
+
+Art. 31. KAD/KHD (Kill Admin/Helper Duty) - Soporte
+
+El KAD/KHD consiste en matar, atacar o interrumpir de forma agresiva a un miembro del Staff mientras se encuentra en servicio administrativo o de ayuda.
+
+31.1 Definición
+
+Se considera KAD/KHD cualquier acto de violencia o interferencia intencionada contra un Administrador, Moderador o Helper mientras está cumpliendo con sus funciones en el servidor.
+
+
+31.2 Ejemplos Prohibidos
+
+Atacar, disparar, secuestrar o atropellar a un Staff que esté identificado como en deber (Admin Duty o Helper Duty).
+
+Interrumpir una escena de Staff con acciones violentas sin justificación RP.
+
+Matar o intentar matar a un miembro del Staff visiblemente en servicio.
+
+Provocar o trollear a un Staff mientras está resolviendo reportes o ayudando a jugadores.
+
+Ignorar la identificación del Staff (nombres especiales, etiquetas, etc.) para atacarlos.
+
+
+31.3 Principios Generales
+
+Los miembros del Staff en deber administrativo merecen respeto y protección.
+
+Sus funciones son necesarias para el correcto funcionamiento de la comunidad.
+
+Cualquier conflicto con Staff debe resolverse de forma madura y a través de los canales adecuados.
+
+
+31.4 Sanciones
+
+El KAD/KHD es una falta muy grave. Las sanciones pueden ir desde una suspensión temporal larga hasta la expulsión definitiva de la comunidad, sin posibilidad de apelación en casos claros.
+
+Art. 32. Sistema de apelaciones - Soporte
+
+El Sistema de Apelaciones permite a los jugadores solicitar la revisión de una sanción impuesta.
+
+32.1 Definición
+
+Una apelación es la solicitud formal para revisar o modificar una sanción aplicada por el Staff.
+
+
+32.2 Procedimiento
+
+Las apelaciones deben realizarse exclusivamente a través de tickets en el canal correspondiente.
+
+Debes incluir:
+
+Tu nombre de Roblox y Discord.
+
+Número de sanción o motivo.
+
+Explicación clara y respetuosa de por qué crees que la sanción debe ser revisada.
+
+Evidencias (grabaciones, capturas, testigos, etc.).
+
+Solo se aceptará una apelación por sanción.
+
+
+32.3 Plazos y Limitaciones
+
+Las apelaciones deben realizarse dentro de los 7 días siguientes a la sanción.
+
+No se aceptan apelaciones con insultos, falta de respeto o intentos de manipulación.
+
+El Staff se reserva el derecho de aceptar o denegar la apelación.
+
+
+32.4 Principios Generales
+
+Las apelaciones deben ser honestas y basadas en hechos.
+
+En caso de ser denegado puede suprimir la sancion con servicio comunitario (Art.33).
+
+Puede pedir una re-apelacion con la alta administracion mediante el Art.34.
+
+El sistema existe para corregir errores, no para evitar consecuencias merecidas.
+
+
+32.5 Sanciones por Abuso
+
+Abusar del sistema de apelaciones, abrir tickets repetitivos o faltar el respeto al Staff durante el proceso es una falta grave. Esto puede resultar en aumento de la sanción original o nuevas sanciones.
+
+Art. 33. Servicio Comunitario - Apelaciones
+
+El Servicio Comunitario es una sanción alternativa que consiste en realizar tareas útiles para la comunidad como forma de reparación.
+
+33.1 Definición
+
+El Servicio Comunitario es una medida disciplinaria que obliga al jugador a cumplir horas de trabajo RP en beneficio de la comunidad (limpieza, ayuda en eventos, patrullas, etc.).
+
+
+33.2 Procedimiento
+
+El Staff asignará las tareas correspondientes según la falta cometida.
+
+El jugador puede obtar por realizar servicio comunitario de manera voluntaria para anexar sus sanciones a una sola y mantenerla como una nota.
+
+El jugador debe completar las horas asignadas en el tiempo estipulado.
+
+Si el jugador acumula una cantidad de +5 sanciones tendra que obtar por servicio comunitario obligatorio o la expulsion del servidor.
+
+Se debe mantener una actitud positiva y rolear correctamente durante el servicio.
+
+
+33.3 Apelaciones
+
+Las apelaciones al Servicio Comunitario solo se aceptarán en casos de errores graves.
+
+Para apelar, debes abrir un ticket en la sección correspondiente con pruebas claras.
+
+Las apelaciones por "no estar de acuerdo" o "fue sin intención" generalmente no serán aceptadas.
+
+
+33.4 Sanciones por Incumplimiento
+
+No cumplir con el Servicio Comunitario o hacerlo de mala fe es una falta grave. Esto puede resultar en aumento de la sanción original o expulsión temporal del servidor.
+
+Art. 34. Pagos mediante moneda real OOC - Apelaciones
+
+Este artículo regula los pagos con moneda real (OOC) para solicitar apelaciones o revisiones de sanciones.
+
+34.1 Definición
+
+Se permite el pago con moneda real únicamente como opción para agilizar o solicitar una revisión especial de sanciones graves.
+
+
+34.2 Procedimiento
+
+El pago debe realizarse a través de los canales oficiales establecidos por la administración.
+
+El jugador debe abrir un ticket indicando que desea apelar mediante pago OOC.
+
+El monto y las condiciones de cada apelación serán definidos por el Staff según la gravedad de la sanción.
+
+No todos los casos son elegibles para apelación por pago.
+
+
+34.3 Limitaciones
+
+Este sistema no garantiza que la sanción sea levantada.
+
+Solo se aceptan pagos por apelaciones de sanciones graves (no faltas leves).
+
+El Staff se reserva el derecho de aceptar o rechazar la apelación incluso después del pago.
+
+
+34.4 Sanciones
+
+El uso de pagos OOC fuera de los canales oficiales o intentar sobornar al Staff es una falta extremadamente grave. Esto resultará en expulsión permanente sin posibilidad de apelación.
+
+Art. 35. Cierre automático de tickets - Soporte
+
+Todo ticket abierto en el sistema de soporte Discord (reportes, apelaciones, dudas, quejas, solicitudes de eventos, etc.) debe ser gestionado de forma activa por el usuario que lo creó. Si transcurren 3 días naturales (72 horas) desde la apertura del ticket sin ninguna respuesta, interacción o aporte adicional por parte del solicitante (mensajes, evidencias, aclaraciones), el ticket se cerrará automáticamente con el estado “Cerrado por inactividad del usuario”.
+
+Esta medida busca:
+
+Evitar acumulación innecesaria de tickets abandonados
+
+Priorizar casos activos y urgentes
+
+Reducir carga administrativa al staff
+
+El cierre automático no impide abrir un nuevo ticket con el mismo asunto si el usuario decide retomarlo posteriormente, pero deberá explicar el contexto anterior y adjuntar referencias al ticket viejo (número o enlace).
+
+Art. 36. Donaciones y pagos - Sistema monetario
+
+Las donaciones y pagos con dinero real son contribuciones voluntarias realizadas por los jugadores para apoyar el servidor. Esta actividad está estrictamente regulada.
+
+36.1 Definición
+
+Se considera donación o pago cualquier transferencia de dinero real (bolívares, dólares, criptomonedas, gift cards u otros métodos) hacia la administración del servidor.
+
+
+36.2 Procedimiento Oficial
+
+Todas las donaciones y pagos deben realizarse exclusivamente a través de los métodos y cuentas oficiales anunciados por la administración.
+
+El jugador debe notificar mediante ticket una vez realizada la donación, incluyendo comprobante de pago. Posteriormente esperar la verificacion.
+
+Las donaciones no otorgan ventajas que afecten el equilibrio del roleplay (inmortalidad, impunidad, etc.).
+
+Los beneficios por donación serán entregados según los paquetes establecidos.
+
+
+36.3 Prohibiciones
+
+Está estrictamente prohibido realizar pagos OOC fuera de los canales oficiales.
+
+No se permite comprar, vender o intercambiar cuentas, vehículos, dinero IC, rangos o cualquier elemento del servidor por dinero real.
+
+Queda prohibido ofrecer o aceptar donaciones a cambio de favores administrativos, levantamiento de sanciones o trato preferencial.
+
+No se permite presionar, extorsionar o condicionar a otros jugadores para que donen.
+
+
+36.4 Responsabilidad
+
+Las donaciones son voluntarias y no reembolsables.
+
+La administración no se hace responsable por pagos realizados a cuentas no oficiales.
+
+Cualquier intento de estafa o fraude relacionado con donaciones será reportado y perseguido.
+
+
+36.5 Sanciones
+
+Cualquier violación a este artículo se considera una falta extremadamente grave.
+
+Las sanciones incluyen:
+
+Expulsión permanente del servidor y Discord.
+
+Posible reporte a las autoridades correspondientes en casos de fraude.
+
+Pérdida total de todos los beneficios adquiridos.
+
+No hay excepciones ni apelaciones para infracciones relacionadas con pagos irregulares de dinero real.
+
+
+Vida Ciudadana
+
+
+Departamentos y Trabajos
+
+
+Vida Criminal
+
+Disposiciones Finales y Autoridad de la Normativa
+Venezuela Community
+
+Venezuela Community se reserva el derecho absoluto y exclusivo de establecer, interpretar, modificar y actualizar la presente Normativa en cualquier momento.
+
+Cualquier cambio o actualización será comunicado con antelación razonable a través de los canales oficiales de comunicaciones del servidor (principalmente anuncios en Discord, mensajes pinned o canales dedicados). La fecha de la última actualización aparecerá siempre al inicio de cada sección o documento para garantizar transparencia.
+
+El objetivo de estas modificaciones es mantener la integridad del roleplay, cerrar posibles vacíos interpretativos, corregir desequilibrios y prevenir cualquier intento de aprovechamiento o abuso por parte de los usuarios.
+
+Al ingresar a la comunidad y aceptar participar en el servidor (mediante verificación, lectura de reglas o uso continuado de los servicios), el usuario reconoce y acepta íntegramente la Normativa vigente en ese momento, así como su carácter vinculante y obligatorio. Esta aceptación implica que:
+
+No podrá invocar desconocimiento de las reglas.
+
+No podrá contradecir, cuestionar públicamente la validez o incumplir deliberadamente la Normativa.
+
+Acepta que cualquier violación será sancionada de acuerdo con los niveles establecidos (advertencia, kick, ban temporal, ban permanente, wipe de personaje, etc.), sin perjuicio de otras medidas que el equipo administrativo considere necesarias para proteger la comunidad.
+
+Las decisiones del equipo de moderación y administración son finales e inapelables en cuanto a la interpretación y aplicación de la Normativa, salvo el procedimiento de apelación expresamente previsto en las reglas correspondientes.
+
+Si en algún momento un usuario no está de acuerdo con la Normativa vigente o con alguna de sus actualizaciones, la única opción disponible es cesar inmediatamente su participación en la comunidad y retirarse del servidor de forma voluntaria. La permanencia implica aceptación plena y sin reservas de todas las disposiciones.
+
+Venezuela Community no es solo un servidor: es un espacio construido con esfuerzo colectivo. Respetar estas bases es la forma más directa de contribuir a que siga siendo un lugar de roleplay serio, justo y familiar para todos.
+
+
+
+COMUNIDAD
+Servidor Discord
+
+Emergency Response: Liberty County
+
+
+RECURSOS
+Términos de Discord
+Seguridad Discord
+Términos de Roblox
+
+Privacidad Roblox
+
+
+
+LEGAL
+Términos y Condiciones
+
+Política de Privacidad
+
+Política de Cookies
+
+
+© 2026 VENEZUELA COMMUNITY. Todos los derechos reservados.
+
+No estamos afiliados con Roblox Corporation, Discord Inc, o Emergency Response: Liberty County.
+

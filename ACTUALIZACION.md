@@ -335,3 +335,10 @@ lib/rol.js, lib/placa.js, components/CedulaCard.js, app/darkweb/*, app/delictivo
 - Cada revisión queda en **Auditoría** (acción `ojosVer`, con motivo y quién; sin el contenido) y se manda al webhook de auditoría.
 - Archivos: `app/ojos/*`, `app/api/ojos/route.js`.
 - Recomendado: añade a la política de privacidad/reglas que el staff puede revisar comunicaciones del portal para moderar reportes.
+
+## Actualización 34 — Normativa en el portal + Li'l Monkey
+- **Normativa** (menú → Normativa, `/normativa`): las 4 normativas oficiales copiadas tal cual: General (36 arts.), Ciudadana (21), Departamental (Bloque A primarios 21, B secundarios 11, C negocios 9) y Delictiva (19), más las Disposiciones finales. Pestañas por sección, desplegables por artículo y buscador por tema o abreviatura (PG, RDM, respawn, taser, robo a banco, +18…). Se puede enlazar a un artículo: `/normativa?a=gen-4`.
+- **Li'l Monkey** (así se llama la mascota): ahora responde "¿en qué artículo está…?" y "¿qué normativa habla de…?". Dice la normativa y el artículo (y el apartado), resume el texto y lleva al artículo con un enlace. Solo cita lo que está escrito, no inventa. Entiende abreviaturas (PG, MG, RDM, VDM, CK, FearRP, NRE, NRH, ZZA, KAD, BD, PI…).
+- **Animación**: se quitó el recorte de los brazos (dejaba la silueta fea al saludar). Ahora se anima la imagen completa: se balancea y respira, saluda inclinándose con un saltito, camina saltando y parpadea.
+- **Actualizar la normativa**: edita los `.txt` de `normativa/fuentes/` (o reemplázalos) y ejecuta `python3 normativa/construir.py`; eso regenera `lib/normativaData.js`. El borrador completo está en `normativa/borrador.md`.
+- Archivos: `lib/normativa.js`, `lib/normativaData.js`, `app/normativa/*`, `normativa/*`.

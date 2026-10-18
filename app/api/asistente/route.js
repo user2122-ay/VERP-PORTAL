@@ -7,6 +7,7 @@ import { casaRef } from "@/lib/mdt";
 import { nombreDe } from "@/lib/rol";
 import { responder, charla, SALUDO, temasStaff, resumenRango } from "@/lib/asistente";
 import { canReview, canAdmin, RANK_LABEL } from "@/lib/roles";
+import { buscar as buscarNorma, resumen as resumenNorma } from "@/lib/normativa";
 export const dynamic = "force-dynamic";
 const bad = (m, s = 400) => NextResponse.json({ error: m }, { status: s }), MAX_MSGS = 40, MAX_NOTAS = 20;
 // Beta: solo el Developer (y todos cuando Administración → Economía lo abre). Sin sesión solo ayuda con registro e inicio de sesión cuando está abierto.
@@ -23,6 +24,14 @@ async function avisos(d, u) {
   if (canReview(u.rank)) { const q = async (c, f) => d.collection(c).countDocuments(f).catch(() => 0), tr = await q("trabajos", { estado: "pendiente" }), ap = await q("apelaciones", { estado: "pendiente" }), ro = await q("robos", { estado: "pendiente" }), re = canAdmin(u.rank) ? await q("reports", { estado: { $ne: "resuelto" } }) : 0;
     if (tr) out.push({ k: "s-tr", staff: 1, t: `Staff: ${tr} solicitud(es) de trabajo por revisar.`, link: "/admin" }); if (ap) out.push({ k: "s-ap", staff: 1, t: `Staff: ${ap} apelación(es) de CK pendiente(s).`, link: "/admin" }); if (ro) out.push({ k: "s-ro", staff: 1, t: `Staff: ${ro} solicitud(es) de robo de auto por revisar.`, link: "/admin" }); if (re) out.push({ k: "s-re", staff: 1, t: `Staff: ${re} reporte(s) 911 sin resolver.`, link: "/admin" }); }
   return out;
+}
+// Preguntas sobre la normativa: dice en qué artículo está y resume. Li'l Monkey no inventa: solo cita lo que está en lib/normativaData.js.
+const NORMA = /(art[ií]culo|normativa|\bnormas?\b|\breglas?\b|sanci[oó]n|sanciones|prohib|permitid|falta (leve|media|grave)|qu[eé] dice|est[aá] permitido|se puede)/i;
+function respNorma(msg) {
+  const r = buscarNorma(msg, 3).filter((x, i, a) => x.score >= a[0].score * 0.55); if (!r.length) return null; const p = r[0];
+  let t = `Eso está en la ${p.ref}: «${p.a.titulo}»${p.sub ? ` (apartado ${p.sub})` : ""}.`; const rs = resumenNorma(p.a, 240); if (rs) t += `\n${rs}`;
+  if (r[1]) t += `\n\nTambién se toca en: ${r.slice(1).map((x) => `${x.ref} (${x.a.titulo})`).join("; ")}.`;
+  return { r: t, link: "/normativa?a=" + p.a.id };
 }
 export async function GET() {
   const { u, d, visible, anon } = await acceso(); if (!visible) return NextResponse.json({ visible: false });
@@ -46,7 +55,7 @@ export async function POST(req) {
   else if (u.rank && /(qu[eé] puedo hacer|mis permisos|mi rango)/i.test(msg)) { r = resumenRango(u.rank, !!u.auxApertura) || "Todavía no tienes un rango de staff."; link = "/admin"; }
   else if (/(qu[eé] me pasa|c[oó]mo voy|mi estado|resumen|qu[eé] tengo pendiente|pendiente)/i.test(msg)) { const a = await avisos(d, u); r = a.length ? "Esto es lo que veo ahora:\n" + a.map((x) => "- " + x.t).join("\n") : "Todo tranquilo: no tienes nada urgente."; link = a[0]?.link || ""; }
   else {
-    const x = responder(msg, u.rank || u.auxApertura ? temasStaff(u.rank, !!u.auxApertura) : []); r = x?.r; link = x?.link || "";
+    const x = responder(msg, u.rank || u.auxApertura ? temasStaff(u.rank, !!u.auxApertura) : []), nm = NORMA.test(msg) || !x ? respNorma(msg) : null; r = nm ? nm.r : x?.r; link = nm ? nm.link : x?.link || "";
     if (!r) r = charla(msg) || (SALUDO.test(msg) ? `Hola, ${nombreDe(u).split(" ")[0] || "bienvenido"}. Pregúntame cómo funciona algo del portal o dime “recuerda que…” y lo anoto.` : "No estoy seguro de eso. Prueba con otras palabras (por ejemplo: comida, casa, casino, trading, TikTok, banco, multas) o pregúntale al staff en el Discord.");
   }
   if (!anon) { const msgs = [...(doc.msgs || []), { r: "u", t: msg, at: new Date() }, { r: "a", t: r, at: new Date() }].slice(-MAX_MSGS); await col.updateOne({ _id: u.id }, { $set: { msgs, notas, ult: Date.now() } }, { upsert: true }); }

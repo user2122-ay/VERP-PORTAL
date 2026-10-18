@@ -6,8 +6,8 @@ import { usePathname } from "next/navigation";
 import PushAsk from "./PushAsk";
 import { canReview } from "@/lib/roles";
 import { tieneVpn } from "@/lib/vpn";
-import { LayoutDashboard, Contact, Store, Siren, Landmark, Bell, Package, Smartphone, Briefcase, ShieldCheck, Sun, Moon, LogOut, Globe, Skull, Shield, Users, Home, Eye } from "lucide-react";
-const L = [["/", "Panel", LayoutDashboard], ["/cedula", "Cédula", Contact], ["/banco", "Banco", Landmark], ["/mercado", "Mercado", Store], ["/inventario", "Inventario", Package], ["/hogar", "Hogar", Home], ["/trabajos", "Trabajos", Briefcase], ["/whatsapp", "Teléfono", Smartphone], ["/notificaciones", "Avisos", Bell], ["/emergencias", "911", Siren]];
+import { LayoutDashboard, Contact, Store, Siren, Landmark, Bell, Package, Smartphone, Briefcase, ShieldCheck, Sun, Moon, LogOut, Globe, Skull, Shield, Users, Home, Eye, BookOpen } from "lucide-react";
+const L = [["/", "Panel", LayoutDashboard], ["/cedula", "Cédula", Contact], ["/banco", "Banco", Landmark], ["/mercado", "Mercado", Store], ["/inventario", "Inventario", Package], ["/hogar", "Hogar", Home], ["/normativa", "Normativa", BookOpen], ["/trabajos", "Trabajos", Briefcase], ["/whatsapp", "Teléfono", Smartphone], ["/notificaciones", "Avisos", Bell], ["/emergencias", "911", Siren]];
 // Miembros registrados en la página (se actualiza solo cada minuto)
 function Miembros() {
   const [n, setN] = useState(null);

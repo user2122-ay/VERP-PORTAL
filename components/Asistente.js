@@ -3,19 +3,13 @@ import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 // Mascota original de VE:RP (azul, suave, pseudo-3D con CSS). Si pones tu propia imagen en public/asistente.png se usa en lugar del dibujo.
 const AL = 130; // alto del muñeco
-// Brazos y ojos: capas sobre la misma imagen (recortes en % de la imagen). Los brazos se mueven alrededor del hombro.
-const BR = [[77.3, 39.5], [84, 34.3], [90.8, 30.6], [96.5, 29.7], [100, 32.4], [100, 37.9], [96.5, 43.5], [89.8, 48.4], [83.1, 52.7], [78.2, 55.7], [74.4, 50.8], [71.5, 45.3], [70.1, 42.2]], BL = [[27.2, 50.2], [22.4, 52], [14.7, 56.9], [9.4, 63.1], [5.5, 69.8], [5, 72.9], [7.4, 76], [13.7, 76.9], [18.5, 75.7], [21.9, 73.5], [22.4, 68.6], [23.3, 62.5], [25.7, 56.9], [28.2, 53.3]];
-const poly = (P) => "polygon(" + P.map(([x, y]) => `${x}% ${y}%`).join(",") + ")";
-const hueco = (P) => { const cx = P.reduce((a, p) => a + p[0], 0) / P.length, cy = P.reduce((a, p) => a + p[1], 0) / P.length; return "M" + P.map(([x, y]) => `${((cx + (x - cx) * .95) / 100).toFixed(4)} ${((cy + (y - cy) * .95) / 100).toFixed(4)}`).join("L") + "Z"; };
-const BASE = "M0 0H1V1H0Z" + hueco(BR) + hueco(BL);
 function Blob({ talk, wave, look, size = 84, img }) {
   const s = { transform: `perspective(420px) rotateY(${look.x * 12}deg) rotateX(${-look.y * 8}deg)` }, W = Math.round(AL * .637);
   if (img) return (<div className={"as-blob" + (talk ? " as-talk" : "")} style={{ width: W, height: AL, position: "relative", ...s }}>
-    <svg width="0" height="0" style={{ position: "absolute" }}><defs><clipPath id="asbase" clipPathUnits="objectBoundingBox"><path clipRule="evenodd" d={BASE} /></clipPath></defs></svg>
-    <img src="/asistente.png" alt="" draggable={false} style={{ width: W, height: AL, display: "block", clipPath: "url(#asbase)", pointerEvents: "none" }} />
-    <img src="/asistente.png" alt="" draggable={false} className={wave ? "as-ar as-aw" : "as-ar"} style={{ clipPath: poly(BR), transformOrigin: "77% 52%" }} />
-    <img src="/asistente.png" alt="" draggable={false} className="as-al" style={{ clipPath: poly(BL), transformOrigin: "25% 52%" }} />
-    <i className="as-oj" style={{ left: "26.3%", top: "31.3%" }} /><i className="as-oj" style={{ left: "57.1%", top: "25.6%" }} />
+    <div className={"as-fig" + (wave ? " as-wv" : "")}>
+      <img src="/asistente.png" alt="" draggable={false} style={{ width: W, height: AL, display: "block", pointerEvents: "none" }} />
+      <i className="as-oj" style={{ left: "26.3%", top: "31.3%" }} /><i className="as-oj" style={{ left: "57.1%", top: "25.6%" }} />
+    </div>
   </div>);
   return (<div className={"as-blob" + (talk ? " as-talk" : "")} style={{ width: size, height: size, ...s }}>
     <svg viewBox="0 0 100 100" width={size} height={size}>
@@ -68,14 +62,14 @@ export default function Asistente() {
     const up = () => { removeEventListener("pointermove", mv); removeEventListener("pointerup", up); removeEventListener("pointercancel", up); r.act = Date.now(); if (o.mov) { r.pausa = Date.now() + 30000; setTimeout(() => setDrag(false), 30); } else { setAbierto((v) => !v); setGlobo(""); } };
     addEventListener("pointermove", mv); addEventListener("pointerup", up); addEventListener("pointercancel", up); };
   const enviar = async (m) => { m = (m ?? txt).trim(); if (!m || busy) return; setTxt(""); setBusy(true); setMsgs((x) => [...x, { r: "u", t: m }]); try { const j = await (await fetch("/api/asistente", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ msg: m, ruta }) })).json(); setMsgs((x) => [...x, { r: "a", t: j.r || j.error || "Algo falló.", link: j.link }]); } catch { setMsgs((x) => [...x, { r: "a", t: "No pude conectar. Intenta otra vez." }]); } setBusy(false); };
-  const sug = est.anon ? ["¿Cómo me registro?", "No puedo iniciar sesión"] : est.rango ? ["¿Qué tengo pendiente?", "Pendientes del staff", "¿Cómo apruebo un trabajo?", "¿Qué puedo hacer en Administración?"] : ["¿Qué tengo pendiente?", "¿Cómo funciona la comida?", "¿Cómo funciona el trading?", "¿Qué recuerdas?"];
+  const sug = est.anon ? ["¿Cómo me registro?", "No puedo iniciar sesión"] : est.rango ? ["¿Qué tengo pendiente?", "Pendientes del staff", "¿Cómo apruebo un trabajo?", "¿En qué artículo está el PG?"] : ["¿Qué tengo pendiente?", "¿Cómo funciona la comida?", "¿En qué artículo está el PG?", "¿Qué recuerdas?"];
   const p = pos, izq = p.x < innerWidth / 2, ancho = innerWidth >= 700, lado = ancho ? (izq ? { right: 14 } : { left: 14 }) : { right: 14 };
   return (<>
     <style>{`.as-mas{position:fixed;left:0;top:0;z-index:9999;width:${SZ}px;transition:transform 3.4s cubic-bezier(.45,.05,.3,1)}.as-mas.as-ab{transition:transform .5s ease}
 .as-in{cursor:grab;touch-action:none;user-select:none}.as-dr .as-in{cursor:grabbing}.as-dr{transition:none!important}.as-dr .as-blob{animation:none}
-.as-ar,.as-al{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none}.as-ar{animation:asar 3.4s ease-in-out infinite}.as-ar.as-aw{animation:asaw .45s ease-in-out 5}.as-al{animation:asal 4.2s ease-in-out infinite}
+.as-fig{position:relative;width:100%;height:100%;transform-origin:50% 100%;animation:asfig 3.6s ease-in-out infinite}.as-fig.as-wv{animation:aswv .5s ease-in-out 5}
 .as-oj{position:absolute;width:7.6%;height:4.8%;transform:translate(-50%,-50%) scaleY(0);border-radius:50%;background:#c3e4f6;animation:asoj 4.8s infinite;pointer-events:none}
-@keyframes asar{0%,100%{transform:rotate(0)}50%{transform:rotate(-5deg)}}@keyframes asaw{0%,100%{transform:rotate(0)}50%{transform:rotate(-22deg)}}@keyframes asal{0%,100%{transform:rotate(0)}50%{transform:rotate(5deg)}}@keyframes asoj{0%,93%,100%{transform:translate(-50%,-50%) scaleY(0)}96%{transform:translate(-50%,-50%) scaleY(1)}}.as-in.as-hop{animation:ashop .55s ease-in-out infinite}.as-hop .as-ar{animation:asaw .5s ease-in-out infinite}.as-hop .as-al{animation:asal .5s ease-in-out infinite}
+@keyframes asfig{0%,100%{transform:rotate(-1.6deg) scale(1,1)}50%{transform:rotate(1.6deg) scale(1.015,.985)}}@keyframes aswv{0%,100%{transform:rotate(0) translateY(0)}50%{transform:rotate(7deg) translateY(-4px)}}@keyframes asoj{0%,93%,100%{transform:translate(-50%,-50%) scaleY(0)}96%{transform:translate(-50%,-50%) scaleY(1)}}.as-in.as-hop{animation:ashop .55s ease-in-out infinite}.as-hop .as-fig{animation:aswv .5s ease-in-out infinite}
 .as-blob{cursor:pointer;animation:asb 3.2s ease-in-out infinite;transition:transform .15s;filter:drop-shadow(0 6px 8px rgba(0,0,0,.3))}.as-talk{animation:ast .35s ease-in-out infinite}
 .as-eyes{transform-origin:50px 50px;animation:asblink 4.5s infinite}.as-wave{transform-origin:80px 56px;animation:asw .5s ease-in-out 4}
 @keyframes ashop{0%,100%{transform:translateY(0) rotate(-5deg)}50%{transform:translateY(-14px) rotate(5deg)}}@keyframes asb{0%,100%{translate:0 0}50%{translate:0 -6px}}@keyframes ast{0%,100%{scale:1}50%{scale:1.06 .96}}@keyframes asblink{0%,94%,100%{transform:scaleY(1)}97%{transform:scaleY(.1)}}@keyframes asw{0%,100%{transform:rotate(0)}50%{transform:rotate(-28deg)}}
@@ -87,13 +81,13 @@ export default function Asistente() {
 .as-s{display:flex;flex-wrap:wrap;gap:5px;padding:0 10px 6px}.as-s button{font-size:12px;padding:3px 8px;border-radius:99px;border:1px solid var(--bd);background:none;color:var(--tx);cursor:pointer}
 .as-i{display:flex;gap:6px;padding:8px;border-top:1px solid var(--bd)}.as-i input{flex:1;min-width:0}`}</style>
     {tiros.map((z) => <div key={z.id} className="as-t" style={{ left: z.x - 15, top: z.y - 15, "--dx": z.dx + "px", "--dy": z.dy + "px", "--rot": z.rot + "deg" }}><Cosa t={z.t} /></div>)}
-    {abierto && (<div className="as-p" style={lado}><div className="as-h"><span>Asistente VE:RP{est.rango ? " · " + est.rango : ""} · beta</span><span><button onClick={() => cuando(!quieto)} title="Que se mueva o se quede quieto">{quieto ? "Dejar que pasee" : "Dejarlo quieto"}</button><button className="x" onClick={() => setAbierto(false)} aria-label="Cerrar">×</button></span></div>
-      <div className="as-m">{!msgs.length && <div className="as-b as-a">{est.anon ? "Hola, te ayudo con el registro y el inicio de sesión." : `Hola${est.nombre ? ", " + est.nombre.split(" ")[0] : ""}. Pregúntame cómo funciona algo del portal. Dime “recuerda que…” y lo anoto.`}</div>}
+    {abierto && (<div className="as-p" style={lado}><div className="as-h"><span>Li'l Monkey{est.rango ? " · " + est.rango : ""} · beta</span><span><button onClick={() => cuando(!quieto)} title="Que se mueva o se quede quieta">{quieto ? "Dejar que pasee" : "Dejarla quieta"}</button><button className="x" onClick={() => setAbierto(false)} aria-label="Cerrar">×</button></span></div>
+      <div className="as-m">{!msgs.length && <div className="as-b as-a">{est.anon ? "Hola, te ayudo con el registro y el inicio de sesión." : `Hola${est.nombre ? ", " + est.nombre.split(" ")[0] : ""}. Soy Li'l Monkey. Pregúntame cómo funciona algo del portal o en qué artículo de la normativa está una regla. Dime “recuerda que…” y lo anoto.`}</div>}
         {msgs.map((m, i) => (<div key={i} className={"as-b " + (m.r === "u" ? "as-u" : "as-a")}>{m.t}{m.link && <><br /><a href={m.link} style={{ color: m.r === "u" ? "#fff" : "var(--ac)", textDecoration: "underline" }}>Ir ahí</a></>}</div>))}{busy && <div className="as-b as-a">…</div>}<div ref={fin} /></div>
       <div className="as-s">{sug.map((s) => <button key={s} onClick={() => enviar(s)}>{s}</button>)}</div>
       <form className="as-i" onSubmit={(e) => { e.preventDefault(); enviar(); }}><input value={txt} onChange={(e) => setTxt(e.target.value)} maxLength={300} placeholder="Escribe aquí…" /><button className="btn" disabled={busy}>Enviar</button></form></div>)}
     <div className={"as-mas" + (drag ? " as-dr" : "")} style={{ transform: `translate(${p.x}px,${p.y}px)` }}>
       {!abierto && globo && <div className="as-g" style={izq ? { left: 0 } : { right: 0 }} onClick={() => { setAbierto(true); setGlobo(""); }}>{globo}</div>}
-      <div className={"as-in" + (camina && !abierto && !drag ? " as-hop" : "")} onPointerDown={empezar} role="button" aria-label="Asistente (arrástralo para moverlo)"><Blob talk={busy} wave={wave} look={look} img={img} size={SZ} /></div>
+      <div className={"as-in" + (camina && !abierto && !drag ? " as-hop" : "")} onPointerDown={empezar} role="button" aria-label="Li'l Monkey (arrástrala para moverla)"><Blob talk={busy} wave={wave} look={look} img={img} size={SZ} /></div>
     </div></>);
 }
