@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import PushAsk from "./PushAsk";
 import { canReview } from "@/lib/roles";
 import { tieneVpn } from "@/lib/vpn";
-import { LayoutDashboard, Contact, Store, Siren, Landmark, Bell, Package, Smartphone, Briefcase, ShieldCheck, Sun, Moon, LogOut, Globe, Skull, Shield, Users, Home } from "lucide-react";
+import { LayoutDashboard, Contact, Store, Siren, Landmark, Bell, Package, Smartphone, Briefcase, ShieldCheck, Sun, Moon, LogOut, Globe, Skull, Shield, Users, Home, Eye } from "lucide-react";
 const L = [["/", "Panel", LayoutDashboard], ["/cedula", "Cédula", Contact], ["/banco", "Banco", Landmark], ["/mercado", "Mercado", Store], ["/inventario", "Inventario", Package], ["/hogar", "Hogar", Home], ["/trabajos", "Trabajos", Briefcase], ["/whatsapp", "Teléfono", Smartphone], ["/notificaciones", "Avisos", Bell], ["/emergencias", "911", Siren]];
 // Miembros registrados en la página (se actualiza solo cada minuto)
 function Miembros() {
@@ -24,7 +24,7 @@ export default function Shell({ user, children }) {
     document.startViewTransition(go).ready.then(() => d.animate({ clipPath: [`circle(0 at ${x}px ${y}px)`, `circle(${r}px at ${x}px ${y}px)`] }, { duration: 650, easing: "ease-in-out", pseudoElement: "::view-transition-new(root)" }));
   }
   const vpn = tieneVpn(user);
-  const items = [...L, ...(vpn ? [["/darkweb", "Dark Web", Globe]] : []), ...(vpn || user.rank === "FUNDACION" ? [["/delictivo", "Delictivo", Skull]] : []), ...(user.agente || user.dev ? [["/mdt", "MDT", Shield]] : []), ...(canReview(user.rank) || user.rank === "AUXILIAR_APERTURA" ? [["/admin", "Administración", ShieldCheck]] : [])];
+  const items = [...L, ...(vpn ? [["/darkweb", "Dark Web", Globe]] : []), ...(vpn || user.rank === "FUNDACION" ? [["/delictivo", "Delictivo", Skull]] : []), ...(user.agente || user.dev ? [["/mdt", "MDT", Shield]] : []), ...(user.dev ? [["/ojos", "Ojos del mundo", Eye]] : []), ...(canReview(user.rank) || user.rank === "AUXILIAR_APERTURA" ? [["/admin", "Administración", ShieldCheck]] : [])];
   return (<><div className="top"><img src="/logo.png" alt="VE:RP" /><Miembros />
     <nav className="nav">{items.map(([h, t, I]) => <Link key={h} href={h} className={p === h ? "on" : ""}><I size={18} className="neon" />{t}</Link>)}</nav>
     <button className="btn g" onClick={toggle} aria-label="Cambiar tema"><Sun size={18} className="neon" /></button>
