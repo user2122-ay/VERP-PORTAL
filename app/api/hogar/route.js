@@ -81,7 +81,6 @@ export async function POST(req) {
     const y = limpiar(it); y.enNevera = false; y.vence = new Date(+ahora + Math.max(0, venceMs(it) - +ahora) / FACTOR_NEVERA); await us.updateOne({ id: u.id }, { $push: { inventory: y } }); return ok({ msg: `${it.name} fuera de la nevera` });
   }
   if (A === "nev_comer") { // se puede comer lo que haya en la nevera de la casa (lo de otros también): es una casa compartida
-    if (!u.dev && !(await servidorEstado(d)).abierto) return bad("El servidor está cerrado: no puedes comer ni beber hasta que abra", 403);
     const { tipo, pct } = it.consumo || {}; if (!tipo) return bad("No se puede consumir"); const actual = nivelDe(u.cuerpo?.[tipo], HORAS[tipo]); if (actual >= 95) return bad(tipo === "agua" ? "Todavía no tienes sed" : "Todavía no tienes hambre");
     const venc = vencido(it), set = { [`cuerpo.${tipo}`]: { n: Math.min(100, actual + pct), t: ahora } }; let enfermo = false, perdida = null;
     if (venc && Math.random() < PROB_ENFERMAR) { enfermo = true; const c = nivelDe(u.cuerpo?.comida, HORAS.comida), a = nivelDe(u.cuerpo?.agua, HORAS.agua), pc = al(4, 12), pa = al(4, 12), bc = tipo === "comida" ? Math.min(100, c + pct) : c, ba = tipo === "agua" ? Math.min(100, a + pct) : a; set["cuerpo.comida"] = { n: Math.max(1, bc - pc), t: ahora }; set["cuerpo.agua"] = { n: Math.max(1, ba - pa), t: ahora }; perdida = { comida: pc, agua: pa }; set["cuerpo.enfermo"] = { hasta: new Date(+ahora + HORAS_ENFERMO * 36e5), causa: it.name }; }

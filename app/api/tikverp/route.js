@@ -5,6 +5,7 @@ import { apiUser } from "@/lib/auth";
 import { waListo, fmtTel } from "@/lib/redes";
 import { canReview, RANK_LABEL } from "@/lib/roles";
 import { auditar } from "@/lib/auditoria";
+import { importarImagen } from "@/lib/imagen";
 import { validarLink, etiquetas, HANDLE, insignia, esFund, parId, tickRacha, rachaVista } from "@/lib/tikverp";
 import { ecoCfg } from "@/lib/reserva";
 export const dynamic = "force-dynamic";
@@ -131,6 +132,7 @@ export async function POST(req) {
     let sonido = null;
     if (b.sonidoId) { const _id = oid(b.sonidoId), s = _id && (await c.so.findOneAndUpdate({ _id }, { $inc: { usos: 1 } })); if (!s) return bad("Ese sonido ya no existe"); sonido = { id: String(s._id), titulo: s.titulo, artista: s.artista, url: s.url }; }
     else if (b.sonidoNuevo) { const s = await nuevoSonido(b.sonidoNuevo); if (s.error) return bad(s.error); await c.so.updateOne({ _id: s.id }, { $inc: { usos: 1 } }); sonido = { id: String(s.id), titulo: s.titulo, artista: s.artista, url: s.url }; }
+    if (r.media === "foto") { const f = await importarImagen(c.d, r.href); if (f.error) return bad(f.error); r.href = f.url || r.href; } // la foto se guarda en el sitio: el link de Discord vence, el nuestro no
     await c.po.insertOne({ uid: me, handle: yo.handle, tipo: r.media, url: r.href, desc, tags: etiquetas(desc), sonido, likes: 0, comentarios: 0, compartidos: 0, at }); return NextResponse.json({ ok: true });
   }
   if (["msg", "aceptar", "rechazar", "bloquear", "desbloquear"].includes(b.accion)) {

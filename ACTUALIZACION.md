@@ -342,3 +342,14 @@ lib/rol.js, lib/placa.js, components/CedulaCard.js, app/darkweb/*, app/delictivo
 - **Animación**: se quitó el recorte de los brazos (dejaba la silueta fea al saludar). Ahora se anima la imagen completa: se balancea y respira, saluda inclinándose con un saltito, camina saltando y parpadea.
 - **Actualizar la normativa**: edita los `.txt` de `normativa/fuentes/` (o reemplázalos) y ejecuta `python3 normativa/construir.py`; eso regenera `lib/normativaData.js`. El borrador completo está en `normativa/borrador.md`.
 - Archivos: `lib/normativa.js`, `lib/normativaData.js`, `app/normativa/*`, `normativa/*`.
+
+## Actualización 35 — Sueldos, Moderación y fotos de VE TikTok
+- **Trabajos secundarios**: todos pagan **$1.000 por hora** (`lib/trabajos.js`).
+- **"Ojos del mundo" ahora es "Moderación de comunicaciones"** (menú → Moderación, `/ojos`): disponible para **Developer, Fundación y Junta Directiva** (con acceso de Administración vigente). Sigue siendo solo lectura, con motivo obligatorio (mín. 10 caracteres) y registro en Auditoría sin el contenido. Recomendado: añadir a la política de privacidad que el staff puede revisar comunicaciones por reportes.
+- **Links vencidos de VE TikTok**: las **fotos** se descargan y se guardan en la base de datos al publicar (`/api/img/<id>`, no vencen). Los **videos y audios** siguen usando el link de Discord (vencen); para que no se pierdan hace falta almacenamiento de archivos (Cloudflare R2 / Vercel Blob). Las publicaciones ya vencidas no se pueden recuperar.
+
+## Actualización 36 — Comida y agua: 12 horas
+- Cada barra (comida y agua) dura **12 horas** de 100% a 0% (`HORAS` en `lib/cuerpo.js` y `app/Cuerpo.js`).
+- Se quitó el texto "morirías en X h" de la pantalla de inicio.
+- Con el servidor **cerrado** las barras siguen en pausa pero **ya se puede comer y beber** (Mercado/Inventario/Hogar).
+- **Developer**: ahora su comida y agua se guardan y bajan como las de los demás (antes se reiniciaban al recargar la web porque nunca se guardaban), pero no muere al llegar a 0%.

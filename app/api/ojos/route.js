@@ -5,10 +5,10 @@ import { auditar } from "@/lib/auditoria";
 export const dynamic = "force-dynamic";
 const err = (m, s = 400) => NextResponse.json({ error: m }, { status: s });
 const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), str = (s, n = 80) => String(s || "").trim().slice(0, n);
-// OJOS DEL MUNDO: solo el Developer (con sesión de Administración vigente). Para moderar por reportes (política +18 del servidor).
+// MODERACIÓN DE COMUNICACIONES: Developer, Fundación y Junta Directiva (con sesión de Administración vigente). Para moderar por reportes (política +18 del servidor).
 // Cada revisión pide una razón y queda en Auditoría (sin el contenido de los mensajes). Solo lectura: no borra ni cambia nada.
 export async function POST(req) {
-  const a = await adminUser(); if (!a || !a.dev) return err("Sin permiso", 403);
+  const a = await adminUser(); if (!a || !["DEVELOPER", "FUNDACION", "JUNTA_DIRECTIVA"].includes(a.rank)) return err("Sin permiso", 403);
   const b = await req.json().catch(() => ({})), d = await db(), us = d.collection("users");
   if (b.a === "buscar") {
     const q = str(b.q, 40); if (q.length < 2) return NextResponse.json({ users: [] });

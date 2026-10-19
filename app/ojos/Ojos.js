@@ -24,8 +24,8 @@ export default function Ojos() {
   const ver = async (e) => { e.preventDefault(); const j = await post({ a: "ver", uid: sel.id, razon }); if (j) { setD(j); setTab("wa"); setFiltro(""); } };
   const cuenta = d ? { wa: d.wa.reduce((n, c) => n + c.msgs.length, 0), tk: d.tk.reduce((n, c) => n + c.msgs.length, 0) } : null;
   return (<div>
-    <h2>Ojos del mundo</h2>
-    <div className="card" style={{ borderColor: "#ffb020" }}><b>Solo Developer · solo lectura</b><p className="mut" style={{ margin: "6px 0 0" }}>Sirve para moderar reportes y casos de la política del servidor (roles +18). Cada revisión exige un motivo y queda en Auditoría (sin el contenido de los mensajes). Úsalo solo cuando haya un reporte o una sospecha fundada, y mantén en la política de privacidad que el staff puede revisar comunicaciones del portal para moderar.</p></div>
+    <h2>Moderación de comunicaciones</h2>
+    <div className="card" style={{ borderColor: "#ffb020" }}><b>Developer, Fundación y Junta Directiva · solo lectura</b><p className="mut" style={{ margin: "6px 0 0" }}>Sirve para moderar reportes y casos de la política del servidor (roles +18). Cada revisión exige un motivo y queda en Auditoría (sin el contenido de los mensajes). Úsalo solo cuando haya un reporte o una sospecha fundada, y mantén en la política de privacidad que el staff puede revisar comunicaciones del portal para moderar.</p></div>
     <form className="card" onSubmit={buscar}><b>Buscar persona</b><input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Usuario de Discord, Roblox, nombre, cédula, número +58 o @tiktok" /><button className="btn" disabled={busy || q.trim().length < 2}>Buscar</button></form>
     {err && <p style={{ color: "var(--bad)" }}>{err}</p>}
     {res && !res.length && <p className="mut">Sin resultados.</p>}
