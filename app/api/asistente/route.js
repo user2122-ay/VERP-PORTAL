@@ -5,6 +5,7 @@ import { ecoCfg } from "@/lib/reserva";
 import { nivelDe, HORAS } from "@/lib/cuerpo";
 import { casaRef } from "@/lib/mdt";
 import { nombreDe } from "@/lib/rol";
+import { respEquipo, comando, semilla, fila } from "@/lib/equipo";
 import { responder, charla, SALUDO, temasStaff, resumenRango } from "@/lib/asistente";
 import { canReview, canAdmin, RANK_LABEL } from "@/lib/roles";
 import { buscar as buscarNorma, resumen as resumenNorma } from "@/lib/normativa";
@@ -41,12 +42,20 @@ export async function GET() {
 }
 export async function POST(req) {
   const { u, d, visible, anon } = await acceso(); if (!visible) return bad("El asistente todavía está en beta", 403);
-  const b = await req.json().catch(() => ({})), msg = String(b.msg || "").trim().slice(0, 300), ruta = String(b.ruta || "").slice(0, 60); if (!msg) return bad("Escribe algo");
+  const b = await req.json().catch(() => ({})), msg = String(b.msg || "").trim().slice(0, String(b.msg || "").trim().startsWith("/") ? 500 : 300), ruta = String(b.ruta || "").slice(0, 60); if (!msg) return bad("Escribe algo");
   const col = d.collection("asistente"); let doc = anon ? {} : (await col.findOne({ _id: u.id })) || {}; const nuevos = [], notas = doc.notas || [];
   if (!anon && doc.ult && Date.now() - doc.ult < 1200) return bad("Un momento, voy leyendo", 429);
   let r = null, link = "";
+  const eq = d.collection("equipo"); let lista = []; if (!anon) { lista = await eq.find({}).toArray(); if (!lista.length) { lista = semilla(); try { await eq.insertMany(lista, { ordered: false }); } catch {} } } // se siembra una sola vez con el equipo inicial
+  const cmd = !anon && comando(msg), puedeEq = !!u && (u.dev || ["DEVELOPER", "FUNDACION"].includes(u.rank));
   const rec = !anon && /^(recuerda|recuérdame|recuerdame|anota|apunta|guarda)\b( que)?\s+(.{3,})/i.exec(msg);
   if (anon) { const x = responder(msg); r = x?.r; link = x?.link || ""; if (!r) r = charla(msg) || SALUDO.test(msg) ? "Hola. Te puedo ayudar a registrarte o a iniciar sesión en el portal de VE:RP. Pregúntame lo que necesites." : "Por ahora aquí solo te ayudo con el registro y el inicio de sesión. Cuéntame qué te pasa."; }
+  else if (cmd) {
+    if (cmd.error) r = cmd.error; else if (cmd.acc === "lista") r = "Equipo de VE:RP:\n" + lista.map((p) => "- " + fila(p)).join("\n");
+    else if (!puedeEq) r = "Solo el Developer y la Fundación pueden cambiar el equipo.";
+    else if (cmd.acc === "quitar") { const x = await eq.deleteOne({ _id: cmd.id }); r = x.deletedCount ? `Listo, quité a ${cmd.id} del equipo.` : "No encontré a esa persona. Usa su usuario de Roblox."; }
+    else { const { _id, ...resto } = cmd.p, ya = lista.some((p) => p._id === _id); await eq.updateOne({ _id }, { $set: resto }, { upsert: true }); r = `${ya ? "Actualicé" : "Añadí"} a ${cmd.p.nombre}: ${cmd.p.cargos.join(", ")}.`; }
+  }
   else if (rec) { if (notas.length >= MAX_NOTAS) r = `Ya tengo ${MAX_NOTAS} cosas anotadas. Dime “olvida todo” o “olvida 1” para hacer espacio.`; else { notas.push({ t: rec[3].trim().slice(0, 200), at: new Date() }); r = `Listo, lo recuerdo: “${rec[3].trim().slice(0, 200)}”.`; } }
   else if (/(qu[eé] recuerdas|mis notas|mis recuerdos|qu[eé] te dije)/i.test(msg)) r = notas.length ? "Esto es lo que recuerdo:\n" + notas.map((n, i) => `${i + 1}. ${n.t}`).join("\n") : "Todavía no me has pedido recordar nada. Dime “recuerda que…” y lo anoto.";
   else if (/^(olvida|borra)\s+(todo|mis notas|todas)/i.test(msg)) { notas.length = 0; r = "Listo, olvidé todo lo que tenía anotado."; }
@@ -54,6 +63,7 @@ export async function POST(req) {
   else if (u.rank && /(pendientes? del staff|cola del staff|qu[eé] hay por revisar|trabajo pendiente del staff)/i.test(msg)) { const a = (await avisos(d, u)).filter((x) => x.staff); r = a.length ? "Pendientes del staff:\n" + a.map((x) => "- " + x.t.replace("Staff: ", "")).join("\n") : "No hay nada pendiente por revisar."; link = "/admin"; }
   else if (u.rank && /(qu[eé] puedo hacer|mis permisos|mi rango)/i.test(msg)) { r = resumenRango(u.rank, !!u.auxApertura) || "Todavía no tienes un rango de staff."; link = "/admin"; }
   else if (/(qu[eé] me pasa|c[oó]mo voy|mi estado|resumen|qu[eé] tengo pendiente|pendiente)/i.test(msg)) { const a = await avisos(d, u); r = a.length ? "Esto es lo que veo ahora:\n" + a.map((x) => "- " + x.t).join("\n") : "Todo tranquilo: no tienes nada urgente."; link = a[0]?.link || ""; }
+  else if (respEquipo(msg, lista)) r = respEquipo(msg, lista).r;
   else {
     const x = responder(msg, u.rank || u.auxApertura ? temasStaff(u.rank, !!u.auxApertura) : []), nm = NORMA.test(msg) || !x ? respNorma(msg) : null; r = nm ? nm.r : x?.r; link = nm ? nm.link : x?.link || "";
     if (!r) r = charla(msg) || (SALUDO.test(msg) ? `Hola, ${nombreDe(u).split(" ")[0] || "bienvenido"}. Pregúntame cómo funciona algo del portal o dime “recuerda que…” y lo anoto.` : "No estoy seguro de eso. Prueba con otras palabras (por ejemplo: comida, casa, casino, trading, TikTok, banco, multas) o pregúntale al staff en el Discord.");

@@ -358,3 +358,8 @@ lib/rol.js, lib/placa.js, components/CedulaCard.js, app/darkweb/*, app/delictivo
 - **Editar cédula (Administración)**: si la persona es EXTRANJERO, el lugar de nacimiento puede ser cualquier país/lugar (antes solo aceptaba Caracas, La Guaira o El Ávila y lo rechazaba). Los venezolanos siguen limitados a esos tres.
 - **VE TikTok en pausa**: solo el Developer puede entrar (página, API y botón del teléfono). Los demás ven "en mantenimiento". Se controla con `TIKTOK_SOLO_DEV` en `lib/tikverp.js`: ponlo en `false` para reabrir. Al reabrir, las rachas que estaban vivas al pausar se conservan (una sola vez, no se pierden por los días cerrados).
 - **Li'l Monkey** aprendió el equipo del staff (usuarios de Roblox, nombres y cargos). Para cambiarlo edita la entrada "Equipo del staff" en `lib/asistente.js`.
+
+## Actualización 38 — Li'l Monkey: equipo por persona y comando /añadir
+- Si preguntas por una persona ("¿quién es Mono?", "qué hace Omar") responde **solo** los cargos de esa persona (por usuario de Roblox, nombre o alias). Si preguntas por un cargo ("quiénes son los Head Staff", "asuntos internos", "fundadores") lista solo a quienes lo tienen. "¿Quién es el staff?" o `/equipo` muestra todos.
+- Comandos en el chat de Li'l Monkey (solo **Developer y Fundación**): `/añadir usuario_roblox (Nombre o Alias) Cargo 1, Cargo 2` (si ya existe, lo actualiza), `/quitar usuario_roblox`. `/equipo` lo puede usar cualquiera.
+- El equipo vive en la colección `equipo` (se siembra solo la primera vez con los 9 iniciales; `lib/equipo.js`). Se quitó la entrada fija anterior de `lib/asistente.js`.
