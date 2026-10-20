@@ -84,7 +84,7 @@ export async function POST(req) {
       if (!t.cedula) return err("Ese usuario no tiene cédula");
       const c = b.cedula || {}, set = {}, antes = {};
       for (const k of ["nombres", "apellidos", "edoCivil", "roblox"]) if (c[k] !== undefined && str(c[k])) { set[`cedula.${k}`] = k === "roblox" ? str(c[k], 30) : up(c[k]); antes[k] = t.cedula[k]; }
-      if (c.lugar) { if (!LUGARES[c.lugar]) return err("Lugar de nacimiento inválido"); set["cedula.lugar"] = c.lugar; antes.lugar = t.cedula.lugar; }
+      if (c.lugar) { const ext = t.cedula.nacionalidad === "EXTRANJERO", lg = ext ? str(c.lugar, 40) : c.lugar; if (!ext && !LUGARES[lg]) return err("Lugar de nacimiento inválido (Caracas, La Guaira o El Ávila)"); if (lg) { set["cedula.lugar"] = lg; antes.lugar = t.cedula.lugar; } } // los extranjeros pueden tener cualquier país/lugar de origen
       if (c.nac) { const n = new Date(c.nac); if (isNaN(n)) return err("Fecha inválida"); set["cedula.nac"] = n; antes.nac = t.cedula.nac; }
       if (!Object.keys(set).length) return err("No hay cambios");
       await users.updateOne({ id: t.id }, { $set: set }); await log("editCedula", quien, { antes, despues: set }, { imagen: it.img }); break;

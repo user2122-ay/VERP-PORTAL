@@ -353,3 +353,8 @@ lib/rol.js, lib/placa.js, components/CedulaCard.js, app/darkweb/*, app/delictivo
 - Se quitó el texto "morirías en X h" de la pantalla de inicio.
 - Con el servidor **cerrado** las barras siguen en pausa pero **ya se puede comer y beber** (Mercado/Inventario/Hogar).
 - **Developer**: ahora su comida y agua se guardan y bajan como las de los demás (antes se reiniciaban al recargar la web porque nunca se guardaban), pero no muere al llegar a 0%.
+
+## Actualización 37 — Cédula de extranjeros, VE TikTok en pausa y equipo del staff
+- **Editar cédula (Administración)**: si la persona es EXTRANJERO, el lugar de nacimiento puede ser cualquier país/lugar (antes solo aceptaba Caracas, La Guaira o El Ávila y lo rechazaba). Los venezolanos siguen limitados a esos tres.
+- **VE TikTok en pausa**: solo el Developer puede entrar (página, API y botón del teléfono). Los demás ven "en mantenimiento". Se controla con `TIKTOK_SOLO_DEV` en `lib/tikverp.js`: ponlo en `false` para reabrir. Al reabrir, las rachas que estaban vivas al pausar se conservan (una sola vez, no se pierden por los días cerrados).
+- **Li'l Monkey** aprendió el equipo del staff (usuarios de Roblox, nombres y cargos). Para cambiarlo edita la entrada "Equipo del staff" en `lib/asistente.js`.

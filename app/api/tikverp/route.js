@@ -8,6 +8,7 @@ import { auditar } from "@/lib/auditoria";
 import { importarImagen } from "@/lib/imagen";
 import { validarLink, etiquetas, HANDLE, insignia, esFund, parId, tickRacha, rachaVista } from "@/lib/tikverp";
 import { ecoCfg } from "@/lib/reserva";
+import { TIKTOK_SOLO_DEV, PAUSA_DESDE, dia } from "@/lib/tikverp";
 export const dynamic = "force-dynamic";
 const bad = (m, s = 400) => NextResponse.json({ error: m }, { status: s });
 const oid = (s) => { try { return new ObjectId(String(s)); } catch { return null; } };
@@ -16,6 +17,9 @@ let listo = false;
 async function cols() {
   const d = await db(), c = { d, per: d.collection("tv_perfiles"), po: d.collection("tv_posts"), li: d.collection("tv_likes"), co: d.collection("tv_com"), fo: d.collection("tv_follows"), so: d.collection("tv_sonidos"), ch: d.collection("tv_chats"), ms: d.collection("tv_msgs"), bl: d.collection("tv_blocks"), cl: d.collection("tv_comlikes") };
   if (!listo) { listo = true; await Promise.all([c.per.createIndex({ handle: 1 }, { unique: true }), c.po.createIndex({ at: -1 }), c.po.createIndex({ uid: 1, at: -1 }), c.po.createIndex({ tags: 1 }), c.li.createIndex({ post: 1 }), c.co.createIndex({ post: 1, at: 1 }), c.fo.createIndex({ a: 1 }), c.fo.createIndex({ b: 1 }), c.so.createIndex({ usos: -1 }), c.ch.createIndex({ uids: 1, ult: -1 }), c.ms.createIndex({ chat: 1, at: 1 }), c.bl.createIndex({ a: 1 }), c.bl.createIndex({ b: 1 })]).catch(() => {}); }
+  if (!TIKTOK_SOLO_DEV) { // al reabrir: las rachas que estaban vivas al pausar quedan como "de ayer" (una sola vez), así no se pierden por los días cerrados
+    const f = await d.collection("config").findOne({ _id: "tikverpReanuda" }); if (!f) { try { await d.collection("config").insertOne({ _id: "tikverpReanuda", at: new Date() }); await c.ch.updateMany({ rn: { $gt: 0 }, rc: { $gte: dia(Date.parse(PAUSA_DESDE) - 864e5) } }, { $set: { rc: dia(Date.now() - 864e5), rd: null, hoy: {} } }); } catch {} }
+  }
   return c;
 }
 // Moderación (Fundación / Developer): queda en la auditoría de Administración y se manda al canal de Discord.
@@ -38,7 +42,7 @@ const yo_h = (x) => (x?.handleAt ? new Date(+new Date(x.handleAt) + 7 * 864e5).t
 const perfilPub = (x, extra = {}) => ({ uid: x._id, handle: x.handle, nombre: x.nombre, bio: x.bio || "", foto: x.foto || null, seguidores: x.seguidores || 0, siguiendo: x.siguiendo || 0, likes: x.likes || 0, ...extra });
 
 export async function GET(req) {
-  const u = await apiUser(); if (!u?.cedula) return bad("Sin sesión", 401);
+  const u = await apiUser(); if (!u?.cedula) return bad("Sin sesión", 401); if (TIKTOK_SOLO_DEV && !u.dev) return bad("VE TikTok está en mantenimiento", 403);
   const c = await cols(), p = new URL(req.url).searchParams, m = p.get("m") || "feed", me = u.id;
   if (m === "audio") { // reproduce un audio subido desde el celular
     const _id = oid(p.get("id")), a = _id && (await c.d.collection("tv_audio").findOne({ _id })); if (!a) return bad("Ese audio ya no existe", 404);
@@ -92,7 +96,7 @@ export async function GET(req) {
 }
 
 export async function POST(req) {
-  const u = await apiUser(); if (!u?.cedula) return bad("Sin sesión", 401);
+  const u = await apiUser(); if (!u?.cedula) return bad("Sin sesión", 401); if (TIKTOK_SOLO_DEV && !u.dev) return bad("VE TikTok está en mantenimiento", 403);
   const b = await req.json(), c = await cols(), me = u.id, at = new Date(), yo = await c.per.findOne({ _id: me });
   if (b.accion === "crear" || b.accion === "editar") {
     const nombre = String(b.nombre || "").trim().slice(0, 30), bio = String(b.bio || "").trim().slice(0, 120); if (!nombre) return bad("Escribe tu nombre");
