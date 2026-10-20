@@ -363,3 +363,7 @@ lib/rol.js, lib/placa.js, components/CedulaCard.js, app/darkweb/*, app/delictivo
 - Si preguntas por una persona ("¿quién es Mono?", "qué hace Omar") responde **solo** los cargos de esa persona (por usuario de Roblox, nombre o alias). Si preguntas por un cargo ("quiénes son los Head Staff", "asuntos internos", "fundadores") lista solo a quienes lo tienen. "¿Quién es el staff?" o `/equipo` muestra todos.
 - Comandos en el chat de Li'l Monkey (solo **Developer y Fundación**): `/añadir usuario_roblox (Nombre o Alias) Cargo 1, Cargo 2` (si ya existe, lo actualiza), `/quitar usuario_roblox`. `/equipo` lo puede usar cualquiera.
 - El equipo vive en la colección `equipo` (se siembra solo la primera vez con los 9 iniciales; `lib/equipo.js`). Se quitó la entrada fija anterior de `lib/asistente.js`.
+
+## Actualización 39 — Li'l Monkey para todos + revisión
+- **Li'l Monkey abierto para todos** (también ayuda con registro e inicio de sesión sin cuenta). El ajuste de Administración → Economía → Asistente cambió de clave interna (`asistente3`) para que cualquier "Beta" guardado antes no lo deje cerrado; por defecto queda **Abierto** y se puede volver a Beta desde ahí.
+- Revisión con ~40 preguntas de prueba: se arregló "¿cómo transfiero dinero?" (no respondía), "cuánto pagan los trabajos" (ahora dice $1.000/h) y los temas de TikTok avisan que está en mantenimiento.
