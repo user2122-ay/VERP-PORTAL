@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { apiUser } from "@/lib/auth";
 import { ecoCfg } from "@/lib/reserva";
-import { nivelDe, HORAS } from "@/lib/cuerpo";
+import { nivelDe, HORAS, refCuerpo } from "@/lib/cuerpo";
 import { casaRef } from "@/lib/mdt";
 import { nombreDe } from "@/lib/rol";
 import { respEquipo, comando, semilla, fila } from "@/lib/equipo";
@@ -15,7 +15,7 @@ const bad = (m, s = 400) => NextResponse.json({ error: m }, { status: s }), MAX_
 async function acceso() { const u = await apiUser().catch(() => null), d = await db(), abierto = (await ecoCfg(d)).asistente === "abierto"; return { u: u?.cedula || u?.dev ? u : u, d, visible: abierto || !!u?.dev, anon: !u }; }
 // Lo que el asistente "sabe" de ti ahora mismo: se calcula en cada consulta, así nunca se desactualiza.
 async function avisos(d, u) {
-  const out = [], ahora = Date.now(), pct = (e, h) => Math.round(nivelDe(e, h)), c = pct(u.cuerpo?.comida, HORAS.comida), a = pct(u.cuerpo?.agua, HORAS.agua);
+  const out = [], ahora = Date.now(), ref = await refCuerpo(d, u), pct = (e, h) => Math.round(nivelDe(e, h, ref)), c = pct(u.cuerpo?.comida, HORAS.comida), a = pct(u.cuerpo?.agua, HORAS.agua);
   if (u.cuerpo && !u.muerte) { if (a <= 30) out.push({ k: "sed", t: `Tienes sed: tu agua está en ${a}%.`, link: "/inventario?v=comida" }); if (c <= 30) out.push({ k: "hambre", t: `Tienes hambre: tu comida está en ${c}%.`, link: "/inventario?v=comida" }); }
   const n = await d.collection("notifs").find({ uid: u.id, read: false }).sort({ at: -1 }).limit(5).toArray();
   if (n.length) out.push({ k: "avisos", id: String(n[0]._id), t: `Tienes ${n.length >= 5 ? "varios" : n.length} aviso(s) sin leer. Último: ${n[0].title}.`, link: "/notificaciones" });

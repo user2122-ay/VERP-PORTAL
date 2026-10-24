@@ -367,3 +367,8 @@ lib/rol.js, lib/placa.js, components/CedulaCard.js, app/darkweb/*, app/delictivo
 ## Actualización 39 — Li'l Monkey para todos + revisión
 - **Li'l Monkey abierto para todos** (también ayuda con registro e inicio de sesión sin cuenta). El ajuste de Administración → Economía → Asistente cambió de clave interna (`asistente3`) para que cualquier "Beta" guardado antes no lo deje cerrado; por defecto queda **Abierto** y se puede volver a Beta desde ahí.
 - Revisión con ~40 preguntas de prueba: se arregló "¿cómo transfiero dinero?" (no respondía), "cuánto pagan los trabajos" (ahora dice $1.000/h) y los temas de TikTok avisan que está en mantenimiento.
+
+## Actualización 40 — Comida y agua: mismos porcentajes en todos lados
+- **Causa**: el panel de inicio mide el tiempo con la hora "congelada" (servidor cerrado o fuera de ER:LC), pero Li'l Monkey y el cálculo al comer usaban la hora actual, así que mostraban números distintos.
+- **Arreglo**: nueva función `refCuerpo` (`lib/cuerpo.js`) con la hora de referencia única. La usan el panel, Li'l Monkey (avisos de hambre/sed) y comer/beber (Inventario y Hogar).
+- Pendiente (sugerencia para después): comidas por porcentaje repartido entre las unidades de cada compra (ej. galletas x12 con 10% total).

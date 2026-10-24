@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { apiUser } from "@/lib/auth";
-import { nivelDe, HORAS, servidorEstado } from "@/lib/cuerpo";
+import { nivelDe, HORAS, refCuerpo } from "@/lib/cuerpo";
 import { estaRetenido } from "@/lib/decomiso";
 import { esComida, neveraDe, enNevera, vencido, venceMs, FACTOR_NEVERA, HORAS_ENFERMO, PROB_ENFERMAR } from "@/lib/comida";
 const bad = (m, s = 400) => NextResponse.json({ error: m }, { status: s });
@@ -32,10 +32,10 @@ export async function POST(req) {
   }
   if (b.accion === "comer") {
     const { tipo, pct } = it.consumo || {}; if (!tipo) return bad("No se puede consumir");
-    const actual = nivelDe(u.cuerpo?.[tipo], HORAS[tipo]); if (actual >= 95) return bad(tipo === "agua" ? "Todavía no tienes sed" : "Todavía no tienes hambre");
+    const ref = await refCuerpo(d, u), actual = nivelDe(u.cuerpo?.[tipo], HORAS[tipo], ref); if (actual >= 95) return bad(tipo === "agua" ? "Todavía no tienes sed" : "Todavía no tienes hambre");
     const set = { [`cuerpo.${tipo}`]: { n: Math.min(100, actual + pct), t: ahora } }; let enfermo = false, perdida = null;
     if (venc && Math.random() < PROB_ENFERMAR) { // comida vencida: te enfermas y pierdes un pequeño % de comida y agua
-      enfermo = true; const c = nivelDe(u.cuerpo?.comida, HORAS.comida), a = nivelDe(u.cuerpo?.agua, HORAS.agua), pc = al(4, 12), pa = al(4, 12);
+      enfermo = true; const c = nivelDe(u.cuerpo?.comida, HORAS.comida, ref), a = nivelDe(u.cuerpo?.agua, HORAS.agua, ref), pc = al(4, 12), pa = al(4, 12);
       const baseC = tipo === "comida" ? Math.min(100, c + pct) : c, baseA = tipo === "agua" ? Math.min(100, a + pct) : a;
       set["cuerpo.comida"] = { n: Math.max(1, baseC - pc), t: ahora }; set["cuerpo.agua"] = { n: Math.max(1, baseA - pa), t: ahora }; perdida = { comida: pc, agua: pa };
       set["cuerpo.enfermo"] = { hasta: new Date(+ahora + HORAS_ENFERMO * 36e5), causa: it.name };
