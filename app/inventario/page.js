@@ -23,7 +23,7 @@ import { casaRef } from "@/lib/mdt";
 import Comida from "./Comida";
 import { Cultivar, Cosechar } from "./Cultivo";
 import { esSemilla } from "@/lib/cultivo";
-import { esNevera, esComida, neveraDe } from "@/lib/comida";
+import { esNevera, esComida, neveras, nidDe, nevDe, capNev, racionesDe, quedanDe, pctRacion, unidadDe, plural } from "@/lib/comida";
 import { tasaITBMS } from "@/lib/tesoreria";
 import { autoMigrar } from "@/lib/imagen";
 export const dynamic = "force-dynamic";
@@ -58,7 +58,7 @@ export default async function P({ searchParams }) {
         {m.desacato && <div style={{ color: "var(--bad)", marginTop: 4 }}>Desacato: {m.desacato.tipo} ({m.desacato.detalle})</div>}{m.pagadaAt && <div className="mut">Pagada el {new Date(m.pagadaAt).toLocaleDateString("es")}</div>}
         {m.est !== "pagada" && <PagarMulta id={m.id} monto={m.monto} metodos={metodos} />}</div>); })}
       {!multas.length && <div className="card mut">No tienes multas. ¡Sigue así!</div>}</>)}
-    {v === "comida" && <Comida comida={items.filter(esComida).map((i) => ({ fid: i.fid, name: i.name, img: i.img, sub: i.sub, consumo: i.consumo, calif: i.calif, enNevera: !!i.enNevera, vence: +new Date(i.vence) }))} nevera={(() => { const n = neveraDe(u); return n ? { name: n.name, img: n.img || fotos[n.name] || null, capacidad: n.capacidad || ({ "nevera-normal": 10, refrigerador: 15, "nevera-lujo": 20 })[n.sku] || 10 } : null; })()} />}
+    {v === "comida" && <Comida comida={items.filter(esComida).map((i) => ({ fid: i.fid, name: i.name, img: i.img, sub: i.sub, consumo: i.consumo, calif: i.calif, enNevera: !!i.enNevera, nev: i.enNevera ? nevDe(u, i) : "", vence: +new Date(i.vence), rac: racionesDe(i) > 1 ? { q: quedanDe(i), R: racionesDe(i), per: pctRacion(i), un: unidadDe(i), unp: plural(2, unidadDe(i)) } : null }))} neveras={neveras(u).map((n) => { const c = casas.find((x) => casaRef(x.name, x.at) === n.casa); return { nid: nidDe(n), name: n.name, img: n.img || fotos[n.name] || null, capacidad: capNev(n), casa: c ? `${c.name}${c.ubicacion ? " · " + c.ubicacion : ""}` : "" }; })} />}
     {v === "negocios" || v === "multas" || v === "comida" ? null : v === "casa" ? (<>
       <p className="mut">Lo que guardas en casa no se puede robar en un asalto: solo te pueden robar lo que llevas encima. Pasar un objeto entre tu inventario y el de la casa (guardar o sacar) tiene una espera de 5 minutos. La policía puede revisar tu casa con una orden judicial. Las sustancias solo se pueden llevar encima, guardar en casa o vender en la Dark Web.</p>
       {!casas.length && <div className="card mut">Necesitas una casa para guardar cosas. Compra una en el Mercado → Propiedades.</div>}

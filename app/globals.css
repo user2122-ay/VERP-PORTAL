@@ -109,6 +109,9 @@ h1,h2{margin:.2em 0}.mut{color:var(--mut);font-size:14px}.big{font-size:34px;fon
 .cu-s{display:flex;align-items:flex-start;gap:8px}.cu-s:first-child{flex-direction:row}.cu-pct{font-weight:900;font-size:20px;margin-top:30px;text-shadow:0 2px 6px #000}
 .cu-ring{position:relative;width:84px;height:84px}.cu-ring span{position:absolute;inset:0;display:grid;place-items:center;font-size:28px}.cu-n{display:block;text-align:center;font-size:18px;font-family:Georgia,serif;text-shadow:0 2px 6px #000}
 .cu-av{position:relative;z-index:1;height:min(340px,62vw);width:auto;margin-top:110px;object-fit:contain}.cu-pie{position:relative;z-index:2;text-align:center;margin-top:6px}
+.cu-ok{animation:cu-flota 3.5s ease-in-out infinite}.cu-mal{animation:cu-tiembla .3s infinite}.cu-av{will-change:transform}
+/* Celular / poco movimiento: sin animaciones pesadas (aro que gira, brillo, temblor) para que no se trabe */
+@media(pointer:coarse),(max-width:760px),(prefers-reduced-motion:reduce){.cu-gira,.cu-brillo,.cu-ic{animation:none}.cu-arco{animation:none;filter:none}.cu-mal{animation:none}.cu-ok{animation:cu-flota 5s ease-in-out infinite}.as-fig,.as-oj{animation:none}}
 @keyframes cu-flota{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
 @keyframes cu-tiembla{0%,100%{transform:translateX(0) rotate(0)}25%{transform:translateX(-3px) rotate(-1.5deg)}75%{transform:translateX(3px) rotate(1.5deg)}}
 

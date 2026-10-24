@@ -375,3 +375,10 @@ lib/rol.js, lib/placa.js, components/CedulaCard.js, app/darkweb/*, app/delictivo
 
 ## Actualización 41 — Li'l Monkey dice tus porcentajes
 - Ahora puedes preguntarle "¿cuánto tengo de sed?", "¿qué porcentaje de comida tengo?", "mi nivel de agua" o "cómo están mis barras de comida" y responde con tu comida y agua exactas (mismo número que el panel; avisa si están en pausa).
+
+## Actualización 42 — Raciones de comida, 2 neveras y optimización para celular
+- **Raciones**: cada comida se divide en raciones y el % que sube se reparte entre ellas (ej. shawarma 23% = 2 raciones de 11,5%). Raciones: shawarma 2, Subway 3, pizza 8, tequeños 6, empanada 3, cachapa 2, pastel 14, pan dulce 6, panquecas 3, galletas 6, pan 3, Banana Kami 2, bandeja de helado 8, pote de helado 8, hayaca 6 (la "yaca"), perro caliente 3, botellón 16 vasos, patilla 15, melón 6, pera 1, cambur 2 (`RACIONES` en `lib/comida.js`; para cambiar una pon el número o añade el producto). El resto sigue siendo 1 ración.
+  - Inventario → Comida: botones **Comer 1**, **La mitad** y **Todo / Lo que queda**, con barra de raciones. No se gasta más de lo necesario para llegar a 100% (lo que sobra se queda guardado). Funciona también en la nevera de la casa (Hogar).
+  - Lo ya comprado queda con todas sus raciones (no hace falta migrar nada).
+- **2 neveras**: puedes comprar hasta 2 (una por casa). Al comprar eliges la casa; en Inventario → Comida ves cada nevera con su casa y su capacidad, y al guardar eliges en cuál. La nevera de Hogar es la de esa casa. Las neveras/comida de antes siguen funcionando (la comida vieja cuenta en tu primera nevera).
+- **Celular / bug al morir**: la pantalla se trababa porque, si las barras llegaban a 0% y el servidor aún no marcaba la muerte, la página se recargaba sin parar (ahora recarga una sola vez y el Developer nunca). Además: sin animaciones pesadas en celular (aro que gira, temblor, brillos), Li'l Monkey se queda quieta por defecto en celular (se puede activar con su botón) y la pantalla "Moriste" es más ligera.

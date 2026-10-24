@@ -11,7 +11,8 @@ import { acreditarNegocio, NEGOCIOS } from "@/lib/negocios";
 import { iva as ivaDe, ingresarTesoreria, tasaITBMS } from "@/lib/tesoreria";
 import { licTipo, tieneLic, tieneLicEntrada, numeroLicencia } from "@/lib/licencia";
 import { MAX_CASAS } from "@/lib/casa";
-import { ids, tieneCasa, neveraDe, esNevera, PRECIO_MAX } from "@/lib/comida";
+import { ids, tieneCasa, neveras, esNevera, MAX_NEVERAS, PRECIO_MAX } from "@/lib/comida";
+import { casaRef } from "@/lib/hogar";
 const err = (m, s = 400) => NextResponse.json({ error: m }, { status: s });
 export async function POST(req) {
   const u = await apiUser(); if (!u?.cedula) return err("Sin sesión", 401);
@@ -22,7 +23,12 @@ export async function POST(req) {
   const neg0 = it.negocio ? await d.collection("negocios").findOne({ _id: it.negocio }) : null;
   if (neg0?.estado === "clausurado") return err("Este negocio está clausurado por el Ministerio del Interior", 403);
   if (it.consumo) return comprarComida(d, u, it, pk);
-  if (esNevera(it)) { if (!tieneCasa(u)) return err("Necesitas una casa para comprar una nevera", 403); if (neveraDe(u)) return err("Ya tienes una nevera: solo se permite una por usuario"); }
+  let casaN = null; // casa donde va la nevera (puedes tener 2 neveras: una por casa)
+  if (esNevera(it)) {
+    if (!tieneCasa(u)) return err("Necesitas una casa para comprar una nevera", 403); const ns = neveras(u); if (ns.length >= MAX_NEVERAS) return err(`Ya tienes ${MAX_NEVERAS} neveras: es el máximo (una por casa)`);
+    const casas = (u.inventory || []).filter((i) => i.category === "Propiedades").map((c) => casaRef(c.name, c.at)), libres = casas.filter((r) => !ns.some((n) => n.casa === r));
+    casaN = b.casa ? String(b.casa) : libres.length === 1 || casas.length === 1 ? libres[0] || casas[0] : ""; if (!casaN || !casas.includes(casaN)) return err("Elige en qué casa va la nevera"); if (ns.some((n) => n.casa === casaN)) return err("Esa casa ya tiene una nevera");
+  }
   const tasa = await tasaITBMS(d), pct = Math.round(tasa * 1000) / 10, lt = licTipo(it), imp = ivaDe(it.price, tasa), total = it.price + imp; // ITBMS ${pct}% sobre el precio
 
   if (it.category === "Concesionario" && !tieneLic(u, "conducir")) return err("Necesitas la Licencia de Conducir para comprar vehículos", 403);
@@ -38,7 +44,7 @@ export async function POST(req) {
   const pl = esAuto ? await nuevaPlaca(d, { modelo: it.name, color, detalles, img: it.img || "", brand: it.brand || "", year: it.year || "", clase: it.clase || "", desc: it.desc || "", dueno: u.id, duenoN: nombreDe(u) }) : null;
   const vence = it.dias ? new Date(Math.max(Date.now(), vigente ? +new Date(vigente.vence) : 0) + it.dias * 864e5) : null;
   const guard = (lt && it.sku) || (unico && !it.dias) ? { inventory: { $not: { $elemMatch: it.sku ? { sku: it.sku } : { name: it.name } } } } : {};
-  const nuevo = { name: it.name, category: it.category, price: it.price, at: new Date(), sku: it.sku || null, tipo: it.tipo || null, ubicacion: it.ubicacion || null, img: it.img || null, placa: pl, color, detalles, vence, licNum: lt ? numeroLicencia(lt) : null, ...(it.category === "Propiedades" ? { impProx: new Date(Date.now() + 7 * 864e5) } : {}) };
+  const nuevo = { name: it.name, category: it.category, price: it.price, at: new Date(), sku: it.sku || null, tipo: it.tipo || null, ubicacion: it.ubicacion || null, img: it.img || null, placa: pl, color, detalles, vence, licNum: lt ? numeroLicencia(lt) : null, ...(it.category === "Propiedades" ? { impProx: new Date(Date.now() + 7 * 864e5) } : {}), ...(esNevera(it) ? { nid: ids(), casa: casaN } : {}) };
   const upd = vigente ? { $inc: { [pk]: -total }, $set: { "inventory.$[e].vence": vence } } : { $inc: { [pk]: -total }, $push: { inventory: nuevo } }, opts = vigente ? { arrayFilters: [{ "e.sku": it.sku, "e.vence": vigente.vence }] } : {};
   const r = await d.collection("users").updateOne({ id: u.id, [pk]: { $gte: total }, ...guard }, upd, opts);
   if (!r.modifiedCount) { if (pl) await d.collection("placas").deleteOne({ _id: normPlaca(pl) }); if (it.stock > 0) await items.updateOne({ _id }, { $inc: { stock: 1 } }); return err("Saldo insuficiente"); }

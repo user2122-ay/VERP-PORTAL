@@ -39,7 +39,7 @@ export default function Asistente() {
   R.current.abierto = abierto; R.current.quieto = quieto;
   const cargar = async () => { try { const j = await (await fetch("/api/asistente", { cache: "no-store" })).json(); if (!j.visible) { setEst(false); return; } setEst(j); setMsgs((m) => (m.length ? m : j.historial.map((x) => ({ r: x.r, t: x.t })))); const n = (j.avisos || []).find((a) => !vistos.current.has(a.k)); if (n) { vistos.current.add(n.k); setGlobo(n.t); setTimeout(() => setGlobo(""), 9000); } } catch { setEst(false); } };
   useEffect(() => { cargar(); const i = setInterval(cargar, 60000); return () => clearInterval(i); }, []);
-  useEffect(() => { try { setQuieto(localStorage.asQuieto === "1" || matchMedia("(prefers-reduced-motion: reduce)").matches); } catch {} fetch("/asistente.png", { method: "HEAD" }).then((r) => setImg(r.ok && /image/.test(r.headers.get("content-type") || ""))).catch(() => {}); }, []);
+  useEffect(() => { try { setQuieto(localStorage.asQuieto === "1" || (localStorage.asQuieto !== "0" && matchMedia("(pointer: coarse), (prefers-reduced-motion: reduce)").matches)); } catch {} fetch("/asistente.png", { method: "HEAD" }).then((r) => setImg(r.ok && /image/.test(r.headers.get("content-type") || ""))).catch(() => {}); }, []);
   const cuando = (v) => { setQuieto(v); try { localStorage.asQuieto = v ? "1" : "0"; } catch {} };
   // Puntos de referencia: posición inicial (esquina inferior derecha) y actividad del usuario.
   useEffect(() => { if (!est) return; const W = innerWidth, H = innerHeight, p = { x: W - SZ - 14, y: H - AL - 14 }; R.current.pos = p; setPos(p);

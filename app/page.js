@@ -23,5 +23,5 @@ export default async function P() {
       <small style={{ opacity: 0.8 }}>Patrimonio total</small><div className="big">{$(u.balance + bancos)}</div>
       <div className="stats"><div><small>Efectivo</small><b>{$(u.balance)}</b></div><div><small>En bancos</small><b>{$(bancos)}</b></div><div><small>Avisos sin leer</small><b>{sin}</b></div><div><small>Rango</small><b>{u.rank ? u.rank.replace("_", " ") : "Ciudadano"}</b></div></div></div>
     <div className="tiles">{MODULOS.map(([h, t, s, I]) => <Link key={h} href={h} className="tile"><I size={26} className="neon" /><b>{t}</b><span className="mut">{s}</span></Link>)}</div>
-    <Cuerpo congelado={congelado} fuera={!!fu} comida={ser(cp.comida)} agua={ser(cp.agua)} img={img} ahora={ahora} enfermo={cp.enfermo?.hasta && +new Date(cp.enfermo.hasta) > ahora ? { hasta: new Date(cp.enfermo.hasta).toISOString(), causa: cp.enfermo.causa } : null} /></div></Shell>);
+    <Cuerpo dev={!!u.dev} congelado={congelado} fuera={!!fu} comida={ser(cp.comida)} agua={ser(cp.agua)} img={img} ahora={ahora} enfermo={cp.enfermo?.hasta && +new Date(cp.enfermo.hasta) > ahora ? { hasta: new Date(cp.enfermo.hasta).toISOString(), causa: cp.enfermo.causa } : null} /></div></Shell>);
 }

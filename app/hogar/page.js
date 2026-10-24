@@ -4,7 +4,7 @@ import { needUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { casaRef } from "@/lib/mdt";
 import { guardable, esAuto } from "@/lib/casa";
-import { esComida, neveraDe, enNevera, vencido, venceMs } from "@/lib/comida";
+import { esComida, neveraDeCasa, nidDe, enNeveraId, capNev, vencido, venceMs, racionesDe, quedanDe, plural, unidadDe } from "@/lib/comida";
 import { tipoDe, cupo, plazas, HAB, etiquetaCasa, DIAS_INVITACION, CUOTA_MAX } from "@/lib/hogar";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Hogar · VE:RP" };
@@ -20,11 +20,11 @@ export default async function P() {
   // Como ocupante
   const h = await col.findOne({ "ocup.id": u.id }); let vivo = null;
   if (h) {
-    const yo = h.ocup.find((x) => x.id === u.id), dueno = await d.collection("users").findOne({ id: h.owner }, { projection: { inventory: 1, name: 1 } }), inv = dueno?.inventory || [], nev = neveraDe(dueno), nombres = Object.fromEntries(h.ocup.map((o) => [o.id, o.name])); nombres[h.owner] = h.ownerName; const familia = yo.modo === "familia";
+    const yo = h.ocup.find((x) => x.id === u.id), dueno = await d.collection("users").findOne({ id: h.owner }, { projection: { inventory: 1, name: 1 } }), inv = dueno?.inventory || [], nev = neveraDeCasa(dueno, h._id), nid = nidDe(nev), nombres = Object.fromEntries(h.ocup.map((o) => [o.id, o.name])); nombres[h.owner] = h.ownerName; const familia = yo.modo === "familia";
     const guard = inv.filter((i) => i.loc === "casa" && i.casa === h._id), vis = guard.filter((i) => i.por === u.id || (familia && i.lugar !== "Caja fuerte"));
     vivo = { ref: h._id, label: h.etiqueta, dueno: h.ownerName, modo: yo.modo, cuota: yo.cuota, prox: yo.prox ? iso(yo.prox) : null, companeros: h.ocup.filter((o) => o.id !== u.id).map((o) => ({ name: o.name, modo: o.modo })), ocultos: guard.length - vis.length,
       objetos: vis.map((i) => ({ name: i.name, at: iso(i.at), img: i.img || "", lugar: i.lugar, por: i.por ? nombres[i.por] || "" : "Dueño", puede: i.por === u.id || (familia && !esAuto(i) && i.lugar !== "Caja fuerte" && !i.plantada) })),
-      tieneNevera: !!nev, cap: nev?.capacidad || 10, nevera: enNevera(dueno).filter((i) => !i.casa || i.casa === h._id).map((i) => ({ fid: i.fid, name: i.name, img: i.img || "", resta: Math.max(0, venceMs(i) - Date.now()), por: i.por ? nombres[i.por] || "" : "Dueño", puede: familia || i.por === u.id })),
+      tieneNevera: !!nev, cap: capNev(nev), nevera: enNeveraId(dueno, nid).map((i) => ({ fid: i.fid, name: i.name, rac: racionesDe(i) > 1 ? `${quedanDe(i)}/${racionesDe(i)} ${plural(racionesDe(i), unidadDe(i))}` : "", img: i.img || "", resta: Math.max(0, venceMs(i) - Date.now()), por: i.por ? nombres[i.por] || "" : "Dueño", puede: familia || i.por === u.id })),
       mios: items.filter((i) => guardable(i) && i.loc !== "casa").map((i) => ({ name: i.name, at: iso(i.at), auto: esAuto(i) })), comida: items.filter((i) => esComida(i) && !i.enNevera && !vencido(i)).map((i) => ({ fid: i.fid, name: i.name })) };
   }
   return <Shell user={u}><Hogar mias={mias} invs={invs} vivo={vivo} cuotaMax={CUOTA_MAX} /></Shell>;

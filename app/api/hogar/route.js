@@ -4,7 +4,7 @@ import { apiUser } from "@/lib/auth";
 import { nombreDe } from "@/lib/rol";
 import { casaRef } from "@/lib/mdt";
 import { LUGARES_CASA, ESPERA_GUARDAR, guardable, esAuto } from "@/lib/casa";
-import { esComida, neveraDe, enNevera, vencido, venceMs, FACTOR_NEVERA, HORAS_ENFERMO, PROB_ENFERMAR } from "@/lib/comida";
+import { esComida, neveraDeCasa, nidDe, nevDe, enNeveraId, capNev, vencido, venceMs, FACTOR_NEVERA, HORAS_ENFERMO, PROB_ENFERMAR, racionesDe, plan, unidadDe, plural } from "@/lib/comida";
 import { nivelDe, HORAS, refCuerpo } from "@/lib/cuerpo";
 import { estaRetenido } from "@/lib/decomiso";
 import { tipoDe, cupo, etiquetaCasa, limpiar, cobrarCuota, quitarOcupante, devolverCosas, CUOTA_MAX, DIAS_INVITACION, MAX_DEPOSITOS, SEM } from "@/lib/hogar";
@@ -66,26 +66,28 @@ export async function POST(req) {
     await us.updateOne({ id: u.id }, { $push: { inventory: limpiar(it) }, $set: { guardarAt: ahora } }); return ok();
   }
   // ---------- NEVERA COMPARTIDA (la del dueño) ----------
-  const nev = neveraDe(dueno), fid = String(b.fid || ""); if (!nev) return bad("El dueño de la casa no tiene nevera");
+  const nev = neveraDeCasa(dueno, ref), nid = nidDe(nev), fid = String(b.fid || ""); if (!nev) return bad("El dueño de la casa no tiene nevera");
   if (A === "nev_guardar") {
     const it = (u.inventory || []).find((i) => esComida(i) && i.fid === fid); if (!it) return bad("Esa comida ya no está en tu inventario", 404); if (estaRetenido(it)) return bad("Está retenida por la policía", 403); if (it.enNevera) return bad("Ya está en una nevera"); if (vencido(it)) return bad("Eso ya está vencido: no lo guardes");
-    if (enNevera(dueno).length >= (nev.capacidad || 10)) return bad("La nevera de la casa está llena");
+    if (enNeveraId(dueno, nid).length >= capNev(nev)) return bad("La nevera de la casa está llena");
     const vence = new Date(+ahora + (venceMs(it) - +ahora) * FACTOR_NEVERA);
     if (!(await us.updateOne({ id: u.id }, { $pull: { inventory: { fid } } })).modifiedCount) return bad("No se pudo guardar");
-    await us.updateOne({ id: h.owner }, { $push: { inventory: { ...it, enNevera: true, vence, casa: ref, por: u.id } } }); return ok({ msg: `${it.name} guardado en la nevera de la casa` });
+    await us.updateOne({ id: h.owner }, { $push: { inventory: { ...it, enNevera: true, vence, casa: ref, nev: nid, por: u.id } } }); return ok({ msg: `${it.name} guardado en la nevera de la casa` });
   }
-  const it = (dueno.inventory || []).find((i) => esComida(i) && i.fid === fid && i.enNevera && (!i.casa || i.casa === ref)); if (!it) return bad("Esa comida ya no está en la nevera", 404);
+  const it = (dueno.inventory || []).find((i) => esComida(i) && i.fid === fid && i.enNevera && nevDe(dueno, i) === nid); if (!it) return bad("Esa comida ya no está en la nevera", 404);
   if (A === "nev_sacar") {
     if (!familia && it.por !== u.id) return bad("Como alquilino solo puedes sacar lo que tú guardaste");
     if (!(await us.updateOne({ id: h.owner }, { $pull: { inventory: { fid, enNevera: true } } })).modifiedCount) return bad("No se pudo sacar");
     const y = limpiar(it); y.enNevera = false; y.vence = new Date(+ahora + Math.max(0, venceMs(it) - +ahora) / FACTOR_NEVERA); await us.updateOne({ id: u.id }, { $push: { inventory: y } }); return ok({ msg: `${it.name} fuera de la nevera` });
   }
-  if (A === "nev_comer") { // se puede comer lo que haya en la nevera de la casa (lo de otros también): es una casa compartida
-    const { tipo, pct } = it.consumo || {}; if (!tipo) return bad("No se puede consumir"); const ref = await refCuerpo(d, u), actual = nivelDe(u.cuerpo?.[tipo], HORAS[tipo], ref); if (actual >= 95) return bad(tipo === "agua" ? "Todavía no tienes sed" : "Todavía no tienes hambre");
-    const venc = vencido(it), set = { [`cuerpo.${tipo}`]: { n: Math.min(100, actual + pct), t: ahora } }; let enfermo = false, perdida = null;
-    if (venc && Math.random() < PROB_ENFERMAR) { enfermo = true; const c = nivelDe(u.cuerpo?.comida, HORAS.comida, ref), a = nivelDe(u.cuerpo?.agua, HORAS.agua, ref), pc = al(4, 12), pa = al(4, 12), bc = tipo === "comida" ? Math.min(100, c + pct) : c, ba = tipo === "agua" ? Math.min(100, a + pct) : a; set["cuerpo.comida"] = { n: Math.max(1, bc - pc), t: ahora }; set["cuerpo.agua"] = { n: Math.max(1, ba - pa), t: ahora }; perdida = { comida: pc, agua: pa }; set["cuerpo.enfermo"] = { hasta: new Date(+ahora + HORAS_ENFERMO * 36e5), causa: it.name }; }
-    if (!(await us.updateOne({ id: h.owner }, { $pull: { inventory: { fid, enNevera: true } } })).modifiedCount) return bad("Otra persona ya se lo comió");
-    await us.updateOne({ id: u.id }, { $set: set }); return ok({ enfermo, msg: enfermo ? `Estaba vencido y te enfermaste: -${perdida.comida}% comida, -${perdida.agua}% agua` : `${tipo === "agua" ? "Bebiste" : "Comiste"} ${it.name}: +${pct}% de ${tipo}` });
+  if (A === "nev_comer") { // se puede comer lo que haya en la nevera de la casa (lo de otros también): es una casa compartida. Por raciones: n, "mitad" o "todo"
+    const { tipo, pct } = it.consumo || {}; if (!tipo) return bad("No se puede consumir"); const rc = await refCuerpo(d, u), actual = nivelDe(u.cuerpo?.[tipo], HORAS[tipo], rc), R = racionesDe(it); if (actual >= (R > 1 ? 99.5 : 95)) return bad(tipo === "agua" ? "Todavía no tienes sed" : "Todavía no tienes hambre");
+    const pl = plan(it, b, actual), gana = R > 1 ? pl.gana : pct, venc = vencido(it), set = { [`cuerpo.${tipo}`]: { n: Math.min(100, actual + gana), t: ahora } }; let enfermo = false, perdida = null;
+    if (venc && Math.random() < PROB_ENFERMAR) { enfermo = true; const c = nivelDe(u.cuerpo?.comida, HORAS.comida, rc), a = nivelDe(u.cuerpo?.agua, HORAS.agua, rc), pc = al(4, 12), pa = al(4, 12), bc = tipo === "comida" ? Math.min(100, c + gana) : c, ba = tipo === "agua" ? Math.min(100, a + gana) : a; set["cuerpo.comida"] = { n: Math.max(1, bc - pc), t: ahora }; set["cuerpo.agua"] = { n: Math.max(1, ba - pa), t: ahora }; perdida = { comida: pc, agua: pa }; set["cuerpo.enfermo"] = { hasta: new Date(+ahora + HORAS_ENFERMO * 36e5), causa: it.name }; }
+    const q = R > 1 && pl.resta > 0;
+    if (!(await us.updateOne({ id: h.owner, inventory: { $elemMatch: { fid, enNevera: true } } }, q ? { $set: { "inventory.$.quedan": pl.resta } } : { $pull: { inventory: { fid, enNevera: true } } })).modifiedCount) return bad("Otra persona ya se lo comió");
+    await us.updateOne({ id: u.id }, { $set: set }); const cuanto = R > 1 ? `${pl.n} ${plural(pl.n, unidadDe(it))} de ` : "";
+    return ok({ enfermo, msg: enfermo ? `Estaba vencido y te enfermaste: -${perdida.comida}% comida, -${perdida.agua}% agua` : `${tipo === "agua" ? "Bebiste" : "Comiste"} ${cuanto}${it.name}: +${gana}% de ${tipo}${q ? ` · quedan ${pl.resta}` : ""}${pl.limitado ? " (con eso ya estás al 100%)" : ""}` });
   }
   return bad("Acción inválida");
 }
