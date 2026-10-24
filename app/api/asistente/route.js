@@ -62,6 +62,9 @@ export async function POST(req) {
   else if (/^(olvida|borra)\s+(\d+)/i.test(msg)) { const i = Number(/(\d+)/.exec(msg)[1]) - 1; if (notas[i]) { const x = notas.splice(i, 1)[0]; r = `Olvidé: “${x.t}”.`; } else r = "No tengo una nota con ese número."; }
   else if (u.rank && /(pendientes? del staff|cola del staff|qu[eé] hay por revisar|trabajo pendiente del staff)/i.test(msg)) { const a = (await avisos(d, u)).filter((x) => x.staff); r = a.length ? "Pendientes del staff:\n" + a.map((x) => "- " + x.t.replace("Staff: ", "")).join("\n") : "No hay nada pendiente por revisar."; link = "/admin"; }
   else if (u.rank && /(qu[eé] puedo hacer|mis permisos|mi rango)/i.test(msg)) { r = resumenRango(u.rank, !!u.auxApertura) || "Todavía no tienes un rango de staff."; link = "/admin"; }
+  else if (!anon && /(cu[aá]nto|qu[eé]|mi|mis|c[oó]mo).*(porcentaje|%|nivel|barra|tengo|\best[aá]n?\b|voy).*(comida|agua|sed|hambre)|(comida|agua|sed|hambre).*(porcentaje|%|nivel|cu[aá]nto)/i.test(msg) && !/(c[oó]mo (funciona|bajan|suben)|por qu[eé])/i.test(msg)) {
+    if (!u.cuerpo) r = "Todavía no tienes comida ni agua que medir: primero crea tu cédula."; else { const ref = await refCuerpo(d, u), p = (e, h) => Math.round(nivelDe(e, h, ref)), c = p(u.cuerpo.comida, HORAS.comida), a = p(u.cuerpo.agua, HORAS.agua), pau = ref < Date.now() - 60000 ? " (están en pausa: el servidor está cerrado o no estás dentro de ER:LC)" : ""; r = `Ahora tienes 🍖 comida ${c}% y 💧 agua ${a}%${pau}.` + (a <= 30 || c <= 30 ? " Deberías comer o beber pronto." : ""); link = "/inventario?v=comida"; }
+  }
   else if (/(qu[eé] me pasa|c[oó]mo voy|mi estado|resumen|qu[eé] tengo pendiente|pendiente)/i.test(msg)) { const a = await avisos(d, u); r = a.length ? "Esto es lo que veo ahora:\n" + a.map((x) => "- " + x.t).join("\n") : "Todo tranquilo: no tienes nada urgente."; link = a[0]?.link || ""; }
   else if (respEquipo(msg, lista)) r = respEquipo(msg, lista).r;
   else {

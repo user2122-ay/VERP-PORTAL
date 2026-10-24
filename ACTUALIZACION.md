@@ -372,3 +372,6 @@ lib/rol.js, lib/placa.js, components/CedulaCard.js, app/darkweb/*, app/delictivo
 - **Causa**: el panel de inicio mide el tiempo con la hora "congelada" (servidor cerrado o fuera de ER:LC), pero Li'l Monkey y el cálculo al comer usaban la hora actual, así que mostraban números distintos.
 - **Arreglo**: nueva función `refCuerpo` (`lib/cuerpo.js`) con la hora de referencia única. La usan el panel, Li'l Monkey (avisos de hambre/sed) y comer/beber (Inventario y Hogar).
 - Pendiente (sugerencia para después): comidas por porcentaje repartido entre las unidades de cada compra (ej. galletas x12 con 10% total).
+
+## Actualización 41 — Li'l Monkey dice tus porcentajes
+- Ahora puedes preguntarle "¿cuánto tengo de sed?", "¿qué porcentaje de comida tengo?", "mi nivel de agua" o "cómo están mis barras de comida" y responde con tu comida y agua exactas (mismo número que el panel; avisa si están en pausa).
